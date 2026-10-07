@@ -1,0 +1,2066 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F2438">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Feuille de match volley</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="Volley">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EAEFF3; --surface:#FFFFFF; --ink:#0F2438; --muted:#5A6B7C; --line:#C9D4DE;
+  --a:#1D5FA8; --a-ink:#FFFFFF; --b:#C2410C; --b-ink:#FFFFFF;
+  --gold:#F0B429; --gold-ink:#1A1300; --danger:#B42318;
+  --head-bg:#0F2438; --head-ink:#EAF0F5;
+  --font-d:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --font-b:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A141E; --surface:#12263A; --ink:#E8EEF3; --muted:#93A5B6; --line:#26405A;
+    --a:#5BA0EA; --a-ink:#07121C; --b:#F58A57; --b-ink:#1A0A02;
+    --head-bg:#07101A; --head-ink:#E8EEF3;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A141E; --surface:#12263A; --ink:#E8EEF3; --muted:#93A5B6; --line:#26405A;
+  --a:#5BA0EA; --a-ink:#07121C; --b:#F58A57; --b-ink:#1A0A02;
+  --head-bg:#07101A; --head-ink:#E8EEF3;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:16px;line-height:1.4;padding-bottom:28px;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+h1,h2,h3{font-family:var(--font-d);margin:0;line-height:1.1}
+h2{font-size:26px;font-weight:700}
+h3{font-size:20px;font-weight:700;margin-bottom:8px}
+small{font-weight:500;opacity:.75}
+.muted{color:var(--muted);font-size:14px}
+
+/* En-tête */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--head-bg);color:var(--head-ink);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding:10px 14px}
+.hset{display:flex;flex-direction:column;line-height:1.15}
+.hset strong{font-family:var(--font-d);font-size:24px;font-weight:700}
+.hset span{font-size:13px;opacity:.8}
+.clock{display:flex;align-items:center;gap:10px}
+header.top .clk{font-family:var(--font-d);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.hbtn{background:transparent;border:1.5px solid currentColor;color:inherit;border-radius:8px;min-height:40px;padding:0 12px;font-weight:600}
+
+/* Tableau de score */
+main{max-width:720px;margin:0 auto}
+.board{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 12px 0}
+.tile{border-radius:16px;overflow:hidden;display:flex;flex-direction:column;background:var(--a);color:var(--a-ink)}
+.tile.b{background:var(--b);color:var(--b-ink)}
+.tilemain{background:none;border:0;color:inherit;padding:14px 8px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;width:100%}
+.tilemain:disabled{cursor:default}
+.tname{font-family:var(--font-d);font-weight:600;font-size:21px;line-height:1.1;overflow-wrap:anywhere}
+.score{font-family:var(--font-d);font-weight:800;font-size:clamp(84px,27vw,132px);line-height:.95;font-variant-numeric:tabular-nums}
+.hint{font-size:13px;opacity:.85;min-height:18px}
+.srv{background:rgba(0,0,0,.2);color:inherit;border:0;min-height:46px;width:100%;font-size:14px;font-weight:500}
+.srv.on{background:var(--gold);color:var(--gold-ink);font-weight:700}
+.srv:disabled{opacity:.6;cursor:default}
+
+/* Commandes */
+.ctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px 0}
+.col{display:flex;flex-direction:column;gap:8px}
+.btn{min-height:50px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font-weight:600;padding:8px 10px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.col.a .btn{border-left:6px solid var(--a)}
+.col.b .btn{border-left:6px solid var(--b)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.wide{justify-content:center;text-align:center;border-left:1px solid var(--line)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 12px 0}
+.last{padding:10px 14px 0;font-size:14px;color:var(--muted);margin:0}
+.banner{margin:12px 12px 0;padding:12px 14px;border-radius:10px;background:var(--ink);color:var(--bg);font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.stack>.banner{margin:0}
+.tcbar{margin:12px 12px 0;padding:10px 14px;border-radius:10px;background:var(--gold);color:var(--gold-ink);display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700}
+.tcbar button{background:transparent;border:1.5px solid currentColor;border-radius:8px;min-height:38px;padding:0 10px;color:inherit;font-weight:600}
+
+/* Affichage et terrain */
+.prefs{display:flex;flex-wrap:wrap;gap:8px;padding:16px 12px 0}
+.tg{min-height:44px;font-size:14px;min-width:0}
+.courtbox{max-width:360px;margin:0 auto;padding:14px 12px 0}
+.chead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}
+.cname{font-family:var(--font-d);font-weight:700;font-size:21px;line-height:1.1;display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere}
+.cname.a{color:var(--a)}
+.cname.b{color:var(--b)}
+.cbtns{display:flex;gap:6px;flex-shrink:0}
+.court{border:3px solid var(--ink);background:var(--surface);border-radius:3px}
+.half{height:196px;display:grid}
+.half.top{grid-template-rows:2fr 1fr;background:rgba(29,95,168,.09)}
+.half.bot{grid-template-rows:1fr 2fr;background:rgba(194,65,12,.09)}
+.rowp{display:grid;grid-template-columns:repeat(3,1fr);justify-items:center;align-items:center}
+.half .rowp:first-child{border-bottom:2px solid var(--ink)}
+.netbar{height:8px;background:var(--ink);margin:0 -9px;border-radius:2px;position:relative;z-index:2}
+.pl{width:50px;height:50px;border-radius:50%;border:3px solid var(--a);background:var(--surface);font-family:var(--font-d);font-weight:800;font-size:23px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
+.pl.b{border-color:var(--b)}
+.pl.srv2{box-shadow:0 0 0 4px var(--gold)}
+.pl.empty{border-style:dashed;color:var(--muted);font-weight:600}
+.mini{min-height:44px;padding:4px 10px;border:1px solid var(--line);background:var(--surface);border-radius:8px;font-weight:600;font-size:14px;min-width:44px}
+.logo{object-fit:contain;background:#fff;border-radius:6px;padding:2px;flex-shrink:0;vertical-align:middle}
+.tname{display:flex;align-items:center;justify-content:center;gap:8px}
+.tname>span{min-width:0}
+.logoedit{display:flex;align-items:center;gap:14px;margin-top:6px}
+.logoedit .logo{border:1px solid var(--line)}
+.logoedit .logo.none{width:64px;height:64px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center}
+
+/* Cartes et formulaires */
+.stack{padding:12px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card.a{border-top:6px solid var(--a)}
+.card.b{border-top:6px solid var(--b)}
+label.f{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=number],input[type=date],input[type=time],input[inputmode],select,textarea{width:100%;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px 10px}
+textarea{min-height:120px;font-size:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.plist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.plist li{display:flex;align-items:center;gap:8px;min-height:52px;border-bottom:1px solid var(--line)}
+.plist input.pnum{width:58px;min-height:44px;text-align:center;font-family:var(--font-d);font-weight:700;font-size:22px;padding:2px}
+.plist .nm{flex:1;overflow-wrap:anywhere}
+.plist .pos{font-size:13px;color:var(--muted);white-space:nowrap}
+.del{border:0;background:transparent;font-size:24px;min-width:44px;min-height:44px;color:var(--muted)}
+.addrow{display:grid;grid-template-columns:70px 1fr auto;gap:8px;margin-top:6px;align-items:center}
+.addrow2{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.res{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.res .btn{min-height:48px}
+
+/* Tableaux */
+.tablewrap{overflow-x:auto;max-width:100%;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:14px}
+th,td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;z-index:1;box-shadow:1px 0 0 var(--line)}
+th:first-child{z-index:2}
+th{font-weight:600;color:var(--muted)}
+.tbl-left th,.tbl-left td{text-align:left}
+.tbl-left th:last-child,.tbl-left td:last-child{text-align:center;padding-left:6px;padding-right:6px}
+.cut{display:block;max-width:min(44vw,190px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td:first-child .fxteam{max-width:min(44vw,190px)}
+td:first-child .fxteam .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.delwrap{background:none;border:0;padding:0;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.delc{width:30px;height:30px;border-radius:50%;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;font-weight:700}
+td.pts{font-weight:800;font-size:16px}
+.sortb{background:none;border:0;padding:6px 4px;min-height:40px;font-weight:600;color:var(--muted)}
+.sortb.on{color:var(--ink)}
+.rank{color:var(--muted);font-variant-numeric:tabular-nums;padding-right:4px}
+.setline{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.setchip{font-family:var(--font-d);font-weight:700;font-size:22px;border:1px solid var(--line);border-radius:8px;padding:4px 12px}
+.log{list-style:none;margin:8px 0 0;padding:0}
+.log li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.log .t{font-variant-numeric:tabular-nums;color:var(--muted);min-width:46px}
+.log .sc{margin-left:auto;font-weight:700;white-space:nowrap}
+.btnrow{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.mrow{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.mrow .tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.vh{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden}
+.vh:focus-visible + label{outline:3px solid var(--gold);outline-offset:2px}
+.bigstat{font-size:20px;margin:12px 0 4px}
+.bigstat b{font-family:var(--font-d);font-size:56px;font-weight:800;margin-right:6px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 16px;max-width:320px}
+.kv b{font-variant-numeric:tabular-nums;text-align:right}
+
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Bande des sets dans l'en-tête */
+.sets{flex:1 1 236px;max-width:340px;margin-left:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;min-width:0}
+.scell{display:flex;flex-direction:column;align-items:center;line-height:1.1;border-left:1px solid rgba(255,255,255,.2);padding-left:2px}
+.scl{font-size:11px;opacity:.75}
+.scv{font-family:var(--font-d);font-weight:700;font-size:17px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.scv .w{color:var(--gold)}
+.scv .l{opacity:.8}
+
+/* Photos, boutons d'édition, menu */
+.av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--line);vertical-align:middle}
+.av.ph{display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted);font-family:var(--font-d)}
+.avbtn{background:none;border:0;padding:0;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%}
+.editc{width:30px;height:30px;border-radius:50%;background:#6B7B8C;color:#fff;display:flex;align-items:center;justify-content:center}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .editc{background:#51657A}}
+:root[data-theme="dark"] .editc{background:#51657A}
+.actcell{display:flex;align-items:center;justify-content:center;gap:0}
+.pcell{display:flex;align-items:center;gap:10px}
+details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;font-size:20px;min-height:44px;display:flex;align-items:center}
+.brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:26px 12px 6px}
+.brand .logo{background:transparent;padding:0}
+.brand h1{font-size:32px;font-weight:800;line-height:1.05}
+.brand p{margin:0;color:var(--muted);font-size:15px}
+.menugrid{display:grid;grid-template-columns:1fr;gap:12px;padding:14px 12px 0;max-width:520px;margin:0 auto}
+.menubtn{width:100%;min-height:84px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:12px 18px;text-align:left}
+.menubtn b{font-family:var(--font-d);font-size:28px;font-weight:700;line-height:1.1}
+.menubtn span{font-size:14px;color:var(--muted)}
+.menubtn.live{border-color:var(--gold);border-width:2.5px}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.tot td{font-weight:800}
+.statgrid div{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;line-height:1.1}
+.statgrid b{display:block;font-family:var(--font-d);font-size:28px;font-weight:800}
+.statgrid span{font-size:12px;color:var(--muted)}
+
+/* Chrono central et accueil */
+.bigclock{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 12px 0}
+.bigclock .clk{font-family:var(--font-d);font-weight:800;font-size:clamp(56px,18vw,80px);line-height:1;font-variant-numeric:tabular-nums}
+.bigclock.paused .clk{opacity:.5}
+.hbtn2{min-height:42px;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:0 18px;font-weight:600}
+.hbtn2:disabled{opacity:.4}
+.bigbtn{width:100%;min-height:84px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-family:var(--font-d);font-weight:700;font-size:28px;display:flex;align-items:center;justify-content:center;gap:10px}
+.bigbtn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.bigbtn:disabled{opacity:.45}
+.ritem{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line)}
+.ritem:last-child{border-bottom:0}
+.ritem .fx{border-bottom:0;flex:1}
+.fxt .nm{font-weight:600;overflow-wrap:anywhere}
+.fxt small{opacity:1;color:var(--muted);font-weight:400}
+.rsc{font-family:var(--font-d);font-weight:800;font-size:24px;white-space:nowrap}
+
+/* Calendrier */
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{background:none;border:0;min-height:48px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.fx{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 0;min-height:64px}
+.fx:last-child{border-bottom:0}
+.fxd{display:flex;flex-direction:column;min-width:74px;font-weight:600;font-size:14px;line-height:1.2}
+.fxt{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.fxteam{display:flex;align-items:center;gap:8px;min-width:0}
+.fxteam .nm{flex:1;overflow-wrap:anywhere}
+.fxteam b{font-family:var(--font-d);font-size:22px;min-width:20px;text-align:right}
+.fxteam.win .nm{font-weight:700}
+.tag.warn{color:var(--danger);border-color:var(--danger)}
+.tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px;white-space:nowrap}
+
+/* Navigation */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav button{background:none;border:0;border-top:4px solid transparent;min-height:60px;font-weight:600;font-size:12.5px;color:var(--muted);padding:0 2px}
+.nav button.on{border-top-color:var(--gold);color:var(--ink)}
+
+/* Feuille de saisie */
+#sheet .back{position:fixed;inset:0;z-index:40;background:rgba(5,12,20,.55);display:flex;align-items:flex-end;justify-content:center}
+#sheet .panel{background:var(--surface);width:100%;max-width:720px;max-height:88vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){#sheet .panel{animation:none}}
+.group{margin-top:14px}
+.group>p{margin:0 0 6px;font-weight:600;color:var(--muted);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:52px;min-width:64px;padding:6px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.chip b{font-family:var(--font-d);font-size:24px;font-weight:700}
+.chip.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.panel .close{margin-top:16px;width:100%}
+.hint2{margin:12px 0 0;font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet"></div>
+<input type="file" id="pphoto" class="vh" accept="image/*" tabindex="-1" aria-hidden="true">
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- Constantes ---------- */
+var KEY = 'volley-match-v1';
+var HOW = { attack:'Attaque', block:'Bloc', ace:'Service gagnant', relance:'Relance' };
+var FAULTS = ['Filet','Ballon sorti','Double touche','Quatre touches','Faute de service','Faute de rotation','Pied sur la ligne','Autre'];
+var TYPE_FR = { point:'Point', fault:'Faute', sub:'Remplacement', timeout:'Temps mort', setEnd:'Fin de set', matchEnd:'Fin de match' };
+var RESULTS = ['3-0','3-1','3-2','2-3','1-3','0-3'];
+var GRID = [3,2,1,4,5,0]; /* ordre d'affichage : postes 4-3-2 (filet) puis 5-6-1 (fond) */
+
+/* ---------- Outils ---------- */
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function uid(){ return 'x' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmt(ms){ var s = Math.floor(ms/1000); var m = Math.floor(s/60); return String(m).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); }
+function sortP(a,b){ return (parseInt(a.num,10)||999) - (parseInt(b.num,10)||999); }
+function norm(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function slug(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+function stamp(){ return new Date().toISOString().slice(0,10); }
+
+/* ---------- État ---------- */
+function emptyLineup(){ return [[null,null,null,null,null,null],[null,null,null,null,null,null]]; }
+function newState(){
+  return {
+    v:2, created:new Date().toISOString(), title:'',
+    teams:[{name:'Notre équipe',clubId:'',players:[]},{name:'Adversaire',clubId:'',players:[]}],
+    lineup:emptyLineup(),
+    cfg:{setsToWin:3, pts:25, ptsLast:15},
+    sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
+    events:[], history:[], finished:false,
+    clock:{running:false, since:0, acc:0}, tc:null,
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'',
+    prefs:{ schema:true, players:false, sheet:false }
+  };
+}
+function migrate(s){
+  var d = newState();
+  s.clubs = s.clubs || []; s.champs = s.champs || [];
+  s.champs.forEach(function(c){ c.fixtures = c.fixtures || []; });
+  if(s.fixtureRef === undefined) s.fixtureRef = null;
+  if(s.prepared === undefined) s.prepared = (s.events.length > 0 || s.sets.length > 0 || s.teams.some(function(t){ return t.players.length > 0; }));
+  if(s.matchChamp === undefined) s.matchChamp = s.fixtureRef ? s.fixtureRef.cid : '';
+  if(!s.library) s.library = [];
+  if(s.homeClub === undefined) s.homeClub = '';
+  if(!s.stage) s.stage = s.prepared ? 'play' : 'home';
+  s.prefs = Object.assign({}, d.prefs, s.prefs || {});
+  s.teams.forEach(function(t){ if(t.clubId == null) t.clubId = ''; });
+  if(!s.lineup){
+    s.lineup = s.teams.map(function(t){
+      var on = t.players.filter(function(p){ return p.on; }).slice(0,6).map(function(p){ return p.id; });
+      while(on.length < 6) on.push(null);
+      return on;
+    });
+    s.history = [];
+  }
+  s.v = 2;
+  return s;
+}
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    if(!raw) return null;
+    var s = JSON.parse(raw);
+    return (s && (s.v === 1 || s.v === 2) && s.teams && s.teams.length === 2) ? migrate(s) : null;
+  }catch(e){ return null; }
+}
+var S = load() || newState();
+function syncSquads(){
+  S.teams.forEach(function(t,i){
+    var c = clubById(t.clubId);
+    if(c) c.squad = JSON.parse(JSON.stringify({ players:t.players, lineup:S.lineup[i] }));
+  });
+}
+function save(){
+  try{ syncSquads(); localStorage.setItem(KEY, JSON.stringify(S)); if(ui.warn) ui.warn = ''; }
+  catch(e){ ui.warn = 'Enregistrement impossible : l\'espace de stockage de l\'appareil est plein. Faites une sauvegarde puis supprimez des photos ou d\'anciens matchs.'; }
+}
+function switchClub(t, newId){
+  syncSquads();
+  var prevId = S.teams[t].clubId;
+  if(prevId === newId) return;
+  var nc = clubById(newId), hadPlayers = S.teams[t].players.length > 0;
+  S.teams[t].clubId = newId;
+  if(!nc) return;
+  var sq = nc.squad;
+  if(sq && sq.players && sq.players.length && !(!prevId && hadPlayers)){
+    S.teams[t].players = JSON.parse(JSON.stringify(sq.players));
+    S.lineup[t] = (sq.lineup || [null,null,null,null,null,null]).slice();
+  } else if(prevId){
+    S.teams[t].players = []; S.lineup[t] = [null,null,null,null,null,null];
+  }
+  S.history = [];
+}
+function logoHtml(clubId, px){
+  var c = clubById(clubId);
+  if(!c || !c.logo) return '';
+  return '<img class="logo" src="' + esc(c.logo) + '" alt="" width="' + px + '" height="' + px + '">';
+}
+var ui = { tab:'menu', dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
+
+function tn(i){ return (S.teams[i].name || '').trim() || (i ? 'Équipe B' : 'Équipe A'); }
+function allPlayers(){ return S.teams[0].players.concat(S.teams[1].players); }
+function findPlayer(t,id){ if(!id) return null; return S.teams[t].players.filter(function(p){ return p.id === id; })[0] || null; }
+function pinfo(p){ return p ? { pid:p.id, num:p.num, name:p.name, lic:p.licence || '' } : { pid:null, num:'', name:'', lic:'' }; }
+function plabel(num,name){ return ((num ? '#' + num + ' ' : '') + (name || '')).trim(); }
+function onCourt(t){ return S.lineup[t].map(function(id){ return findPlayer(t,id); }).filter(Boolean); }
+function benchOf(t){ var ids = S.lineup[t]; return S.teams[t].players.filter(function(p){ return ids.indexOf(p.id) < 0; }); }
+function clockMs(){ return S.clock.acc + (S.clock.running ? Date.now() - S.clock.since : 0); }
+function setNumber(){ return S.sets.length + 1; }
+function setsWon(){ var w = [0,0]; S.sets.forEach(function(s){ if(s[0] > s[1]) w[0]++; else w[1]++; }); return w; }
+function target(){ return S.sets.length === 2*S.cfg.setsToWin - 2 ? S.cfg.ptsLast : S.cfg.pts; }
+function setWinner(){
+  var a = S.cur[0], b = S.cur[1], t = target();
+  if(Math.max(a,b) >= t && Math.abs(a-b) >= 2) return a > b ? 0 : 1;
+  return null;
+}
+function clubById(id){ return S.clubs.filter(function(c){ return c.id === id; })[0] || null; }
+function clubName(id){ var c = clubById(id); return c ? c.name : 'Club supprimé'; }
+function curClub(){ var c = clubById(ui.clubSel); if(!c && S.clubs.length){ c = S.clubs[0]; ui.clubSel = c.id; } return c; }
+function champById(id){ return S.champs.filter(function(c){ return c.id === id; })[0] || null; }
+function curChamp(){ var c = champById(ui.champSel); if(!c && S.champs.length){ c = S.champs[0]; ui.champSel = c.id; } return c; }
+
+/* ---------- Rotation ---------- */
+/* lineup[t][0..5] = postes 1..6 ; rotation dans le sens horaire : 2→1, 1→6, 6→5, 5→4, 4→3, 3→2 */
+function rotate(t, dir){
+  var L = S.lineup[t];
+  S.lineup[t] = dir > 0 ? L.slice(1).concat(L[0]) : [L[5]].concat(L.slice(0,5));
+}
+function scoreFor(team){
+  if(S.serving !== null && S.serving !== team) rotate(team, 1);
+  S.cur[team]++; S.serving = team;
+}
+
+/* ---------- Historique (annuler) ---------- */
+function snap(){
+  S.history.push({ ev:S.events.length, cur:S.cur.slice(), sets:S.sets.map(function(x){ return x.slice(); }),
+    serving:S.serving, timeouts:S.timeouts.slice(), subs:S.subs.slice(), finished:S.finished,
+    lineup:S.lineup.map(function(a){ return a.slice(); }) });
+  if(S.history.length > 80) S.history.shift();
+}
+function undo(){
+  var h = S.history.pop();
+  if(!h) return;
+  S.events.length = h.ev;
+  S.cur = h.cur; S.sets = h.sets; S.serving = h.serving; S.timeouts = h.timeouts; S.subs = h.subs; S.finished = h.finished; S.lineup = h.lineup;
+  S.tc = null; ui.sheet = null;
+  save(); render();
+}
+function addEvent(e){
+  var base = { n:S.events.length + 1, set:setNumber(), t:clockMs(), ts:new Date().toISOString(), score:S.cur.slice() };
+  S.events.push(Object.assign(base, e));
+}
+
+/* ---------- Chrono ---------- */
+var wl = null;
+function keepAwake(){
+  try{
+    if('wakeLock' in navigator && !wl){
+      navigator.wakeLock.request('screen').then(function(l){ wl = l; l.addEventListener('release', function(){ wl = null; }); }).catch(function(){});
+    }
+  }catch(e){}
+}
+function startClock(){ S.clock.since = Date.now(); S.clock.running = true; keepAwake(); }
+function stopClock(){ if(S.clock.running){ S.clock.acc += Date.now() - S.clock.since; S.clock.running = false; } }
+function toggleClock(){ if(S.clock.running) stopClock(); else startClock(); save(); render(); }
+function autoClock(){ if(!S.clock.running && S.clock.acc === 0 && S.events.length === 0) startClock(); }
+
+/* ---------- Actions de match ---------- */
+function commitPoint(team, how, pid){
+  snap(); autoClock();
+  scoreFor(team);
+  addEvent(Object.assign({ type:'point', team:team, how:how }, pinfo(findPlayer(team, pid))));
+  afterPoint();
+}
+function commitFault(team, kind, pid){
+  snap(); autoClock();
+  scoreFor(1 - team);
+  addEvent(Object.assign({ type:'fault', team:team, how:kind, pointFor:1 - team }, pinfo(findPlayer(team, pid))));
+  afterPoint();
+}
+function afterPoint(){
+  save();
+  var w = setWinner();
+  ui.sheet = w !== null ? { kind:'setend', winner:w } : null;
+  render();
+}
+function commitSub(team, outId, inId){
+  var L = S.lineup[team], idx = L.indexOf(outId), o = findPlayer(team, outId), i = findPlayer(team, inId);
+  if(idx < 0 || !o || !i) return;
+  snap();
+  L[idx] = inId; S.subs[team]++;
+  addEvent(Object.assign({ type:'sub', team:team, how:'entre ' + plabel(i.num, i.name) }, pinfo(o)));
+  save();
+}
+function callTimeout(team){
+  if(S.timeouts[team] >= 2 || S.finished) return;
+  snap(); S.timeouts[team]++;
+  addEvent({ type:'timeout', team:team });
+  S.tc = { team:team, endsAt:Date.now() + 30000 };
+  save(); render();
+}
+function manualRotate(t, dir){
+  snap(); rotate(t, dir); save(); render();
+}
+function endSet(){
+  snap();
+  var a = S.cur[0], b = S.cur[1];
+  addEvent({ type:'setEnd', how:a + '-' + b });
+  S.sets.push([a,b]);
+  S.cur = [0,0]; S.timeouts = [0,0]; S.subs = [0,0]; S.serving = null; S.tc = null;
+  var w = setsWon();
+  ui.sheet = null;
+  if(w[0] >= S.cfg.setsToWin || w[1] >= S.cfg.setsToWin){
+    S.finished = true;
+    addEvent({ type:'matchEnd', set:S.sets.length, how:w[0] + '-' + w[1], score:[a,b] });
+    stopClock();
+    var fr = S.fixtureRef, fch = fr && champById(fr.cid), ff = fch && fixtureOf(fch, fr.fid), done = null;
+    if(ff) done = addToChamp(fr.cid, ff.home, ff.away, ff.id);
+    else if(champById(S.matchChamp)){
+      var mch = champById(S.matchChamp), k0 = S.teams[0].clubId, k1 = S.teams[1].clubId;
+      if(k0 && k1 && k0 !== k1 && mch.clubIds.indexOf(k0) >= 0 && mch.clubIds.indexOf(k1) >= 0) done = addToChamp(mch.id, k0, k1);
+      else ui.sheet = champSheet(mch.id);
+    }
+    if(done) ui.msg = ff ? 'Résultat ajouté au calendrier de ' + fch.name + '.' : 'Résultat ajouté à ' + champById(S.matchChamp).name + '.';
+    else if(!ui.sheet && S.champs.length) ui.sheet = champSheet(null);
+  }
+  save(); render();
+}
+/* ---------- Bibliothèque de matchs (nouveau / reprendre) ---------- */
+var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded'];
+function hasContent(){ return S.events.length > 0 || S.sets.length > 0; }
+function matchSnapshot(){
+  var o = {};
+  MATCH_KEYS.forEach(function(k){ o[k] = JSON.parse(JSON.stringify(S[k] === undefined ? null : S[k])); });
+  o.clock = { running:false, since:0, acc:clockMs() };
+  o.tc = null;
+  o.savedAt = new Date().toISOString();
+  return o;
+}
+function archiveCurrent(){
+  if(!hasContent()) return;
+  S.library = S.library.filter(function(x){ return x.created !== S.created; });
+  S.library.unshift(matchSnapshot());
+  if(S.library.length > 40) S.library.length = 40;
+}
+function loadMatch(created){
+  var e = S.library.filter(function(x){ return x.created === created; })[0];
+  if(!e) return false;
+  stopClock(); archiveCurrent();
+  S.library = S.library.filter(function(x){ return x.created !== created; });
+  MATCH_KEYS.forEach(function(k){ S[k] = JSON.parse(JSON.stringify(e[k])); });
+  S.clock = { running:false, since:0, acc:(e.clock && e.clock.acc) || 0 };
+  S.tc = null; S.prepared = true; S.stage = 'play';
+  return true;
+}
+function resetForNew(){
+  stopClock(); archiveCurrent();
+  var keep = { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(a){ return a.slice(); }), cfg:S.cfg,
+    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub };
+  S = Object.assign(newState(), keep);
+  S.stage = 'setup';
+}
+function newMatch(){
+  resetForNew();
+  ui.tab = 'match'; ui.showSetup = false; ui.resume = false; ui.sheet = null; ui.msg = '';
+  save(); render(); window.scrollTo(0,0);
+}
+function matchSummary(m){
+  var w = [0,0];
+  (m.sets || []).forEach(function(s){ if(s[0] > s[1]) w[0]++; else w[1]++; });
+  var n0 = ((m.teams[0].name || '').trim()) || 'Équipe A', n1 = ((m.teams[1].name || '').trim()) || 'Équipe B';
+  return { title:((m.title || '').trim()) || (n0 + ' – ' + n1), w:w, cur:m.cur, finished:!!m.finished, setNo:(m.sets || []).length + 1, date:m.savedAt || m.created };
+}
+function savedMatches(){
+  var out = [];
+  if(hasContent()) out.push({ cur:true, m:S });
+  S.library.forEach(function(e){ out.push({ cur:false, m:e }); });
+  return out;
+}
+
+/* ---------- Statistiques ---------- */
+function tnOf(m, i){ return ((m.teams[i].name || '').trim()) || (i ? 'Équipe B' : 'Équipe A'); }
+function setsWonOf(m){ var w = [0,0]; (m.sets || []).forEach(function(s){ if(s[0] > s[1]) w[0]++; else w[1]++; }); return w; }
+function statsRowsOf(m){
+  var map = {};
+  function get(e){
+    var k = e.team + '|' + (e.pid || 'none');
+    return map[k] || (map[k] = { team:e.team, pid:e.pid || null, num:e.num, name:e.name || 'Non attribué', pts:0, attack:0, block:0, ace:0, relance:0, faults:0 });
+  }
+  m.events.forEach(function(e){
+    if(e.type === 'point'){ var r = get(e); r.pts++; if(r[e.how] != null) r[e.how]++; }
+    else if(e.type === 'fault'){ get(e).faults++; }
+  });
+  return Object.keys(map).map(function(k){ return map[k]; });
+}
+function statsRows(){ return statsRowsOf(S); }
+function playerStatOf(m, pid){
+  var r = { pts:0, attack:0, block:0, ace:0, relance:0, faults:0 };
+  m.events.forEach(function(e){
+    if(e.pid !== pid) return;
+    if(e.type === 'point'){ r.pts++; if(r[e.how] != null) r[e.how]++; }
+    else if(e.type === 'fault') r.faults++;
+  });
+  return r;
+}
+function playerStat(pid){ return playerStatOf(S, pid); }
+function evTextOf(m, e){
+  var who = plabel(e.num, e.name);
+  switch(e.type){
+    case 'point': return 'Point ' + tnOf(m, e.team) + (who ? ' · ' + who : '') + ' · ' + (HOW[e.how] || e.how);
+    case 'fault': return 'Faute ' + tnOf(m, e.team) + ' · ' + e.how + (who ? ' · ' + who : '');
+    case 'sub': return 'Remplacement ' + tnOf(m, e.team) + ' · sort ' + (who || '?') + ' · ' + e.how;
+    case 'timeout': return 'Temps mort ' + tnOf(m, e.team);
+    case 'setEnd': return 'Fin du set ' + e.set + ' · ' + e.how.replace('-', ' – ');
+    case 'matchEnd': return 'Fin du match · ' + e.how.replace('-', ' – ') + ' en sets';
+  }
+  return e.type;
+}
+function evText(e){ return evTextOf(S, e); }
+
+/* ---------- Photos et avatars ---------- */
+function readPhoto(file, cb){
+  var fr = new FileReader();
+  fr.onerror = function(){ ui.msg = 'Impossible de lire cette image.'; render(); };
+  fr.onload = function(){
+    var img = new Image();
+    img.onerror = function(){ ui.msg = 'Ce fichier n\'est pas une image lisible.'; render(); };
+    img.onload = function(){
+      var w = img.naturalWidth || img.width || 160, h = img.naturalHeight || img.height || 160, s = Math.min(w, h), out = 160;
+      var cv = document.createElement('canvas'); cv.width = out; cv.height = out;
+      var ctx = cv.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, out, out);
+      ctx.drawImage(img, (w - s) / 2, (h - s) / 2, s, s, 0, 0, out, out);
+      cb(cv.toDataURL('image/jpeg', 0.82));
+    };
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+function findMember(mid){
+  for(var i = 0; i < S.clubs.length; i++){
+    var m = S.clubs[i].members.filter(function(x){ return x.id === mid; })[0];
+    if(m) return { club:S.clubs[i], m:m };
+  }
+  return null;
+}
+function photoOfPlayer(p){
+  if(!p) return '';
+  if(p.photo) return p.photo;
+  var f = p.mid ? findMember(p.mid) : null;
+  return (f && f.m.photo) || '';
+}
+function photoFor(m, t, pid){
+  if(!pid) return '';
+  var p = m.teams[t].players.filter(function(x){ return x.id === pid; })[0];
+  return photoOfPlayer(p);
+}
+function initials(name){
+  var w = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if(!w.length) return '?';
+  return (w[0][0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase();
+}
+function avatar(src, px, name){
+  if(src) return '<img class="av" src="' + esc(src) + '" alt="" width="' + px + '" height="' + px + '">';
+  return '<span class="av ph" style="width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px * 0.4) + 'px" aria-hidden="true">' + esc(initials(name)) + '</span>';
+}
+var GEAR = (function(){
+  var cx = 12, cy = 12, ro = 10.5, ri = 8, n = 8, step = 2 * Math.PI / n, pts = [];
+  for(var k = 0; k < n; k++){
+    var a = k * step;
+    [[ri,-0.26],[ro,-0.15],[ro,0.15],[ri,0.26]].forEach(function(p){ pts.push([cx + p[0] * Math.cos(a + p[1]), cy + p[0] * Math.sin(a + p[1])]); });
+  }
+  var d = 'M' + pts.map(function(p){ return p[0].toFixed(2) + ' ' + p[1].toFixed(2); }).join('L') + 'Z';
+  d += 'M15.2 12a3.2 3.2 0 1 0-6.4 0a3.2 3.2 0 1 0 6.4 0Z';
+  return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="' + d + '" fill="currentColor" fill-rule="evenodd"/></svg>';
+})();
+
+/* ---------- Données : tous les matchs, équipes, joueurs ---------- */
+function matchDate(m){ return m.savedAt || m.created; }
+function allMatches(){
+  var out = [];
+  if(hasContent()) out.push(S);
+  S.library.forEach(function(e){ out.push(e); });
+  return out.sort(function(a,b){ return String(matchDate(b)).localeCompare(String(matchDate(a))); });
+}
+function matchById(id){ return allMatches().filter(function(x){ return x.created === id; })[0] || S; }
+function teamKey(m, i){ var c = m.teams[i].clubId; return (c && clubById(c)) ? 'c:' + c : 'n:' + norm(tnOf(m, i)); }
+function teamLabel(m, i){ var c = clubById(m.teams[i].clubId); return c ? c.name : tnOf(m, i); }
+function teamLogoClub(m, i){ var c = clubById(m.teams[i].clubId); return c ? c.id : ''; }
+function teamIndex(){
+  var map = {};
+  allMatches().forEach(function(m){
+    [0,1].forEach(function(t){
+      var k = teamKey(m, t);
+      var e = map[k] || (map[k] = { key:k, label:teamLabel(m, t), logo:teamLogoClub(m, t), items:[] });
+      e.items.push({ m:m, t:t });
+    });
+  });
+  return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return a.label.localeCompare(b.label, 'fr'); });
+}
+function playerIndex(){
+  var map = {};
+  allMatches().forEach(function(m){
+    [0,1].forEach(function(t){
+      m.teams[t].players.forEach(function(p){
+        var played = m.lineup[t].indexOf(p.id) >= 0 || m.events.some(function(e){ return e.pid === p.id; });
+        if(!played) return;
+        var k = p.mid ? 'm:' + p.mid : 'n:' + norm(p.name) + '|' + teamKey(m, t);
+        var e = map[k] || (map[k] = { key:k, name:p.name, num:p.num, team:teamLabel(m, t), logo:teamLogoClub(m, t), licence:p.licence || '', photo:'', matches:[] });
+        e.name = p.name || e.name; e.num = p.num || e.num;
+        e.photo = e.photo || photoOfPlayer(p);
+        e.matches.push({ m:m, t:t, st:playerStatOf(m, p.id) });
+      });
+    });
+  });
+  return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return a.team.localeCompare(b.team, 'fr') || a.name.localeCompare(b.name, 'fr'); });
+}
+
+/* ---------- Sauvegarde complète ---------- */
+function backupText(){
+  return JSON.stringify({ app:'volley-feuille-de-match', version:2, exportedAt:new Date().toISOString(), data:S }, function(k, v){ return k === 'history' ? [] : v; });
+}
+function applyBackup(obj){
+  var d = migrate(JSON.parse(JSON.stringify(obj.data)));
+  d.clock = { running:false, since:0, acc:(d.clock && d.clock.acc) || 0 };
+  d.tc = null;
+  S = d; save();
+}
+
+/* ---------- Championnat ---------- */
+function known(own, opp){ return (own === 3 && opp <= 2) || (opp === 3 && own <= 2); }
+function ptsFor(own, opp){
+  if(own === 3) return opp === 0 ? 5 : (opp === 1 ? 4 : (opp === 2 ? 3 : 0));
+  if(opp === 3) return own === 2 ? 2 : (own === 1 ? 1 : 0);
+  return 0;
+}
+function standings(ch){
+  var rows = {};
+  ch.clubIds.forEach(function(id){ rows[id] = { id:id, name:clubName(id), j:0, g:0, p:0, sp:0, sc:0, pts:0 }; });
+  ch.matches.forEach(function(m){
+    var h = rows[m.home], a = rows[m.away];
+    if(!h || !a) return;
+    h.j++; a.j++;
+    h.sp += m.hs; h.sc += m.as; a.sp += m.as; a.sc += m.hs;
+    if(m.hs > m.as){ h.g++; a.p++; } else { a.g++; h.p++; }
+    h.pts += ptsFor(m.hs, m.as); a.pts += ptsFor(m.as, m.hs);
+  });
+  var list = Object.keys(rows).map(function(k){ return rows[k]; });
+  list.sort(function(x,y){ return (y.pts - x.pts) || ((y.sp - y.sc) - (x.sp - x.sc)) || (y.sp - x.sp) || x.name.localeCompare(y.name, 'fr'); });
+  list.forEach(function(r,i){ r.rank = i + 1; });
+  var k = ui.sort.k, dir = ui.sort.dir;
+  function val(r){ return k === 'club' ? r.name.toLowerCase() : r[k]; }
+  list.sort(function(x,y){
+    var a = val(x), b = val(y);
+    var c = typeof a === 'string' ? a.localeCompare(b, 'fr') : a - b;
+    c *= dir;
+    return c || (x.rank - y.rank);
+  });
+  return list;
+}
+function addToChamp(cid, c0, c1, fid){
+  var ch = champById(cid);
+  if(!ch || !c0 || !c1 || c0 === c1) return null;
+  var w = setsWon();
+  var old = ch.matches.filter(function(m){ return m.ref === S.created; })[0];
+  ch.matches = ch.matches.filter(function(m){ return m.ref !== S.created; });
+  var m = { id:uid(), ref:S.created, home:c0, away:c1, hs:w[0], as:w[1], sets:S.sets.map(function(s){ return s.slice(); }), source:'live', date:stamp() };
+  ch.matches.push(m);
+  if(!fid && old && old.fid) fid = old.fid;
+  ch.fixtures.forEach(function(f){
+    if(old && f.matchId === old.id) f.matchId = null;
+    if(fid && f.id === fid){ f.matchId = m.id; m.fid = fid; }
+  });
+  if(!S.teams[0].clubId) S.teams[0].clubId = c0;
+  if(!S.teams[1].clubId) S.teams[1].clubId = c1;
+  S.champAdded = { cid:cid, at:new Date().toISOString() };
+  save();
+  return m;
+}
+
+/* ---------- Calendrier ---------- */
+function iso(y, mo, d){
+  var dt = new Date(y, mo - 1, d);
+  if(dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return '';
+  return y + '-' + String(mo).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+}
+function parseDate(s){
+  s = String(s || '').trim();
+  var m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return iso(+m[1], +m[2], +m[3]);
+  m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/);
+  if(m){ var y = +m[3]; if(y < 100) y += 2000; return iso(y, +m[2], +m[1]); }
+  return '';
+}
+function parseTime(s){
+  var m = String(s || '').trim().match(/^(\d{1,2})[:hH](\d{2})$/);
+  return m ? String(+m[1]).padStart(2,'0') + ':' + m[2] : '';
+}
+function toDate(s){ var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function isoOf(dt){ return iso(dt.getFullYear(), dt.getMonth() + 1, dt.getDate()); }
+function weekStart(s){ var d = toDate(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return isoOf(d); }
+function fmtDay(s){ return toDate(s).toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' }); }
+function weekLabel(ws){
+  var a = toDate(ws), b = new Date(a.getTime());
+  b.setDate(b.getDate() + 6);
+  var same = a.getMonth() === b.getMonth();
+  return 'Semaine du ' + a.toLocaleDateString('fr-FR', same ? { day:'numeric' } : { day:'numeric', month:'long' }) + ' au ' + b.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+}
+function fixtureOf(ch, fid){ return ch.fixtures.filter(function(f){ return f.id === fid; })[0] || null; }
+function matchOf(ch, mid){ return mid ? (ch.matches.filter(function(m){ return m.id === mid; })[0] || null) : null; }
+function setFixtureResult(ch, f, res){
+  var r = res.split('-'), hs = parseInt(r[0], 10), as = parseInt(r[1], 10);
+  var m = matchOf(ch, f.matchId);
+  if(m){ m.hs = hs; m.as = as; m.sets = null; m.source = 'manual'; m.ref = null; }
+  else {
+    m = { id:uid(), ref:null, home:f.home, away:f.away, hs:hs, as:as, sets:null, source:'manual', date:f.date, fid:f.id };
+    ch.matches.push(m); f.matchId = m.id;
+  }
+  save();
+}
+function clearFixtureResult(ch, f){
+  ch.matches = ch.matches.filter(function(m){ return m.id !== f.matchId; });
+  f.matchId = null; save();
+}
+function applyFixture(cid, fid){
+  var ch = champById(cid), f = ch && fixtureOf(ch, fid);
+  if(!f) return false;
+  S.matchChamp = cid;
+  S.fixtureRef = { cid:cid, fid:fid };
+  switchClub(0, f.home); switchClub(1, f.away);
+  S.teams[0].name = clubName(f.home); S.teams[1].name = clubName(f.away);
+  if(!(S.title || '').trim()) S.title = clubName(f.home) + ' – ' + clubName(f.away);
+  return true;
+}
+function champSheet(cid){
+  var sh = { kind:'champ', cid:null, c0:'', c1:'' };
+  var ch = cid ? champById(cid) : null;
+  if(ch){
+    sh.cid = ch.id;
+    sh.c0 = ch.clubIds.indexOf(S.teams[0].clubId) >= 0 ? S.teams[0].clubId : '';
+    sh.c1 = ch.clubIds.indexOf(S.teams[1].clubId) >= 0 ? S.teams[1].clubId : '';
+  }
+  return sh;
+}
+function startFixture(cid, fid){
+  var ch = champById(cid), f = ch && fixtureOf(ch, fid);
+  if(!f) return;
+  syncSquads();
+  resetForNew();
+  applyFixture(cid, fid);
+  ui.tab = 'match'; ui.showSetup = false; ui.resume = false; ui.sheet = null; ui.msg = '';
+  save(); render(); window.scrollTo(0,0);
+}
+function addFixture(ch, date, time, home, away){
+  ch.fixtures.push({ id:uid(), date:date, time:time || '', home:home, away:away, matchId:null });
+  save();
+}
+function importFixtures(txt){
+  var ch = curChamp();
+  if(!ch){ ui.msg = 'Créez d\'abord un championnat.'; render(); return; }
+  var rows = parseCSV(txt), added = 0, unknown = {}, badDate = 0;
+  var byName = {};
+  S.clubs.forEach(function(c){ byName[norm(c.name)] = c.id; });
+  rows.forEach(function(r){
+    var date = parseDate(r[0]);
+    if(!date){ if(norm(r[0]) !== 'date' && r.join('').trim()) badDate++; return; }
+    var time = parseTime(r[1]), off = time ? 2 : 1;
+    if(!time && r[1] !== undefined && r[1].trim() === '') off = 2;
+    var hn = (r[off] || '').trim(), an = (r[off + 1] || '').trim();
+    var h = byName[norm(hn)], a = byName[norm(an)];
+    if(!h){ unknown[hn] = true; } if(!a){ unknown[an] = true; }
+    if(!h || !a || h === a) return;
+    [h, a].forEach(function(id){ if(ch.clubIds.indexOf(id) < 0) ch.clubIds.push(id); });
+    ch.fixtures.push({ id:uid(), date:date, time:time, home:h, away:a, matchId:null });
+    added++;
+  });
+  var un = Object.keys(unknown).filter(Boolean);
+  ui.msg = added + ' match' + (added > 1 ? 's' : '') + ' ajouté' + (added > 1 ? 's' : '') + ' au calendrier.' +
+    (un.length ? ' Clubs inconnus (créez-les d\'abord dans l\'onglet Clubs) : ' + un.join(', ') + '.' : '') +
+    (badDate ? ' ' + badDate + ' ligne' + (badDate > 1 ? 's' : '') + ' sans date reconnue ignorée' + (badDate > 1 ? 's' : '') + '.' : '');
+  save(); render();
+}
+
+/* ---------- Logo ---------- */
+function importLogo(file){
+  var c = curClub();
+  if(!file || !c) return;
+  var fr = new FileReader();
+  fr.onerror = function(){ ui.msg = 'Impossible de lire cette image.'; render(); };
+  fr.onload = function(){
+    var img = new Image();
+    img.onerror = function(){ ui.msg = 'Ce fichier n\'est pas une image lisible.'; render(); };
+    img.onload = function(){
+      var w = img.naturalWidth || img.width || 128, h = img.naturalHeight || img.height || 128;
+      var k = Math.min(1, 128 / Math.max(w, h));
+      var cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(w * k)); cv.height = Math.max(1, Math.round(h * k));
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      c.logo = cv.toDataURL('image/png');
+      ui.msg = 'Logo enregistré pour ' + c.name + '.';
+      save(); render();
+    };
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+
+/* ---------- Clubs et import CSV ---------- */
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/, '');
+  var first = (text.split(/\r?\n/).filter(function(l){ return l.trim(); })[0]) || '';
+  var d = ';', best = -1;
+  [';', ',', '\t'].forEach(function(c){ var n = first.split(c).length - 1; if(n > best){ best = n; d = c; } });
+  var rows = [], row = [], cur = '', inQ = false;
+  for(var i = 0; i < text.length; i++){
+    var ch = text[i];
+    if(inQ){
+      if(ch === '"'){ if(text[i+1] === '"'){ cur += '"'; i++; } else inQ = false; }
+      else cur += ch;
+    } else if(ch === '"') inQ = true;
+    else if(ch === d){ row.push(cur); cur = ''; }
+    else if(ch === '\n' || ch === '\r'){
+      if(ch === '\r' && text[i+1] === '\n') i++;
+      row.push(cur); cur = '';
+      if(row.some(function(c){ return c.trim() !== ''; })) rows.push(row);
+      row = [];
+    } else cur += ch;
+  }
+  row.push(cur);
+  if(row.some(function(c){ return c.trim() !== ''; })) rows.push(row);
+  return rows;
+}
+function colKey(h){
+  var n = norm(h);
+  if(n.indexOf('licen') >= 0) return 'licence';
+  if(n.indexOf('prenom') >= 0 || n === 'firstname') return 'prenom';
+  if(n === 'nom' || n.indexOf('nomde') === 0 || n === 'lastname' || n === 'surname') return 'nom';
+  if(n === 'age' || n.indexOf('age') === 0) return 'age';
+  return null;
+}
+function importRows(rows){
+  var club = curClub();
+  if(!club) return 0;
+  var map = ['licence','nom','prenom','age'], start = 0;
+  var head = rows[0].map(colKey);
+  if(head.filter(Boolean).length >= 2){ map = head; start = 1; }
+  var added = 0, updated = 0;
+  for(var i = start; i < rows.length; i++){
+    var m = { licence:'', nom:'', prenom:'', age:'' };
+    rows[i].forEach(function(cell, j){ var k = map[j]; if(k) m[k] = cell.trim(); });
+    if(!m.nom && !m.prenom && !m.licence) continue;
+    var age = parseInt(m.age, 10);
+    m.age = isNaN(age) ? '' : age;
+    var ex = m.licence ? club.members.filter(function(x){ return x.licence === m.licence; })[0] : null;
+    if(ex){ ex.nom = m.nom; ex.prenom = m.prenom; ex.age = m.age; updated++; }
+    else { club.members.push({ id:uid(), licence:m.licence, nom:m.nom, prenom:m.prenom, age:m.age }); added++; }
+  }
+  ui.msg = added + ' membre' + (added > 1 ? 's' : '') + ' ajouté' + (added > 1 ? 's' : '') + (updated ? ', ' + updated + ' mis à jour' : '') + ' dans ' + club.name + '.';
+  save(); render();
+  return added + updated;
+}
+function importText(txt){
+  var rows = parseCSV(txt);
+  if(!rows.length){ ui.msg = 'Aucune ligne trouvée dans ce texte.'; render(); return; }
+  importRows(rows);
+}
+function importFile(file){
+  if(!file) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    var txt;
+    try{ txt = new TextDecoder('utf-8', { fatal:true }).decode(fr.result); }
+    catch(e){ txt = new TextDecoder('windows-1252').decode(fr.result); }
+    importText(txt);
+  };
+  fr.onerror = function(){ ui.msg = 'Impossible de lire ce fichier.'; render(); };
+  fr.readAsArrayBuffer(file);
+}
+function memberName(m){ return ((m.prenom || '') + ' ' + (m.nom || '')).trim(); }
+
+/* ---------- Partage et export ---------- */
+function clockOf(m){ return m === S ? clockMs() : ((m.clock && m.clock.acc) || 0); }
+function shareText(m){
+  m = m || S;
+  var w = setsWonOf(m), lines = [];
+  if(m.title) lines.push(m.title);
+  lines.push(tnOf(m,0) + ' ' + w[0] + ' – ' + w[1] + ' ' + tnOf(m,1) + (m.finished ? ' (match terminé)' : ''));
+  if(!m.finished) lines.push('Set ' + (m.sets.length + 1) + ' en cours : ' + m.cur[0] + ' – ' + m.cur[1]);
+  if(m.sets.length) lines.push('Sets : ' + m.sets.map(function(s){ return s[0] + '-' + s[1]; }).join(', '));
+  lines.push('Temps de jeu : ' + fmt(clockOf(m)));
+  return lines.join('\n');
+}
+function q(v){ return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+function csvText(m){
+  m = m || S;
+  var rows = [['N°','Set','Chrono','Heure','Événement','Équipe','Maillot','Joueur','Licence','Détail','Score ' + tnOf(m,0),'Score ' + tnOf(m,1)]];
+  m.events.forEach(function(e){
+    var detail = e.type === 'point' ? (HOW[e.how] || e.how) : (e.how || '');
+    rows.push([e.n, e.set, fmt(e.t), e.ts, TYPE_FR[e.type] || e.type, e.team == null ? '' : tnOf(m, e.team), e.num || '', e.name || '', e.lic || '', detail, e.score[0], e.score[1]]);
+  });
+  return '\uFEFF' + rows.map(function(r){ return r.map(q).join(';'); }).join('\r\n');
+}
+function jsonText(m){
+  m = m || S;
+  var out = {
+    titre:m.title, creeLe:m.created,
+    exporteLe:new Date().toISOString(),
+    regles:{ setsGagnants:m.cfg.setsToWin, pointsParSet:m.cfg.pts, pointsSetDecisif:m.cfg.ptsLast },
+    equipes:m.teams.map(function(t,i){ return { nom:tnOf(m,i), club:t.clubId ? clubName(t.clubId) : null, joueurs:t.players.map(function(p){ var pos = m.lineup[i].indexOf(p.id); return { numero:p.num, nom:p.name, licence:p.licence || '', poste:pos >= 0 ? pos + 1 : null }; }) }; }),
+    sets:m.sets, setEnCours:m.finished ? null : m.cur, setsGagnes:setsWonOf(m), matchTermine:m.finished,
+    tempsDeJeu:fmt(clockOf(m)),
+    statistiques:statsRowsOf(m).map(function(r){ return Object.assign({ equipe:tnOf(m, r.team) }, r); }),
+    evenements:m.events.map(function(e){ return Object.assign({ equipe:e.team == null ? null : tnOf(m, e.team), description:evTextOf(m, e) }, e); })
+  };
+  return JSON.stringify(out, null, 2);
+}
+function baseName(m){ return 'volley-' + String(matchDate(m)).slice(0,10) + '-' + (slug(tnOf(m,0) + '-' + tnOf(m,1)) || 'match'); }
+/* Dans Claude : capacité « downloads ». Hors Claude (application installée) : téléchargement classique. */
+function deliverFile(name, data, ext){
+  var inClaude = !!(window.claude && window.claude.use);
+  var p = inClaude ? window.claude.use('downloads') : Promise.resolve(null);
+  Promise.resolve(p).then(function(dl){
+    if(inClaude){
+      if(!dl) throw { code:'unavailable' };
+      return dl.save({ filename:name, data:data });
+    }
+    var blob = new Blob([data], { type: ext === 'csv' ? 'text/csv;charset=utf-8' : 'application/json' });
+    var url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }).catch(function(err){
+    if(err && err.code === 'declined') return;
+    ui.sheet = { kind:'text', title:'Copier les données', note:'Le téléchargement n\'est pas disponible ici. Copiez ce texte et collez-le dans un fichier ' + (ext === 'csv' ? '.csv' : '.json') + '.', text:String(data).replace(/^\uFEFF/, '') };
+    render();
+  });
+}
+function doExport(kind, m){
+  m = m || S;
+  deliverFile(baseName(m) + (kind === 'csv' ? '-journal.csv' : '-match.json'), kind === 'csv' ? csvText(m) : jsonText(m), kind);
+}
+function doBackup(){ deliverFile('volley-sauvegarde-' + stamp() + '.json', backupText(), 'json'); }
+function doShare(m){
+  m = m || S;
+  ui.sheet = { kind:'text', title:'Partager le score', note:'', text:shareText(m), canShare:!!navigator.share };
+  render();
+}
+function copyText(text){
+  function fallback(){
+    var ta = document.getElementById('sharetext');
+    if(ta){ ta.focus(); ta.select(); try{ document.execCommand('copy'); }catch(e){} }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).catch(fallback); }
+  else fallback();
+}
+
+/* ---------- Vues : commun ---------- */
+function inSetup(){ return ui.tab === 'match' && (S.stage === 'setup' || (ui.showSetup && S.stage === 'play')); }
+function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', data:'Données' }[ui.tab] || ''; }
+function clockLabel(){ return S.clock.running ? 'Pause' : (S.clock.acc > 0 ? 'Reprendre' : 'Démarrer'); }
+/* Résultats des sets déjà joués : « Set 1 » avec le score dessous. Cinq colonnes réservées, rien pour les sets non joués. */
+function setsStrip(){
+  if(!S.sets.length) return '';
+  return '<div class="sets" role="list" aria-label="Résultats des sets">' + S.sets.map(function(s, i){
+    var a = s[0] > s[1];
+    return '<div class="scell" role="listitem"><span class="scl">Set ' + (i + 1) + '</span><span class="scv"><span class="' + (a ? 'w' : 'l') + '">' + s[0] + '</span>–<span class="' + (a ? 'l' : 'w') + '">' + s[1] + '</span></span></div>';
+  }).join('') + '</div>';
+}
+function header(){
+  function plain(t, sub){ return '<header class="top"><div class="hset"><strong>' + esc(t) + '</strong>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</div></header>'; }
+  if(ui.tab === 'menu') return '';
+  if(ui.tab === 'match' && S.stage === 'home') return plain('Match', 'Nouveau match ou reprise');
+  if(inSetup()) return plain('Préparation du match', (S.title || '').trim() || 'Nouveau match');
+  if(S.stage !== 'play') return plain(tabTitle());
+  var w = setsWon();
+  var lab = S.finished ? 'Match terminé' : 'Set ' + setNumber();
+  var left = '<div class="hset"><strong>' + lab + '</strong><span>Sets gagnés ' + w[0] + ' – ' + w[1] + '</span></div>';
+  if(ui.tab === 'match') return '<header class="top">' + left + setsStrip() + '</header>';
+  return '<header class="top">' + left + '<div class="clock"><span class="clk" role="timer" aria-label="Temps de jeu">' + fmt(clockMs()) + '</span><button class="hbtn" data-act="clock">' + clockLabel() + '</button></div></header>';
+}
+function menuBtn(){ return '<div class="stack" style="padding-top:4px"><button class="btn wide" data-act="tab" data-tab="menu">‹ Retour au menu</button></div>'; }
+function logHtmlOf(m, n, newestFirst){
+  var ev = m.events.slice();
+  if(newestFirst) ev.reverse();
+  if(n) ev = ev.slice(0, n);
+  return ev.map(function(e){
+    return '<li><span class="t">' + fmt(e.t) + '</span><span>Set ' + e.set + ' · ' + esc(evTextOf(m, e)) + '</span><span class="sc">' + e.score[0] + '–' + e.score[1] + '</span></li>';
+  }).join('');
+}
+function logHtml(n){ return logHtmlOf(S, n, true); }
+function statTableOf(m, t){
+  var rows = statsRowsOf(m).filter(function(r){ return r.team === t; }).sort(function(a,b){ return b.pts - a.pts; });
+  if(!rows.length) return '<p class="muted">Aucun point enregistré.</p>';
+  return '<div class="tablewrap"><table><thead><tr><th>Joueur</th><th title="Points marqués">Pts</th><th title="Attaques">Att.</th><th>Bloc</th><th title="Services gagnants">Ace</th><th title="Relances">Rel.</th><th>Fautes</th></tr></thead><tbody>' +
+    rows.map(function(r){
+      var label = plabel(r.num, r.name);
+      return '<tr><td><span class="fxteam">' + (r.pid ? avatar(photoFor(m, t, r.pid), 28, r.name) : '') + '<span class="nm" title="' + esc(label) + '">' + esc(label) + '</span></span></td><td>' + r.pts + '</td><td>' + r.attack + '</td><td>' + r.block + '</td><td>' + r.ace + '</td><td>' + r.relance + '</td><td>' + r.faults + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+function statTable(t){ return statTableOf(S, t); }
+
+/* ---------- Vue : match ---------- */
+function tile(t){
+  var dis = S.finished;
+  return '<div class="tile ' + (t ? 'b' : 'a') + '">' +
+    '<button class="tilemain" data-act="openPoint" data-team="' + t + '"' + (dis ? ' disabled' : '') + ' aria-label="Marquer un point pour ' + esc(tn(t)) + ', score actuel ' + S.cur[t] + '">' +
+    '<span class="tname">' + logoHtml(S.teams[t].clubId, 34) + '<span>' + esc(tn(t)) + '</span></span><span class="score">' + S.cur[t] + '</span><span class="hint">' + (dis ? '' : 'Toucher pour marquer') + '</span></button>' +
+    '<button class="srv ' + (S.serving === t ? 'on' : '') + '" data-act="serve" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>' + (S.serving === t ? 'Au service' : 'Donner le service') + '</button></div>';
+}
+function col(t){
+  var dis = S.finished;
+  return '<div class="col ' + (t ? 'b' : 'a') + '">' +
+    '<button class="btn" data-act="openSub" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>Remplacement <small>' + S.subs[t] + '/6</small></button>' +
+    '<button class="btn" data-act="timeout" data-team="' + t + '"' + ((dis || S.timeouts[t] >= 2) ? ' disabled' : '') + '>Temps mort <small>' + S.timeouts[t] + '/2</small></button></div>';
+}
+function playerBtn(t, i){
+  var p = findPlayer(t, S.lineup[t][i]);
+  var srv = (i === 0 && S.serving === t);
+  var label = 'Poste ' + (i + 1) + (p ? ', ' + plabel(p.num, p.name) : ', vide') + (srv ? ', au service' : '');
+  return '<button class="pl ' + (t ? 'b' : 'a') + (srv ? ' srv2' : '') + (p ? '' : ' empty') + '" data-act="' + (p ? 'openPlayer' : 'openLineup') + '" data-team="' + t + '"' + (p ? ' data-pid="' + p.id + '"' : '') + ' aria-label="' + esc(label) + '">' + (p ? esc(p.num || '–') : '+') + '</button>';
+}
+function teamBar(t){
+  return '<div class="chead"><span class="cname ' + (t ? 'b' : 'a') + '">' + logoHtml(S.teams[t].clubId, 28) + '<span>' + esc(tn(t)) + '</span></span>' +
+    '<span class="cbtns"><button class="mini" data-act="openLineup" data-team="' + t + '">Composition</button>' +
+    '<button class="mini" data-act="rot" data-team="' + t + '" data-dir="-1" aria-label="Rotation inverse de ' + esc(tn(t)) + '">↺</button>' +
+    '<button class="mini" data-act="rot" data-team="' + t + '" data-dir="1" aria-label="Faire tourner ' + esc(tn(t)) + '">↻</button></span></div>';
+}
+/* Terrain vu de dessus : l'équipe A en haut, l'équipe B en bas, filet au milieu.
+   Haut (face au filet vers le bas) : fond 1-6-5 puis avant 2-3-4. Bas (face au filet vers le haut) : avant 4-3-2 puis fond 5-6-1. */
+function half(t, pos){
+  var g = pos === 'top' ? [[0,5,4],[1,2,3]] : [[3,2,1],[4,5,0]];
+  return '<div class="half ' + pos + '">' + g.map(function(row){ return '<div class="rowp">' + row.map(function(i){ return playerBtn(t, i); }).join('') + '</div>'; }).join('') + '</div>';
+}
+function courtBoard(){
+  return '<div class="courtbox">' + teamBar(0) + '<div class="court" role="group" aria-label="Terrain, vue de dessus">' + half(0,'top') + '<div class="netbar" aria-hidden="true"></div>' + half(1,'bot') + '</div>' + teamBar(1) + '</div>';
+}
+function prefRow(){
+  var items = [['schema','Schéma'],['players','Résultats par joueur'],['sheet','Feuille de match']];
+  return '<div class="prefs" role="group" aria-label="Informations à afficher">' + items.map(function(i){
+    var on = S.prefs[i[0]];
+    return '<button class="chip tg ' + (on ? 'sel' : '') + '" data-act="pref" data-k="' + i[0] + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + i[1] + '</button>';
+  }).join('') + '</div>';
+}
+function matchView(){
+  var w = setsWon(), out = '';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  if(S.finished){
+    out += '<div class="banner"><span>Match terminé · ' + esc(tn(w[0] > w[1] ? 0 : 1)) + ' gagne ' + Math.max(w[0],w[1]) + ' – ' + Math.min(w[0],w[1]) + '</span><button class="hbtn" data-act="openChamp">Championnat</button></div>';
+  }
+  if(S.tc && S.tc.endsAt > Date.now()){
+    out += '<div class="tcbar"><span>Temps mort ' + esc(tn(S.tc.team)) + '</span><span id="tcleft">' + Math.ceil((S.tc.endsAt - Date.now())/1000) + ' s</span><button data-act="tcStop">Fermer</button></div>';
+  }
+  out += '<div class="bigclock ' + (S.clock.running ? '' : 'paused') + '"><span class="clk" role="timer" aria-label="Temps de jeu">' + fmt(clockMs()) + '</span>' +
+    '<button class="hbtn2" data-act="clock"' + (S.finished ? ' disabled' : '') + '>' + clockLabel() + '</button></div>';
+  out += '<div class="board">' + tile(0) + tile(1) + '</div>';
+  if(S.serving === null && S.cur[0] + S.cur[1] === 0 && !S.finished){
+    out += '<p class="last">Touchez « Donner le service » pour l\'équipe qui sert en premier : la rotation automatique en dépend.</p>';
+  }
+  out += '<div class="ctl">' + col(0) + col(1) + '</div>';
+  out += '<div class="actions"><button class="btn wide" data-act="undo"' + (S.history.length ? '' : ' disabled') + '>Annuler le dernier</button>' +
+    '<button class="btn wide" data-act="endSetAsk"' + (S.finished ? ' disabled' : '') + '>Terminer le set</button></div>';
+  out += '<div class="actions"><button class="btn wide" data-act="openSetup">Modifier la préparation</button><button class="btn wide" data-act="goHome">Changer de match</button></div>';
+  out += prefRow();
+  if(S.prefs.schema) out += courtBoard();
+  if(S.prefs.players){
+    out += '<div class="stack" style="padding-bottom:0"><section class="card a"><h3>' + esc(tn(0)) + '</h3>' + statTable(0) + '</section>' +
+      '<section class="card b"><h3>' + esc(tn(1)) + '</h3>' + statTable(1) + '</section></div>';
+  }
+  if(S.prefs.sheet){
+    var log = logHtml(15);
+    out += '<div class="stack" style="padding-bottom:0"><section class="card"><h3>Feuille de match</h3>' + (log ? '<ul class="log">' + log + '</ul>' : '<p class="muted">Aucun événement pour l\'instant.</p>') +
+      (S.events.length > 15 ? '<p class="muted">Les 15 derniers événements. Tout le match est dans l\'onglet Données.</p>' : '') + '</section></div>';
+  }
+  return out;
+}
+
+/* ---------- Vue : accueil du match ---------- */
+function fmtWhen(iso){
+  var d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toLocaleString('fr-FR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+}
+function homeView(){
+  var list = savedMatches(), out = '<div class="stack">';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  if(!ui.resume){
+    out += '<section class="card"><h2>Match</h2><p class="muted" style="margin:6px 0 16px">Que voulez-vous faire ?</p>' +
+      '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="newPlay">Jouer un nouveau match</button>' +
+      '<button class="bigbtn" data-act="showResume"' + (list.length ? '' : ' disabled') + '>Reprendre un match' + (list.length ? ' <small>' + list.length + '</small>' : '') + '</button></div>' +
+      (list.length ? '' : '<p class="hint2">Aucun match enregistré pour l\'instant.</p>') + '</section>';
+  } else {
+    out += '<section class="card"><h2>Reprendre un match</h2><div style="margin-top:8px">' + list.map(function(it){
+      var m = it.m, sm = matchSummary(m);
+      var sub = fmtWhen(sm.date) + (sm.finished ? '' : ' · set ' + sm.setNo + ' (' + sm.cur[0] + '–' + sm.cur[1] + ')');
+      return '<div class="ritem"><button class="fx" data-act="resumeMatch" data-mid="' + esc(m.created) + '"><span class="fxt"><span class="nm">' + esc(sm.title) + '</span><small>' + esc(sub) + '</small></span>' +
+        '<span class="rsc" aria-label="Sets gagnés">' + sm.w[0] + ' – ' + sm.w[1] + '</span><span class="tag">' + (sm.finished ? 'terminé' : 'en cours') + '</span></button>' +
+        (it.cur ? '' : '<button class="delwrap" data-act="delLibAsk" data-mid="' + esc(m.created) + '" aria-label="Supprimer ' + esc(sm.title) + '"><span class="delc" aria-hidden="true">×</span></button>') + '</div>';
+    }).join('') + '</div><div class="btnrow"><button class="btn wide" data-act="hideResume">Retour</button></div></section>';
+  }
+  return out + '</div>';
+}
+
+/* ---------- Vue : équipes ---------- */
+function findHtml(t){
+  var club = clubById(S.teams[t].clubId);
+  if(!club) return '<p class="muted">Choisissez un club ci-dessus pour retrouver ses membres.</p>';
+  var qn = norm(ui.find[t]);
+  var have = {};
+  S.teams[t].players.forEach(function(p){ if(p.mid) have[p.mid] = true; });
+  var list = club.members.filter(function(m){
+    if(have[m.id]) return false;
+    return !qn || norm(m.nom + m.prenom).indexOf(qn) >= 0 || norm(m.prenom + m.nom).indexOf(qn) >= 0 || norm(m.licence).indexOf(qn) >= 0;
+  }).sort(function(a,b){ return (a.nom || '').localeCompare(b.nom || '', 'fr'); });
+  if(!club.members.length) return '<p class="muted">Ce club n\'a pas encore de membres. Ajoutez-en dans l\'onglet Clubs.</p>';
+  if(!list.length) return '<p class="muted">Aucun membre trouvé.</p>';
+  var shown = list.slice(0, 8).map(function(m){
+    return '<button class="btn" data-act="pickMember" data-team="' + t + '" data-mid="' + m.id + '"><span>' + esc(memberName(m)) + '</span><small>' + esc([m.licence, m.age !== '' ? m.age + ' ans' : ''].filter(Boolean).join(' · ')) + '</small></button>';
+  }).join('');
+  return shown + (list.length > 8 ? '<p class="muted">' + (list.length - 8) + ' autres résultats. Précisez votre recherche.</p>' : '');
+}
+function teamCard(t){
+  var team = S.teams[t];
+  var onN = onCourt(t).length, lockClub = !!S.fixtureRef || S.events.length > 0;
+  var clubOpts = '<option value="">— Aucun —</option>' + S.clubs.map(function(c){ return '<option value="' + c.id + '"' + (c.id === team.clubId ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
+  var list = team.players.slice().sort(sortP).map(function(p){
+    var pos = S.lineup[t].indexOf(p.id);
+    var linked = p.mid && findMember(p.mid);
+    var avb = '<button class="avbtn" data-act="' + (linked ? 'editMember' : 'pickPhoto') + '" data-team="' + t + '" data-pid="' + p.id + '"' + (linked ? ' data-mid="' + p.mid + '"' : '') + ' aria-label="' + (linked ? 'Modifier la fiche et la photo de ' : 'Ajouter une photo à ') + esc(p.name || 'ce joueur') + '">' + avatar(photoOfPlayer(p), 40, p.name) + '</button>';
+    return '<li>' + avb + '<input class="pnum" type="text" inputmode="numeric" maxlength="3" value="' + esc(p.num) + '" data-bind="pnum" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Numéro de maillot de ' + esc(p.name || 'ce joueur') + '">' +
+      '<span class="nm">' + esc(p.name) + (p.licence ? ' <small>' + esc(p.licence) + '</small>' : '') + '</span>' +
+      '<span class="pos">' + (pos >= 0 ? 'Poste ' + (pos + 1) : 'Banc') + '</span>' +
+      '<button class="del" data-act="delP" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Retirer ' + esc(p.name || p.num) + '">×</button></li>';
+  }).join('');
+  return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(tn(t)) + '</h2>' +
+    '<label class="f" for="tname' + t + '">Nom de l\'équipe</label>' +
+    '<input type="text" id="tname' + t + '" data-bind="tname" data-team="' + t + '" value="' + esc(team.name) + '" autocomplete="off">' +
+    '<label class="f" for="tclub' + t + '">Club</label><select id="tclub' + t + '" data-bind="tclub" data-team="' + t + '"' + (lockClub ? ' disabled' : '') + '>' + clubOpts + '</select>' +
+    (lockClub ? '<p class="muted" style="margin:4px 0 0">' + (S.fixtureRef ? 'Club imposé par le match du calendrier.' : 'Club figé : le match a commencé.') + '</p>' : '') +
+    '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
+    '<ul class="plist">' + list + '</ul>' +
+    '<div class="btnrow"><button class="btn wide" data-act="openLineup" data-team="' + t + '">Composition de départ</button></div>' +
+    '<label class="f" for="newnum' + t + '">Ajouter un joueur</label>' +
+    '<div class="addrow"><input type="text" inputmode="numeric" id="newnum' + t + '" placeholder="N°" maxlength="3" aria-label="Numéro de maillot" data-enter="p' + t + '">' +
+    '<input type="text" id="newname' + t + '" placeholder="Nom du joueur" aria-label="Nom du joueur" autocomplete="off" data-enter="p' + t + '">' +
+    '<button class="btn wide primary" data-act="addP" data-team="' + t + '">Ajouter</button></div>' +
+    '<label class="f" for="find' + t + '">Ou retrouver un membre du club (le numéro saisi ci-dessus est repris)</label>' +
+    '<input type="text" id="find' + t + '" data-find="' + t + '" value="' + esc(ui.find[t]) + '" placeholder="Nom, prénom ou licence" autocomplete="off">' +
+    '<div class="res" id="res' + t + '">' + findHtml(t) + '</div></section>';
+}
+function setupView(){
+  var c = S.cfg, ch = champById(S.matchChamp), out = '<div class="stack">';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  out += S.prepared ? '<button class="btn wide primary" data-act="startMatch">Retour au match</button>' : '<button class="btn wide" data-act="goHome">Retour</button>';
+  out += '<section class="card"><h2>Match</h2>' +
+    '<label class="f" for="mtitle">Nom du match</label>' +
+    '<input type="text" id="mtitle" data-bind="title" value="' + esc(S.title) + '" placeholder="Ex. Journée 4, Lyon – Dijon" autocomplete="off">' +
+    '<label class="f" for="mchamp">Championnat</label><select id="mchamp" data-bind="mchamp"' + (S.events.length ? ' disabled' : '') + '><option value="">Match amical ou hors championnat</option>' +
+    S.champs.map(function(x){ return '<option value="' + x.id + '"' + (x.id === S.matchChamp ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
+  if(!S.champs.length) out += '<p class="muted" style="margin:6px 0 0">Aucun championnat créé. Vous pouvez en créer un dans l\'onglet Championnat.</p>';
+  if(ch){
+    var open = ch.fixtures.filter(function(f){ return !f.matchId || (S.fixtureRef && S.fixtureRef.fid === f.id); })
+      .sort(function(a,b){ return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); });
+    out += '<label class="f" for="mfix">Match du calendrier</label><select id="mfix" data-bind="mfix"' + (S.events.length ? ' disabled' : '') + '><option value="">Match libre (hors calendrier)</option>' +
+      open.map(function(f){
+        return '<option value="' + f.id + '"' + (S.fixtureRef && S.fixtureRef.fid === f.id ? ' selected' : '') + '>' + esc(fmtDay(f.date) + (f.time ? ' ' + f.time : '') + ' · ' + clubName(f.home) + ' – ' + clubName(f.away)) + '</option>';
+      }).join('') + '</select>';
+    if(!open.length) out += '<p class="muted" style="margin:6px 0 0">Aucun match à jouer au calendrier de ce championnat.</p>';
+  }
+  out += '</section>' + teamCard(0) + teamCard(1) +
+    '<section class="card"><h3>Règles</h3>' +
+    '<label class="f" for="msets">Format</label>' +
+    '<select id="msets" data-bind="sets"><option value="2"' + (c.setsToWin === 2 ? ' selected' : '') + '>Au meilleur des 3 sets</option><option value="3"' + (c.setsToWin === 3 ? ' selected' : '') + '>Au meilleur des 5 sets</option></select>' +
+    '<div class="row2"><div><label class="f" for="mpts">Points par set</label><input type="number" id="mpts" inputmode="numeric" min="1" data-bind="pts" value="' + c.pts + '"></div>' +
+    '<div><label class="f" for="mptsl">Points du set décisif</label><input type="number" id="mptsl" inputmode="numeric" min="1" data-bind="ptsLast" value="' + c.ptsLast + '"></div></div></section>';
+  var missing = 6 - onCourt(0).length, missing1 = 6 - onCourt(1).length;
+  if(!S.prepared && (missing > 0 || missing1 > 0)){
+    out += '<p class="muted" style="margin:0">Composition incomplète (' + onCourt(0).length + '/6 et ' + onCourt(1).length + '/6 en jeu). Vous pourrez la compléter pendant le match.</p>';
+  }
+  out += '<button class="btn wide primary" data-act="startMatch">' + (S.prepared ? 'Retour au match' : 'Commencer le match') + '</button></div>';
+  return out;
+}
+
+/* ---------- Vue : clubs ---------- */
+function clubsView(){
+  var out = '<div class="stack">';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  out += '<section class="card"><h2>Clubs</h2>' +
+    (S.clubs.length ? '<div class="chips" style="margin-top:10px">' + S.clubs.map(function(c){ return chip('selClub', { cid:c.id }, logoHtml(c.id, 24) + esc(c.name) + ' <small>' + c.members.length + '</small>', c.id === ui.clubSel); }).join('') + '</div>' : '<p class="muted" style="margin-top:8px">Aucun club pour l\'instant. Créez-en un pour y ajouter des membres.</p>') +
+    '<label class="f" for="newclub">Ajouter un club</label><div class="addrow2"><input type="text" id="newclub" placeholder="Nom du club" data-enter="club" autocomplete="off"><button class="btn wide primary" data-act="addClub">Ajouter</button></div></section>';
+  var c = curClub();
+  if(c){
+    var members = c.members.slice().sort(function(a,b){ return (a.nom || '').localeCompare(b.nom || '', 'fr') || (a.prenom || '').localeCompare(b.prenom || '', 'fr'); });
+    out += '<section class="card"><h3>Club sélectionné</h3>' +
+      '<label class="f" for="cname">Nom du club</label><input type="text" id="cname" data-bind="cname" value="' + esc(c.name) + '" autocomplete="off">' +
+      '<p class="f" style="margin:14px 0 4px;font-size:14px;color:var(--muted)">Logo</p>' +
+      '<div class="logoedit">' + (c.logo ? logoHtml(c.id, 64) : '<span class="logo none" style="width:64px;height:64px">Pas de logo</span>') +
+      '<div class="btnrow" style="margin:0;flex:1"><input type="file" id="logofile" class="vh" accept="image/*"><label for="logofile" class="btn wide">' + (c.logo ? 'Changer le logo' : 'Choisir un logo') + '</label>' +
+      (c.logo ? '<button class="btn wide" data-act="logoDel">Retirer le logo</button>' : '') + '</div></div></section>';
+    out += '<section class="card"><h3>Importer des membres</h3>' +
+      '<p class="muted" style="margin:0">Fichier CSV avec les colonnes licence, nom, prénom, âge (avec ou sans ligne d\'en-tête). Les séparateurs ; , et tabulation sont reconnus. Une licence déjà présente est mise à jour.</p>' +
+      '<div class="btnrow"><input type="file" id="csvfile" class="vh" accept=".csv,.txt,text/csv,text/plain"><label for="csvfile" class="btn wide">Choisir un fichier CSV</label></div>' +
+      '<label class="f" for="csvtext">Ou collez le contenu ici</label><textarea id="csvtext" placeholder="licence;nom;prénom;âge&#10;123456;Martin;Julie;24"></textarea>' +
+      '<div class="btnrow"><button class="btn wide" data-act="importText">Importer le texte</button></div></section>';
+    out += '<section class="card"><h3>Ajouter un membre</h3>' +
+      '<div class="row2"><div><label class="f" for="mlic">Licence</label><input type="text" id="mlic" autocomplete="off" data-enter="member"></div>' +
+      '<div><label class="f" for="mage">Âge</label><input type="text" inputmode="numeric" id="mage" maxlength="3" data-enter="member"></div></div>' +
+      '<div class="row2"><div><label class="f" for="mnom">Nom</label><input type="text" id="mnom" autocomplete="off" data-enter="member"></div>' +
+      '<div><label class="f" for="mpre">Prénom</label><input type="text" id="mpre" autocomplete="off" data-enter="member"></div></div>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="addMember">Ajouter le membre</button></div></section>';
+    out += '<section class="card"><h3>Membres (' + members.length + ')</h3>' +
+      (members.length ? '<div class="tablewrap"><table class="tbl-left"><thead><tr><th>Nom</th><th>Prénom</th><th>Licence</th><th>Âge</th><th><span class="sr">Actions</span></th></tr></thead><tbody>' +
+        members.map(function(m){
+          return '<tr><td><span class="fxteam">' + avatar(m.photo, 32, memberName(m)) + '<span class="nm" title="' + esc(m.nom) + '">' + esc(m.nom) + '</span></span></td><td>' + esc(m.prenom) + '</td><td>' + esc(m.licence) + '</td><td>' + esc(m.age) + '</td>' +
+            '<td><span class="actcell"><button class="delwrap" data-act="editMember" data-mid="' + m.id + '" aria-label="Modifier les informations de ' + esc(memberName(m)) + '"><span class="editc">' + GEAR + '</span></button>' +
+            '<button class="delwrap" data-act="delMemberAsk" data-mid="' + m.id + '" aria-label="Supprimer ' + esc(memberName(m)) + '"><span class="delc" aria-hidden="true">×</span></button></span></td></tr>';
+        }).join('') + '</tbody></table></div>' : '<p class="muted">Aucun membre dans ce club.</p>') +
+      '<div class="btnrow"><button class="btn wide danger" data-act="delClubAsk">Supprimer ce club</button></div></section>';
+  }
+  return out + '</div>';
+}
+
+/* ---------- Vue : championnat ---------- */
+function clubLine(id, px){ return logoHtml(id, px) + '<span class="nm">' + esc(clubName(id)) + '</span>'; }
+function calView(ch){
+  var fx = ch.fixtures.slice().sort(function(a,b){ return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); });
+  var shown = ui.calHideDone ? fx.filter(function(f){ return !matchOf(ch, f.matchId); }) : fx;
+  var today = isoOf(new Date()), thisWeek = weekStart(today);
+  var weeks = {}, order = [];
+  shown.forEach(function(f){ var w = weekStart(f.date); if(!weeks[w]){ weeks[w] = []; order.push(w); } weeks[w].push(f); });
+  var out = '';
+  if(fx.length){
+    out += '<div class="prefs" style="padding:0"><button class="chip tg ' + (ui.calHideDone ? 'sel' : '') + '" data-act="calHide" aria-pressed="' + (ui.calHideDone ? 'true' : 'false') + '">Masquer les matchs terminés</button></div>';
+  }
+  if(!order.length){
+    out += '<section class="card"><p class="muted" style="margin:0">' + (fx.length ? 'Tous les matchs sont terminés.' : 'Aucun match au calendrier pour l\'instant. Ajoutez-en un ci-dessous ou importez un calendrier.') + '</p></section>';
+  }
+  order.forEach(function(w){
+    out += '<section class="card"><h3>' + weekLabel(w) + (w === thisWeek ? ' <span class="tag">cette semaine</span>' : '') + '</h3>' + weeks[w].map(function(f){
+      var m = matchOf(ch, f.matchId), late = !m && f.date < today;
+      var tag = m ? '<span class="tag">' + (m.source === 'live' ? 'joué' : 'saisi') + '</span>' : (late ? '<span class="tag warn">à renseigner</span>' : '<span class="tag">à venir</span>');
+      var hw = m && m.hs > m.as, aw = m && m.as > m.hs;
+      return '<button class="fx" data-act="openFixture" data-fid="' + f.id + '"><span class="fxd">' + esc(fmtDay(f.date)) + (f.time ? '<small>' + esc(f.time) + '</small>' : '') + '</span>' +
+        '<span class="fxt"><span class="fxteam ' + (hw ? 'win' : '') + '">' + clubLine(f.home, 24) + (m ? '<b>' + m.hs + '</b>' : '') + '</span>' +
+        '<span class="fxteam ' + (aw ? 'win' : '') + '">' + clubLine(f.away, 24) + (m ? '<b>' + m.as + '</b>' : '') + '</span></span>' + tag + '</button>';
+    }).join('') + '</section>';
+  });
+  if(ch.clubIds.length >= 2){
+    var opts = function(sel){ return ch.clubIds.map(function(id,i){ return '<option value="' + id + '"' + (i === sel ? ' selected' : '') + '>' + esc(clubName(id)) + '</option>'; }).join(''); };
+    out += '<section class="card"><h3>Ajouter un match au calendrier</h3>' +
+      '<div class="row2"><div><label class="f" for="fdate">Date</label><input type="date" id="fdate" value="' + today + '"></div>' +
+      '<div><label class="f" for="ftime">Heure (facultatif)</label><input type="time" id="ftime"></div></div>' +
+      '<label class="f" for="fhome">Club à domicile</label><select id="fhome">' + opts(0) + '</select>' +
+      '<label class="f" for="faway">Club à l\'extérieur</label><select id="faway">' + opts(1) + '</select>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="addFixture">Ajouter au calendrier</button></div></section>';
+  } else {
+    out += '<section class="card"><p class="muted" style="margin:0">Sélectionnez au moins deux clubs pour ce championnat (vue Classement) avant d\'ajouter des matchs.</p></section>';
+  }
+  out += '<section class="card"><h3>Importer un calendrier</h3>' +
+    '<p class="muted" style="margin:0">Une ligne par match : date ; heure (facultative) ; club à domicile ; club à l\'extérieur. Dates AAAA-MM-JJ ou JJ/MM/AAAA. Les noms doivent correspondre à des clubs déjà créés.</p>' +
+    '<div class="btnrow"><input type="file" id="fixfile" class="vh" accept=".csv,.txt,text/csv,text/plain"><label for="fixfile" class="btn wide">Choisir un fichier CSV</label></div>' +
+    '<label class="f" for="fixtext">Ou collez le contenu ici</label><textarea id="fixtext" placeholder="10/10/2026;15:00;VBC Lyon;Club Dijon"></textarea>' +
+    '<div class="btnrow"><button class="btn wide" data-act="importFix">Importer le texte</button></div></section>';
+  return out;
+}
+function champView(){
+  var out = '<div class="stack">';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  out += '<section class="card"><h2>Championnat</h2>';
+  if(S.champs.length){
+    out += '<label class="f" for="champsel">Championnat affiché</label><select id="champsel" data-bind="champsel">' +
+      S.champs.map(function(c){ return '<option value="' + c.id + '"' + (c.id === ui.champSel ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>';
+  }
+  out += '<label class="f" for="newchamp">Nouveau championnat</label><div class="addrow2"><input type="text" id="newchamp" placeholder="Ex. Départementale 2026-2027" data-enter="champ" autocomplete="off"><button class="btn wide primary" data-act="addChamp">Créer</button></div></section>';
+  var ch = curChamp();
+  if(!ch) return out + '</div>';
+
+  out += '<div class="seg" role="group" aria-label="Affichage"><button data-act="cview" data-v="table" class="' + (ui.champView === 'table' ? 'on' : '') + '" aria-pressed="' + (ui.champView === 'table') + '">Classement</button>' +
+    '<button data-act="cview" data-v="cal" class="' + (ui.champView === 'cal' ? 'on' : '') + '" aria-pressed="' + (ui.champView === 'cal') + '">Calendrier</button></div>';
+  if(ui.champView === 'cal') return out + calView(ch) + '</div>';
+
+  out += '<section class="card"><h3>Clubs du championnat</h3>';
+  if(!S.clubs.length) out += '<p class="muted">Saisissez d\'abord des clubs dans l\'onglet Clubs.</p>';
+  else out += '<div class="chips">' + S.clubs.map(function(c){ return chip('toggleChampClub', { cid:c.id }, logoHtml(c.id, 24) + esc(c.name), ch.clubIds.indexOf(c.id) >= 0); }).join('') + '</div><p class="hint2">Touchez un club pour l\'ajouter ou le retirer.</p>';
+  out += '</section>';
+
+  var rows = standings(ch);
+  function th(k, label, title){
+    var on = ui.sort.k === k;
+    return '<th aria-sort="' + (on ? (ui.sort.dir > 0 ? 'ascending' : 'descending') : 'none') + '"><button class="sortb ' + (on ? 'on' : '') + '" data-act="sort" data-k="' + k + '" title="' + title + '">' + label + (on ? (ui.sort.dir > 0 ? ' ▴' : ' ▾') : '') + '</button></th>';
+  }
+  out += '<section class="card"><h3>Classement</h3>';
+  if(!rows.length) out += '<p class="muted">Ajoutez des clubs au championnat pour voir le classement.</p>';
+  else out += '<div class="tablewrap"><table><thead><tr>' + th('club','Club','Trier par club') + th('j','J','Matchs joués') + th('g','G','Matchs gagnés') + th('p','P','Matchs perdus') +
+    th('sp','S+','Sets gagnés') + th('sc','S−','Sets perdus') + th('pts','Pts','Points du championnat') + '</tr></thead><tbody>' +
+    rows.map(function(r){
+      return '<tr><td><span class="fxteam"><span class="rank">' + r.rank + '</span>' + logoHtml(r.id, 24) + '<span class="nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span></span></td><td>' + r.j + '</td><td>' + r.g + '</td><td>' + r.p + '</td><td>' + r.sp + '</td><td>' + r.sc + '</td><td class="pts">' + r.pts + '</td></tr>';
+    }).join('') + '</tbody></table></div>' +
+    '<p class="hint2">J joués · G gagnés · P perdus · S+ sets gagnés · S− sets perdus · Pts points. Touchez un en-tête pour trier. Barème : 3-0 → 5, 3-1 → 4, 3-2 → 3, 2-3 → 2, 1-3 → 1, 0-3 → 0.</p>';
+  out += '</section>';
+
+  out += '<section class="card"><h3>Résultats</h3>';
+  var ms = ch.matches.slice().reverse().map(function(m){
+    var warn = known(m.hs, m.as) ? '' : ' <span class="tag" title="Le barème ne prévoit que les matchs en 3 sets gagnants">barème non défini</span>';
+    return '<div class="mrow"><span style="flex:1">' + logoHtml(m.home, 20) + ' ' + esc(clubName(m.home)) + ' <b>' + m.hs + ' – ' + m.as + '</b> ' + logoHtml(m.away, 20) + ' ' + esc(clubName(m.away)) +
+      (m.sets && m.sets.length ? '<br><small>' + m.sets.map(function(s){ return s[0] + '-' + s[1]; }).join(', ') + '</small>' : '') + warn + '</span>' +
+      '<span class="tag">' + (m.source === 'live' ? 'joué' : 'saisi') + '</span>' +
+      '<button class="del" data-act="delMatch" data-mid="' + m.id + '" aria-label="Supprimer ce match">×</button></div>';
+  }).join('');
+  out += ms || '<p class="muted">Aucun match pour l\'instant.</p>';
+  if(ch.clubIds.length >= 2){
+    var opts = function(sel){ return ch.clubIds.map(function(id,i){ return '<option value="' + id + '"' + (i === sel ? ' selected' : '') + '>' + esc(clubName(id)) + '</option>'; }).join(''); };
+    out += '<h3 style="margin-top:18px">Ajouter un match à la main</h3>' +
+      '<label class="f" for="mhome">Club à domicile</label><select id="mhome">' + opts(0) + '</select>' +
+      '<label class="f" for="maway">Club à l\'extérieur</label><select id="maway">' + opts(1) + '</select>' +
+      '<label class="f" for="mres">Score final en sets (du point de vue du club à domicile)</label><select id="mres">' + RESULTS.map(function(r){ return '<option value="' + r + '">' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="addMatch">Ajouter ce match</button></div>';
+  } else if(S.clubs.length){
+    out += '<p class="hint2">Sélectionnez au moins deux clubs pour ajouter des matchs.</p>';
+  }
+  out += '</section><section class="card"><div class="btnrow" style="margin:0"><button class="btn wide danger" data-act="delChampAsk">Supprimer ce championnat</button></div></section>';
+  return out + '</div>';
+}
+
+/* ---------- Menu principal ---------- */
+function homeClubObj(){
+  var c = clubById(S.homeClub);
+  if(c) return c;
+  return S.clubs.filter(function(x){ return norm(x.name).indexOf('commentry') >= 0; })[0] || null;
+}
+function menuView(){
+  var c = homeClubObj(), live = S.stage === 'play' && hasContent() && !S.finished, w = setsWon();
+  var out = '<div class="brand">' + (c && c.logo ? '<img class="logo" src="' + esc(c.logo) + '" alt="" width="120" height="120">' : '') +
+    '<h1>' + esc(c ? c.name : 'Feuille de match volley') + '</h1><p>Feuille de match</p></div>';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  out += '<div class="menugrid">' +
+    '<button class="menubtn' + (live ? ' live' : '') + '" data-act="tab" data-tab="match"><b>Match</b><span>' + (live ? 'Match en cours : ' + esc(tn(0)) + ' ' + w[0] + ' – ' + w[1] + ' ' + esc(tn(1)) : 'Jouer un nouveau match ou reprendre un match') + '</span></button>' +
+    '<button class="menubtn" data-act="tab" data-tab="clubs"><b>Clubs</b><span>Licenciés, logos et photos</span></button>' +
+    '<button class="menubtn" data-act="tab" data-tab="champ"><b>Championnat</b><span>Classement et calendrier</span></button>' +
+    '<button class="menubtn" data-act="tab" data-tab="data"><b>Données</b><span>Équipes et joueurs</span></button></div>';
+  out += '<div class="stack"><section class="card"><h3>Sauvegarde</h3><p class="muted" style="margin:0">Les données restent sur cet appareil. Faites une sauvegarde pour les conserver ou les transférer sur un autre téléphone.</p>' +
+    '<div class="btnrow"><button class="btn wide" data-act="backup">Sauvegarder toutes les données</button>' +
+    '<input type="file" id="restorefile" class="vh" accept=".json,application/json"><label for="restorefile" class="btn wide">Restaurer une sauvegarde</label></div></section>';
+  if(S.clubs.length){
+    out += '<section class="card"><h3>Club du menu</h3><label class="f" for="homeclub" style="margin-top:0">Logo et nom affichés en haut du menu</label><select id="homeclub" data-bind="homeclub"><option value="">Automatique</option>' +
+      S.clubs.map(function(x){ return '<option value="' + x.id + '"' + (x.id === S.homeClub ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select></section>';
+  }
+  return out + '</div>';
+}
+
+/* ---------- Vue : données ---------- */
+function shortDate(m){
+  var d = new Date(matchDate(m));
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
+}
+function backBtn(label){ return '<button class="btn wide" data-act="dataBack">‹ ' + label + '</button>'; }
+function dataHomeView(){
+  var n = allMatches().length;
+  var out = '<div class="stack"><section class="card"><h2>Données</h2><p class="muted" style="margin:6px 0 16px">Que voulez-vous consulter ?</p>' +
+    '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="dataTeams">Données équipes</button><button class="bigbtn" data-act="dataPlayers">Données joueur</button></div>' +
+    '<p class="hint2">' + (n ? n + ' match' + (n > 1 ? 's' : '') + ' enregistré' + (n > 1 ? 's' : '') + '.' : 'Aucun match enregistré pour l\'instant.') + '</p></section>';
+  if(hasContent()){
+    var sm = matchSummary(S);
+    out += '<section class="card"><h3>' + (S.finished ? 'Dernier match terminé' : 'Match en cours') + '</h3><div class="ritem"><button class="fx" data-act="dataMatchOpen" data-mid="' + esc(S.created) + '" data-from="home"><span class="fxt"><span class="nm">' + esc(sm.title) + '</span><small>' + esc(fmtWhen(sm.date)) + '</small></span><span class="rsc">' + sm.w[0] + ' – ' + sm.w[1] + '</span></button></div></section>';
+  }
+  return out + '</div>';
+}
+function recordOf(items){
+  var v = 0, d = 0;
+  items.forEach(function(it){
+    if(!it.m.finished) return;
+    var w = setsWonOf(it.m);
+    if(w[it.t] > w[1 - it.t]) v++; else d++;
+  });
+  return v + 'V – ' + d + 'D';
+}
+function dataTeamsView(){
+  var teams = teamIndex(), tm = ui.dataTeam ? teams.filter(function(k){ return k.key === ui.dataTeam; })[0] : null;
+  if(ui.dataTeam && !tm) ui.dataTeam = null;
+  var out = '<div class="stack">';
+  if(tm){
+    out += backBtn('Toutes les équipes') + '<section class="card"><h2 class="pcell">' + (tm.logo ? logoHtml(tm.logo, 36) : '') + '<span>' + esc(tm.label) + '</span></h2><p class="muted" style="margin:6px 0 0">' + tm.items.length + ' match' + (tm.items.length > 1 ? 's' : '') + ' enregistré' + (tm.items.length > 1 ? 's' : '') + ' · ' + recordOf(tm.items) + '</p><div style="margin-top:6px">' +
+      tm.items.map(function(it){
+        var m = it.m, t = it.t, w = setsWonOf(m), mine = w[t], opp = w[1 - t], win = m.finished && mine > opp, loss = m.finished && mine < opp;
+        return '<button class="fx" data-act="dataMatchOpen" data-mid="' + esc(m.created) + '" data-from="teams"><span class="fxd">' + esc(shortDate(m)) + '</span>' +
+          '<span class="fxt"><span class="fxteam ' + (win ? 'win' : '') + '">' + logoHtml(teamLogoClub(m, t), 24) + '<span class="nm">' + esc(tnOf(m, t)) + '</span><b>' + mine + '</b></span>' +
+          '<span class="fxteam ' + (loss ? 'win' : '') + '">' + logoHtml(teamLogoClub(m, 1 - t), 24) + '<span class="nm">' + esc(tnOf(m, 1 - t)) + '</span><b>' + opp + '</b></span></span>' +
+          '<span class="tag">' + (m.finished ? (win ? 'victoire' : 'défaite') : 'en cours') + '</span></button>';
+      }).join('') + '</div></section>';
+    return out + '</div>';
+  }
+  out += backBtn('Données') + '<section class="card"><h2>Données équipes</h2>';
+  if(!teams.length) out += '<p class="muted">Aucun match enregistré pour l\'instant.</p>';
+  else out += '<p class="muted" style="margin:6px 0 4px">Choisissez une équipe pour voir ses matchs.</p>' + teams.map(function(k){
+    return '<div class="ritem"><button class="fx" data-act="dataTeamSel" data-key="' + esc(k.key) + '"><span class="fxt"><span class="fxteam">' + logoHtml(k.logo, 28) + '<span class="nm">' + esc(k.label) + '</span></span><small>' + k.items.length + ' match' + (k.items.length > 1 ? 's' : '') + '</small></span><span class="rsc">' + recordOf(k.items) + '</span></button></div>';
+  }).join('');
+  return out + '</section></div>';
+}
+function dataMatchView(){
+  var m = matchById(ui.dataMatch);
+  if(!m || m.created !== ui.dataMatch){ ui.dataView = 'home'; return dataHomeView(); }
+  var t = 0;
+  if(ui.dataFrom === 'teams' && ui.dataTeam){ var k = teamKey(m, 1) === ui.dataTeam ? 1 : 0; t = k; }
+  var w = setsWonOf(m), sm = matchSummary(m);
+  var out = '<div class="stack">' + backBtn(ui.dataFrom === 'teams' ? 'Matchs de l\'équipe' : 'Données');
+  out += '<section class="card"><h2>' + esc(sm.title) + '</h2><p class="muted" style="margin:4px 0 0">' + esc(fmtWhen(sm.date)) + (m.finished ? ' · terminé' : ' · en cours') + '</p>' +
+    '<div class="fxt" style="margin-top:10px">' +
+    '<span class="fxteam">' + logoHtml(teamLogoClub(m,0), 28) + '<span class="nm">' + esc(tnOf(m,0)) + '</span><b>' + w[0] + '</b></span>' +
+    '<span class="fxteam">' + logoHtml(teamLogoClub(m,1), 28) + '<span class="nm">' + esc(tnOf(m,1)) + '</span><b>' + w[1] + '</b></span></div>' +
+    '<div class="setline">' + m.sets.map(function(s,i){ return '<span class="setchip" title="Set ' + (i+1) + '">' + s[0] + '–' + s[1] + '</span>'; }).join('') +
+    (m.finished ? '' : '<span class="setchip" style="border-color:var(--gold)" title="Set en cours">' + m.cur[0] + '–' + m.cur[1] + '</span>') + '</div></section>';
+  [t, 1 - t].forEach(function(tt){
+    out += '<section class="card ' + (tt ? 'b' : 'a') + '"><h3>Performances · ' + esc(tnOf(m, tt)) + '</h3>' + statTableOf(m, tt) + '</section>';
+  });
+  var log = logHtmlOf(m, 0, false);
+  out += '<details class="card"><summary>Feuille de match <small>&nbsp;(' + m.events.length + ' événement' + (m.events.length > 1 ? 's' : '') + ')</small></summary>' +
+    (log ? '<ul class="log">' + log + '</ul>' : '<p class="muted">Aucun événement.</p>') + '</details>';
+  out += '<section class="card"><h3>Partager et exporter</h3><div class="btnrow">' +
+    '<button class="btn wide primary" data-act="share" data-mid="' + esc(m.created) + '">Partager le score</button>' +
+    (m === S && S.finished ? '<button class="btn wide" data-act="openChamp">Ajouter au championnat</button>' : '') +
+    '<button class="btn wide" data-act="exportCsv" data-mid="' + esc(m.created) + '">Exporter la feuille de match (CSV)</button>' +
+    '<button class="btn wide" data-act="exportJson" data-mid="' + esc(m.created) + '">Exporter tout le match (JSON)</button></div></section>';
+  return out + '</div>';
+}
+function playerListHtml(idx){
+  if(!idx.length) return '<p class="muted">Aucun joueur n\'a encore joué de match enregistré.</p>';
+  var q2 = norm(ui.pfilter), list = idx.filter(function(p){ return !q2 || norm(p.name + p.team + p.num).indexOf(q2) >= 0; });
+  if(!list.length) return '<p class="muted">Aucun joueur trouvé.</p>';
+  var out = '', last = null;
+  list.forEach(function(p){
+    if(p.team !== last){ out += '<h3 style="margin:16px 0 2px" class="pcell">' + (p.logo ? logoHtml(p.logo, 24) : '') + '<span>' + esc(p.team) + '</span></h3>'; last = p.team; }
+    var pts = p.matches.reduce(function(a, x){ return a + x.st.pts; }, 0);
+    out += '<div class="ritem"><button class="fx" data-act="dataPlayerSel" data-key="' + esc(p.key) + '"><span class="pcell">' + avatar(p.photo, 40, p.name) + '<span class="fxt"><span class="nm">' + esc(p.name) + '</span><small>' + (p.num ? '#' + esc(p.num) + ' · ' : '') + p.matches.length + ' match' + (p.matches.length > 1 ? 's' : '') + '</small></span></span><span class="rsc" aria-label="Points">' + pts + ' pt' + (pts > 1 ? 's' : '') + '</span></button></div>';
+  });
+  return out;
+}
+function dataPlayersView(){
+  var idx = playerIndex(), p = ui.dataPlayer ? idx.filter(function(x){ return x.key === ui.dataPlayer; })[0] : null;
+  if(ui.dataPlayer && !p) ui.dataPlayer = null;
+  var out = '<div class="stack">';
+  if(p){
+    var tot = { pts:0, attack:0, block:0, ace:0, relance:0, faults:0 };
+    p.matches.forEach(function(x){ Object.keys(tot).forEach(function(k){ tot[k] += x.st[k]; }); });
+    var cells = [['Matchs', p.matches.length], ['Points', tot.pts], ['Attaques', tot.attack], ['Blocs', tot.block], ['Services', tot.ace], ['Relances', tot.relance], ['Fautes', tot.faults]];
+    out += backBtn('Tous les joueurs') + '<section class="card"><div class="pcell">' + avatar(p.photo, 72, p.name) + '<div><h2>' + esc(p.name) + '</h2><p class="muted" style="margin:4px 0 0">' + esc(p.team) + (p.num ? ' · #' + esc(p.num) : '') + (p.licence ? ' · licence ' + esc(p.licence) : '') + '</p></div></div>' +
+      '<div class="statgrid">' + cells.map(function(c){ return '<div><b>' + c[1] + '</b><span>' + c[0] + '</span></div>'; }).join('') + '</div></section>';
+    out += '<section class="card"><h3>Performances par match</h3><div class="tablewrap"><table><thead><tr><th>Match</th><th>Rés.</th><th title="Points marqués">Pts</th><th title="Attaques">Att.</th><th>Bloc</th><th title="Services gagnants">Ace</th><th title="Relances">Rel.</th><th>Fautes</th></tr></thead><tbody>' +
+      p.matches.map(function(x){
+        var w = setsWonOf(x.m), mine = w[x.t], opp = w[1 - x.t];
+        var res = x.m.finished ? (mine > opp ? 'V ' : 'D ') + mine + '–' + opp : 'en cours';
+        var label = shortDate(x.m) + ' · ' + teamLabel(x.m, 1 - x.t);
+        return '<tr><td><span class="fxteam"><span class="nm" title="' + esc(label) + '">' + esc(label) + '</span></span></td><td>' + esc(res) + '</td><td>' + x.st.pts + '</td><td>' + x.st.attack + '</td><td>' + x.st.block + '</td><td>' + x.st.ace + '</td><td>' + x.st.relance + '</td><td>' + x.st.faults + '</td></tr>';
+      }).join('') + '</tbody><tfoot><tr class="tot"><td>Total</td><td></td><td>' + tot.pts + '</td><td>' + tot.attack + '</td><td>' + tot.block + '</td><td>' + tot.ace + '</td><td>' + tot.relance + '</td><td>' + tot.faults + '</td></tr></tfoot></table></div></section>';
+    return out + '</div>';
+  }
+  out += backBtn('Données') + '<section class="card"><h2>Données joueur</h2>' +
+    '<label class="f" for="pfind">Rechercher un joueur</label><input type="text" id="pfind" data-pfind="1" value="' + esc(ui.pfilter) + '" placeholder="Nom, équipe ou numéro" autocomplete="off">' +
+    '<div id="plist">' + playerListHtml(idx) + '</div></section>';
+  return out + '</div>';
+}
+function dataView(){
+  if(ui.dataView === 'teams') return dataTeamsView();
+  if(ui.dataView === 'players') return dataPlayersView();
+  if(ui.dataView === 'match') return dataMatchView();
+  return dataHomeView();
+}
+
+/* ---------- Feuilles de saisie ---------- */
+function chip(act, data, html, sel){
+  var d = Object.keys(data).map(function(k){ return ' data-' + k + '="' + esc(data[k]) + '"'; }).join('');
+  return '<button class="chip ' + (sel ? 'sel' : '') + '" data-act="' + act + '"' + d + '>' + html + '</button>';
+}
+function group(label, inner){ return '<div class="group"><p>' + label + '</p><div class="chips">' + inner + '</div></div>'; }
+function whoChips(t, selected, bench){
+  var list = (bench ? benchOf(t) : onCourt(t)).slice().sort(sortP);
+  return list.map(function(p){ return chip('pickWho', { pid:p.id }, '<b>' + esc(p.num) + '</b>' + esc(p.name), selected === p.id); }).join('');
+}
+function sheetView(){
+  var sh = ui.sheet, inner = '';
+  if(sh.kind === 'point'){
+    var how = Object.keys(HOW).map(function(k){ return chip('pickHow', { how:k }, HOW[k], sh.how === k); }).join('') + chip('pickHow', { how:'oppfault' }, 'Faute adverse', false);
+    inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2>' + group('Comment ?', how) +
+      group('Qui a marqué ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''));
+    if(!onCourt(sh.team).length) inner += '<p class="hint2">Aucun joueur en jeu. Placez vos joueurs avec « Composition ».</p>';
+  } else if(sh.kind === 'fault'){
+    var kinds = FAULTS.map(function(k){ return chip('pickHow', { how:k }, esc(k), sh.how === k); }).join('');
+    inner = '<h2>Faute de ' + esc(tn(sh.team)) + '</h2><p class="hint2" style="margin-top:4px">Le point est donné à ' + esc(tn(1 - sh.team)) + '.</p>' +
+      group('Type de faute', kinds) + group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''));
+  } else if(sh.kind === 'sub'){
+    var outs = whoChips(sh.team, sh.out, false).replace(/pickWho/g, 'pickOut');
+    var ins = whoChips(sh.team, sh.in, true).replace(/pickWho/g, 'pickIn');
+    inner = '<h2>Remplacement · ' + esc(tn(sh.team)) + '</h2>' + group('Joueur qui sort', outs || '<span class="muted">Personne en jeu.</span>') +
+      group('Joueur qui entre', ins || '<span class="muted">Personne sur le banc.</span>') +
+      '<p class="hint2">Le remplaçant prend le poste du joueur qui sort.</p>';
+  } else if(sh.kind === 'player'){
+    var p = findPlayer(sh.team, sh.pid);
+    if(!p){ inner = '<h2>Joueur introuvable</h2>'; }
+    else {
+      var st = playerStat(p.id), pos = S.lineup[sh.team].indexOf(p.id);
+      var lk = p.mid && findMember(p.mid);
+      inner = '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:8px">' + avatar(photoOfPlayer(p), 104, p.name) + '<button class="mini" data-act="' + (lk ? 'editMember' : 'pickPhoto') + '" data-team="' + sh.team + '" data-pid="' + p.id + '"' + (lk ? ' data-mid="' + p.mid + '"' : '') + '>' + (photoOfPlayer(p) ? 'Changer la photo' : 'Ajouter une photo') + '</button></div>' +
+        '<h2>' + esc(plabel(p.num, p.name)) + '</h2><p class="hint2" style="margin-top:4px">' + esc(tn(sh.team)) + (p.licence ? ' · Licence ' + esc(p.licence) : '') + (pos >= 0 ? ' · Poste ' + (pos + 1) : ' · Banc') + '</p>' +
+        '<div class="bigstat"><b>' + st.pts + '</b>point' + (st.pts > 1 ? 's' : '') + ' marqué' + (st.pts > 1 ? 's' : '') + '</div>' +
+        '<div class="kv"><span>Attaques</span><b>' + st.attack + '</b><span>Blocs</span><b>' + st.block + '</b><span>Services gagnants</span><b>' + st.ace + '</b><span>Relances</span><b>' + st.relance + '</b><span>Fautes</span><b>' + st.faults + '</b></div>';
+    }
+  } else if(sh.kind === 'lineup'){
+    var roster = S.teams[sh.team].players.slice().sort(sortP), rows = '';
+    for(var i = 0; i < 6; i++){
+      var cur = S.lineup[sh.team][i];
+      rows += '<label class="f" for="slot' + i + '">Poste ' + (i + 1) + '</label><select id="slot' + i + '" data-bind="slot" data-team="' + sh.team + '" data-pos="' + i + '"><option value="">— vide —</option>' +
+        roster.map(function(p){ return '<option value="' + p.id + '"' + (p.id === cur ? ' selected' : '') + '>' + esc(plabel(p.num, p.name)) + '</option>'; }).join('') + '</select>';
+    }
+    inner = '<h2>Composition · ' + esc(tn(sh.team)) + '</h2><p class="hint2">Postes comme au volley : 1 au service (derrière à droite), 2 au filet à droite, 3 au filet au centre, 4 au filet à gauche, 5 derrière à gauche, 6 derrière au centre. Choisir un joueur déjà placé échange les deux postes.</p>' +
+      (roster.length ? rows : '<p class="hint2">Ajoutez d\'abord des joueurs dans la préparation du match.</p>');
+  } else if(sh.kind === 'setend'){
+    inner = '<h2>Set ' + setNumber() + ' gagné par ' + esc(tn(sh.winner)) + '</h2><p class="hint2" style="font-size:18px">' + S.cur[0] + ' – ' + S.cur[1] + '</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="endSetOk">Enregistrer le set</button><button class="btn wide" data-act="closeSheet">Continuer le set</button></div>';
+  } else if(sh.kind === 'endask'){
+    inner = '<h2>Terminer le set ' + setNumber() + ' ?</h2><p class="hint2" style="font-size:18px">Score actuel : ' + S.cur[0] + ' – ' + S.cur[1] + '</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="endSetOk">Terminer le set</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'champ'){
+    if(!S.champs.length){
+      inner = '<h2>Aucun championnat</h2><p class="hint2">Créez un championnat dans l\'onglet Championnat, puis revenez ajouter ce match.</p>';
+    } else if(!sh.cid){
+      inner = '<h2>Ajouter ce match à un championnat ?</h2>' + group('Championnat', S.champs.map(function(c){ return chip('pickChamp', { cid:c.id }, esc(c.name), false); }).join('')) +
+        '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Ne pas l\'ajouter</button></div>';
+    } else {
+      var ch = champById(sh.cid);
+      var copts = function(sel){ return '<option value="">— Choisir —</option>' + ch.clubIds.map(function(id){ return '<option value="' + id + '"' + (id === sel ? ' selected' : '') + '>' + esc(clubName(id)) + '</option>'; }).join(''); };
+      var w2 = setsWon();
+      inner = '<h2>' + esc(ch.name) + '</h2><p class="hint2" style="margin-top:4px">' + esc(tn(0)) + ' ' + w2[0] + ' – ' + w2[1] + ' ' + esc(tn(1)) + '</p>' +
+        (ch.clubIds.length < 2 ? '<p class="hint2">Ce championnat doit contenir au moins deux clubs (onglet Championnat).</p>' :
+        '<label class="f" for="cc0">Club de ' + esc(tn(0)) + '</label><select id="cc0" data-bind="champclub" data-team="0">' + copts(sh.c0) + '</select>' +
+        '<label class="f" for="cc1">Club de ' + esc(tn(1)) + '</label><select id="cc1" data-bind="champclub" data-team="1">' + copts(sh.c1) + '</select>' +
+        '<div class="btnrow"><button class="btn wide primary" data-act="champOk"' + ((!sh.c0 || !sh.c1 || sh.c0 === sh.c1) ? ' disabled' : '') + '>Ajouter le match</button></div>') +
+        '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+    }
+  } else if(sh.kind === 'fixture'){
+    var fch = champById(sh.cid), fx = fch && fixtureOf(fch, sh.fid);
+    if(!fx){ inner = '<h2>Match introuvable</h2>'; }
+    else {
+      var fm = matchOf(fch, fx.matchId);
+      inner = '<h2>' + esc(clubName(fx.home)) + ' – ' + esc(clubName(fx.away)) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fx.date)) + (fx.time ? ' à ' + esc(fx.time) : '') + ' · ' + esc(fch.name) + '</p>';
+      if(fm){
+        inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(s){ return s[0] + '-' + s[1]; }).join(', ') + '</p>' : '');
+      } else {
+        inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera remplacé. Exportez-le avant si besoin.</p>' : '') +
+          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Jouer ce match</button></div>';
+      }
+      inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fx.home)) + ')</label><select id="fres">' +
+        RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
+        '<div class="btnrow"><button class="btn wide" data-act="fixRes">Enregistrer le résultat</button>' +
+        (fm ? '<button class="btn wide" data-act="fixClear">Effacer le résultat</button>' : '') +
+        '<button class="btn wide danger" data-act="fixDel">Supprimer du calendrier</button></div>';
+    }
+  } else if(sh.kind === 'dellib'){
+    var de = S.library.filter(function(x){ return x.created === sh.mid; })[0];
+    inner = '<h2>Supprimer ' + esc(de ? matchSummary(de).title : 'ce match') + ' ?</h2><p class="hint2">Les données de ce match enregistré seront perdues. Exportez-les avant si besoin. Un résultat déjà ajouté à un championnat n\'est pas supprimé.</p>' +
+      '<div class="btnrow"><button class="btn wide danger" data-act="delLibOk">Oui, supprimer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'newmatch'){
+    inner = '<h2>Commencer un nouveau match ?</h2><p class="hint2">' + (hasContent() ? 'Le match en cours est conservé : vous pourrez le retrouver avec « Reprendre un match » sur l\'écran Match. ' : '') + 'Les équipes, joueurs, clubs et championnats sont conservés.</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="newMatchOk">Nouveau match</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'editmember'){
+    var dr = sh.draft;
+    inner = '<h2>Modifier le licencié</h2><div class="logoedit" style="margin-top:10px">' + avatar(dr.photo, 72, ((dr.prenom || '') + ' ' + (dr.nom || '')).trim()) +
+      '<div class="btnrow" style="margin:0;flex:1"><input type="file" id="memphoto" class="vh" accept="image/*"><label for="memphoto" class="btn wide">' + (dr.photo ? 'Changer la photo' : 'Ajouter une photo') + '</label>' +
+      (dr.photo ? '<button class="btn wide" data-act="memPhotoDel">Retirer la photo</button>' : '') + '</div></div>' +
+      '<div class="row2"><div><label class="f" for="em_lic">Licence</label><input type="text" id="em_lic" data-bind="emf" data-k="licence" value="' + esc(dr.licence) + '" autocomplete="off"></div>' +
+      '<div><label class="f" for="em_age">Âge</label><input type="text" inputmode="numeric" id="em_age" maxlength="3" data-bind="emf" data-k="age" value="' + esc(dr.age) + '"></div></div>' +
+      '<div class="row2"><div><label class="f" for="em_nom">Nom</label><input type="text" id="em_nom" data-bind="emf" data-k="nom" value="' + esc(dr.nom) + '" autocomplete="off"></div>' +
+      '<div><label class="f" for="em_pre">Prénom</label><input type="text" id="em_pre" data-bind="emf" data-k="prenom" value="' + esc(dr.prenom) + '" autocomplete="off"></div></div>' +
+      (sh.err ? '<p class="hint2" style="color:var(--danger)" role="alert">' + esc(sh.err) + '</p>' : '') +
+      '<div class="btnrow"><button class="btn wide primary" data-act="memSave">Enregistrer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'restore'){
+    var pr = ui.pendingRestore, dd = pr && pr.data || {};
+    inner = '<h2>Restaurer cette sauvegarde ?</h2><p class="hint2">Sauvegarde du ' + esc(fmtWhen(pr ? pr.exportedAt : '')) + ' : ' + (dd.clubs || []).length + ' club' + ((dd.clubs || []).length > 1 ? 's' : '') + ', ' + (dd.champs || []).length + ' championnat' + ((dd.champs || []).length > 1 ? 's' : '') + ', ' + (((dd.library || []).length) + ((dd.events || []).length || (dd.sets || []).length ? 1 : 0)) + ' match' + '(s). Toutes les données actuelles de cet appareil seront remplacées. Faites une sauvegarde avant si vous n\'êtes pas sûr.</p>' +
+      '<div class="btnrow"><button class="btn wide danger" data-act="restoreOk">Oui, restaurer</button><button class="btn wide" data-act="restoreNo">Annuler</button></div>';
+  } else if(sh.kind === 'delmember'){
+    var dmc = curClub(), dmm = dmc && dmc.members.filter(function(x){ return x.id === sh.mid; })[0];
+    inner = '<h2>Supprimer ' + esc(dmm ? memberName(dmm) : 'ce licencié') + ' ?</h2><p class="hint2">' + (dmm && dmm.licence ? 'Licence ' + esc(dmm.licence) + '. ' : '') + 'Ce licencié sera retiré du club. Les matchs déjà joués ne sont pas modifiés.</p>' +
+      '<div class="btnrow"><button class="btn wide danger" data-act="delMemberOk">Oui, supprimer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'delclub'){
+    var dc = curClub();
+    inner = '<h2>Supprimer ' + esc(dc ? dc.name : 'ce club') + ' ?</h2><p class="hint2">Ses membres seront supprimés, ainsi que ses matchs dans les championnats.</p>' +
+      '<div class="btnrow"><button class="btn wide danger" data-act="delClubOk">Supprimer le club</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'delchamp'){
+    var dch = curChamp();
+    inner = '<h2>Supprimer ' + esc(dch ? dch.name : 'ce championnat') + ' ?</h2><p class="hint2">Tous ses résultats seront supprimés. Les clubs sont conservés.</p>' +
+      '<div class="btnrow"><button class="btn wide danger" data-act="delChampOk">Supprimer le championnat</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'text'){
+    inner = '<h2>' + esc(sh.title) + '</h2>' + (sh.note ? '<p class="hint2">' + esc(sh.note) + '</p>' : '') +
+      '<label class="f" for="sharetext">Texte</label><textarea id="sharetext" readonly style="min-height:170px">' + esc(sh.text) + '</textarea>' +
+      '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
+      '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
+  }
+  var own = ['setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore'];
+  var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
+  return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
+}
+
+function render(){
+  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : matchView())) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : dataView())));
+  var warn = ui.warn ? '<div class="banner" role="alert">' + esc(ui.warn) + '</div>' : '';
+  document.getElementById('app').innerHTML = header() + '<main>' + warn + main + (ui.tab === 'menu' ? '' : menuBtn()) + '</main>';
+  document.getElementById('sheet').innerHTML = ui.sheet ? sheetView() : '';
+  if(ui.focus){ var el = document.getElementById(ui.focus); if(el) el.focus(); ui.focus = null; }
+}
+
+/* ---------- Interactions ---------- */
+function tryCommit(){
+  var sh = ui.sheet;
+  if(!sh) return;
+  if(sh.kind === 'point' && sh.how !== undefined && sh.pid !== undefined){
+    commitPoint(sh.team, sh.how, sh.pid || null);
+  } else if(sh.kind === 'fault' && sh.how !== undefined && sh.pid !== undefined){
+    commitFault(sh.team, sh.how, sh.pid || null);
+  } else if(sh.kind === 'sub' && sh.out !== undefined && sh.in !== undefined){
+    commitSub(sh.team, sh.out, sh.in);
+    ui.sheet = null; render();
+  } else {
+    render();
+  }
+}
+function placeNew(t, p){
+  S.teams[t].players.push(p);
+  var i = S.lineup[t].indexOf(null);
+  if(i >= 0) S.lineup[t][i] = p.id;
+  save();
+}
+function addPlayer(t){
+  var n = document.getElementById('newnum' + t), m = document.getElementById('newname' + t);
+  var num = n.value.trim(), name = m.value.trim();
+  if(!num && !name){ n.focus(); return; }
+  placeNew(t, { id:uid(), num:num, name:name, licence:'', mid:'' });
+  ui.focus = 'newnum' + t; render();
+}
+function addClub(){
+  var el = document.getElementById('newclub'), name = el.value.trim();
+  if(!name){ el.focus(); return; }
+  var c = { id:uid(), name:name, members:[] };
+  S.clubs.push(c); ui.clubSel = c.id; ui.msg = '';
+  save(); ui.focus = 'newclub'; render();
+}
+function addMember(){
+  var c = curClub();
+  if(!c) return;
+  var lic = document.getElementById('mlic').value.trim(), nom = document.getElementById('mnom').value.trim(), pre = document.getElementById('mpre').value.trim();
+  var age = parseInt(document.getElementById('mage').value, 10);
+  if(!nom && !pre){ document.getElementById('mnom').focus(); return; }
+  c.members.push({ id:uid(), licence:lic, nom:nom, prenom:pre, age:isNaN(age) ? '' : age });
+  ui.msg = ''; save(); ui.focus = 'mlic'; render();
+}
+function addChamp(){
+  var el = document.getElementById('newchamp'), name = el.value.trim();
+  if(!name){ el.focus(); return; }
+  var c = { id:uid(), name:name, clubIds:[], matches:[], fixtures:[] };
+  S.champs.push(c); ui.champSel = c.id; ui.msg = '';
+  save(); render();
+}
+function addMatch(){
+  var ch = curChamp();
+  if(!ch) return;
+  var h = document.getElementById('mhome').value, a = document.getElementById('maway').value, r = document.getElementById('mres').value.split('-');
+  if(h === a){ ui.msg = 'Choisissez deux clubs différents.'; render(); return; }
+  ch.matches.push({ id:uid(), ref:null, home:h, away:a, hs:parseInt(r[0],10), as:parseInt(r[1],10), sets:null, source:'manual', date:stamp() });
+  ui.msg = ''; save(); render();
+}
+
+document.addEventListener('click', function(e){
+  var b = e.target.closest('[data-act]');
+  if(!b || b.disabled) return;
+  var act = b.dataset.act, d = b.dataset, t = parseInt(d.team, 10), sh = ui.sheet;
+  if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = null; render(); return; }
+  switch(act){
+    case 'tab': ui.tab = d.tab; ui.showSetup = false; ui.sheet = null; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'dataTeams': ui.dataView = 'teams'; ui.dataTeam = null; render(); window.scrollTo(0,0); break;
+    case 'dataPlayers': ui.dataView = 'players'; ui.dataPlayer = null; ui.pfilter = ''; render(); window.scrollTo(0,0); break;
+    case 'dataTeamSel': ui.dataTeam = d.key; render(); window.scrollTo(0,0); break;
+    case 'dataPlayerSel': ui.dataPlayer = d.key; render(); window.scrollTo(0,0); break;
+    case 'dataMatchOpen': ui.dataMatch = d.mid; ui.dataFrom = d.from; ui.dataView = 'match'; render(); window.scrollTo(0,0); break;
+    case 'dataBack':
+      if(ui.dataView === 'match'){ ui.dataView = ui.dataFrom === 'teams' ? 'teams' : 'home'; ui.dataMatch = null; }
+      else if(ui.dataView === 'teams'){ if(ui.dataTeam) ui.dataTeam = null; else ui.dataView = 'home'; }
+      else if(ui.dataView === 'players'){ if(ui.dataPlayer) ui.dataPlayer = null; else ui.dataView = 'home'; }
+      render(); window.scrollTo(0,0); break;
+    case 'editMember': {
+      var fm = findMember(d.mid);
+      if(fm){ ui.sheet = { kind:'editmember', mid:d.mid, err:'', draft:{ licence:fm.m.licence || '', nom:fm.m.nom || '', prenom:fm.m.prenom || '', age:fm.m.age === '' || fm.m.age == null ? '' : String(fm.m.age), photo:fm.m.photo || '' } }; render(); }
+      break;
+    }
+    case 'memPhotoDel': sh.draft.photo = ''; render(); break;
+    case 'memSave': {
+      var ef = findMember(sh.mid), dr2 = sh.draft;
+      if(!ef){ ui.sheet = null; render(); break; }
+      if(!(dr2.nom || '').trim() && !(dr2.prenom || '').trim()){ sh.err = 'Saisissez au moins un nom ou un prénom.'; render(); break; }
+      var ag = parseInt(dr2.age, 10);
+      ef.m.licence = (dr2.licence || '').trim(); ef.m.nom = (dr2.nom || '').trim(); ef.m.prenom = (dr2.prenom || '').trim(); ef.m.age = isNaN(ag) ? '' : ag;
+      if(dr2.photo) ef.m.photo = dr2.photo; else delete ef.m.photo;
+      var nm2 = memberName(ef.m);
+      function upd(p){ if(p.mid === ef.m.id){ p.name = nm2; p.licence = ef.m.licence; } }
+      S.teams.forEach(function(tm){ tm.players.forEach(upd); });
+      S.clubs.forEach(function(cl){ if(cl.squad && cl.squad.players) cl.squad.players.forEach(upd); });
+      ui.sheet = null; save(); render(); break;
+    }
+    case 'pickPhoto': {
+      ui.photoTarget = { t:t, pid:d.pid };
+      var pin = document.getElementById('pphoto');
+      if(pin && pin.click) pin.click();
+      break;
+    }
+    case 'restoreOk': if(ui.pendingRestore){ applyBackup(ui.pendingRestore); ui.pendingRestore = null; ui.tab = 'menu'; ui.sheet = null; ui.msg = 'Sauvegarde restaurée.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } break;
+    case 'restoreNo': ui.pendingRestore = null; ui.sheet = null; render(); break;
+    case 'openSetup': ui.showSetup = true; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'startMatch': S.prepared = true; S.stage = 'play'; ui.showSetup = false; ui.msg = ''; save(); render(); window.scrollTo(0,0); break;
+    case 'newPlay': newMatch(); break;
+    case 'showResume': ui.resume = true; render(); window.scrollTo(0,0); break;
+    case 'hideResume': ui.resume = false; render(); break;
+    case 'goHome': stopClock(); S.stage = 'home'; ui.resume = false; ui.showSetup = false; ui.sheet = null; save(); render(); window.scrollTo(0,0); break;
+    case 'resumeMatch':
+      if(d.mid === S.created && hasContent()){ S.stage = 'play'; S.prepared = true; }
+      else if(!loadMatch(d.mid)) break;
+      ui.resume = false; ui.showSetup = false; ui.sheet = null; ui.msg = '';
+      save(); render(); window.scrollTo(0,0); break;
+    case 'delLibAsk': ui.sheet = { kind:'dellib', mid:d.mid }; render(); break;
+    case 'delLibOk':
+      S.library = S.library.filter(function(x){ return x.created !== sh.mid; });
+      if(!savedMatches().length) ui.resume = false;
+      ui.sheet = null; save(); render(); break;
+    case 'clock': toggleClock(); break;
+    case 'serve':
+      S.serving = (S.serving === t ? null : t);
+      if(S.serving !== null && !S.clock.running && !S.finished) startClock();
+      save(); render(); break;
+    case 'pref': S.prefs[d.k] = !S.prefs[d.k]; save(); render(); break;
+    case 'rot': manualRotate(t, parseInt(d.dir, 10)); break;
+    case 'openPoint': ui.sheet = { kind:'point', team:t }; render(); break;
+    case 'openFault': ui.sheet = { kind:'fault', team:t }; render(); break;
+    case 'openSub': ui.sheet = { kind:'sub', team:t }; render(); break;
+    case 'openPlayer': ui.sheet = { kind:'player', team:t, pid:d.pid }; render(); break;
+    case 'openLineup': ui.sheet = { kind:'lineup', team:t }; render(); break;
+    case 'openChamp': ui.sheet = champSheet(S.matchChamp); render(); break;
+    case 'timeout': callTimeout(t); break;
+    case 'tcStop': S.tc = null; save(); render(); break;
+    case 'undo': undo(); break;
+    case 'endSetAsk': ui.sheet = { kind:'endask' }; render(); break;
+    case 'endSetOk': endSet(); break;
+    case 'closeSheet': ui.sheet = null; render(); break;
+    case 'pickHow':
+      if(d.how === 'oppfault' && sh.kind === 'point'){ ui.sheet = { kind:'fault', team:1 - sh.team }; render(); }
+      else { sh.how = d.how; tryCommit(); }
+      break;
+    case 'pickWho': sh.pid = d.pid; tryCommit(); break;
+    case 'pickOut': sh.out = d.pid; tryCommit(); break;
+    case 'pickIn': sh.in = d.pid; tryCommit(); break;
+    case 'delP':
+      S.teams[t].players = S.teams[t].players.filter(function(x){ return x.id !== d.pid; });
+      S.lineup[t] = S.lineup[t].map(function(id){ return id === d.pid ? null : id; });
+      save(); render(); break;
+    case 'addP': addPlayer(t); break;
+    case 'pickMember': {
+      var club = clubById(S.teams[t].clubId);
+      var m = club && club.members.filter(function(x){ return x.id === d.mid; })[0];
+      if(!m) break;
+      var num = document.getElementById('newnum' + t).value.trim();
+      placeNew(t, { id:uid(), num:num, name:memberName(m), licence:m.licence, mid:m.id });
+      ui.find[t] = ''; ui.focus = 'find' + t; render();
+      break;
+    }
+    case 'share': doShare(matchById(d.mid)); break;
+    case 'nativeShare':
+      try{ navigator.share({ text:sh.text }).catch(function(){}); }catch(err){}
+      break;
+    case 'copy': copyText(sh.text); break;
+    case 'exportCsv': doExport('csv', matchById(d.mid)); break;
+    case 'exportJson': doExport('json', matchById(d.mid)); break;
+    case 'backup': doBackup(); break;
+    case 'newMatchAsk': ui.sheet = { kind:'newmatch' }; render(); break;
+    case 'newMatchOk': newMatch(); break;
+    case 'pickChamp': ui.sheet = champSheet(d.cid); render(); break;
+    case 'champOk':
+      if(addToChamp(sh.cid, sh.c0, sh.c1)){
+        var cn = champById(sh.cid).name;
+        ui.champSel = sh.cid; ui.tab = 'champ'; ui.sheet = null; ui.msg = 'Match ajouté à ' + cn + '.';
+        render(); window.scrollTo(0,0);
+      }
+      break;
+    case 'selClub': ui.clubSel = d.cid; ui.msg = ''; render(); break;
+    case 'addClub': addClub(); break;
+    case 'importText': {
+      var txt = document.getElementById('csvtext').value;
+      if(!txt.trim()){ ui.msg = 'Collez d\'abord le contenu du fichier.'; render(); break; }
+      importText(txt); break;
+    }
+    case 'addMember': addMember(); break;
+    case 'delMemberAsk': ui.sheet = { kind:'delmember', mid:d.mid }; render(); break;
+    case 'delMemberOk': {
+      var c = curClub();
+      if(c){ c.members = c.members.filter(function(x){ return x.id !== sh.mid; }); }
+      ui.sheet = null; save(); render();
+      break;
+    }
+    case 'delClubAsk': ui.sheet = { kind:'delclub' }; render(); break;
+    case 'delClubOk': {
+      var dc = curClub();
+      if(dc){
+        S.clubs = S.clubs.filter(function(x){ return x.id !== dc.id; });
+        S.champs.forEach(function(ch2){
+          ch2.clubIds = ch2.clubIds.filter(function(id){ return id !== dc.id; });
+          ch2.matches = ch2.matches.filter(function(m2){ return m2.home !== dc.id && m2.away !== dc.id; });
+          ch2.fixtures = ch2.fixtures.filter(function(f2){ return f2.home !== dc.id && f2.away !== dc.id; });
+        });
+        S.teams.forEach(function(tm){ if(tm.clubId === dc.id) tm.clubId = ''; });
+        ui.clubSel = null;
+      }
+      ui.sheet = null; save(); render(); break;
+    }
+    case 'addChamp': addChamp(); break;
+    case 'toggleChampClub': {
+      var ch3 = curChamp();
+      if(!ch3) break;
+      var ix = ch3.clubIds.indexOf(d.cid);
+      if(ix >= 0) ch3.clubIds.splice(ix, 1); else ch3.clubIds.push(d.cid);
+      save(); render(); break;
+    }
+    case 'sort':
+      if(ui.sort.k === d.k) ui.sort.dir = -ui.sort.dir; else ui.sort = { k:d.k, dir:d.k === 'club' ? 1 : -1 };
+      render(); break;
+    case 'addMatch': addMatch(); break;
+    case 'delMatch': {
+      var ch4 = curChamp();
+      if(ch4){
+        ch4.matches = ch4.matches.filter(function(x){ return x.id !== d.mid; });
+        ch4.fixtures.forEach(function(f){ if(f.matchId === d.mid) f.matchId = null; });
+        save(); render();
+      }
+      break;
+    }
+    case 'delChampAsk': ui.sheet = { kind:'delchamp' }; render(); break;
+    case 'cview': ui.champView = d.v; render(); break;
+    case 'calHide': ui.calHideDone = !ui.calHideDone; render(); break;
+    case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; ui.msg = ''; save(); render(); } break; }
+    case 'openFixture': { var oc = curChamp(); if(oc){ ui.sheet = { kind:'fixture', cid:oc.id, fid:d.fid }; render(); } break; }
+    case 'playFixture': startFixture(sh.cid, sh.fid); break;
+    case 'fixRes': {
+      var rc = champById(sh.cid), rf = rc && fixtureOf(rc, sh.fid);
+      if(rf){ setFixtureResult(rc, rf, document.getElementById('fres').value); }
+      ui.sheet = null; render(); break;
+    }
+    case 'fixClear': {
+      var cc = champById(sh.cid), cf = cc && fixtureOf(cc, sh.fid);
+      if(cf) clearFixtureResult(cc, cf);
+      ui.sheet = null; render(); break;
+    }
+    case 'fixDel': {
+      var dc2 = champById(sh.cid);
+      if(dc2){ dc2.fixtures = dc2.fixtures.filter(function(f){ return f.id !== sh.fid; }); save(); }
+      ui.sheet = null; render(); break;
+    }
+    case 'addFixture': {
+      var fc = curChamp();
+      if(!fc) break;
+      var fd = parseDate(document.getElementById('fdate').value), ft = parseTime(document.getElementById('ftime').value);
+      var fh = document.getElementById('fhome').value, fa = document.getElementById('faway').value;
+      if(!fd){ ui.msg = 'Choisissez une date.'; render(); break; }
+      if(fh === fa){ ui.msg = 'Choisissez deux clubs différents.'; render(); break; }
+      addFixture(fc, fd, ft, fh, fa); ui.msg = ''; render(); break;
+    }
+    case 'importFix': {
+      var itx = document.getElementById('fixtext').value;
+      if(!itx.trim()){ ui.msg = 'Collez d\'abord le contenu du calendrier.'; render(); break; }
+      importFixtures(itx); break;
+    }
+    case 'delChampOk': {
+      var dch = curChamp();
+      if(dch) S.champs = S.champs.filter(function(x){ return x.id !== dch.id; });
+      ui.champSel = null; ui.sheet = null; save(); render(); break;
+    }
+  }
+});
+
+document.addEventListener('input', function(e){
+  var ds = e.target.dataset || {};
+  if(ds.find != null){
+    var ft = parseInt(ds.find, 10);
+    ui.find[ft] = e.target.value;
+    var res = document.getElementById('res' + ft);
+    if(res) res.innerHTML = findHtml(ft);
+    return;
+  }
+  if(ds.pfind != null){
+    ui.pfilter = e.target.value;
+    var pl = document.getElementById('plist');
+    if(pl) pl.innerHTML = playerListHtml(playerIndex());
+    return;
+  }
+  var bind = ds.bind;
+  if(!bind) return;
+  var v = e.target.value, t = parseInt(ds.team, 10);
+  if(bind === 'tname') S.teams[t].name = v;
+  else if(bind === 'title') S.title = v;
+  else if(bind === 'sets') S.cfg.setsToWin = parseInt(v, 10) === 2 ? 2 : 3;
+  else if(bind === 'pts') S.cfg.pts = Math.max(1, parseInt(v, 10) || 25);
+  else if(bind === 'ptsLast') S.cfg.ptsLast = Math.max(1, parseInt(v, 10) || 15);
+  else if(bind === 'pnum'){ var p = findPlayer(t, ds.pid); if(p) p.num = v.trim(); }
+  else if(bind === 'cname'){ var c = curClub(); if(c) c.name = v; }
+  else if(bind === 'champsel'){ ui.champSel = v; render(); return; }
+  else if(bind === 'emf'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
+  else if(bind === 'homeclub'){ S.homeClub = v; save(); render(); return; }
+  else if(bind === 'mchamp'){
+    S.matchChamp = v;
+    if(S.fixtureRef && S.fixtureRef.cid !== v) S.fixtureRef = null;
+    save(); render(); return;
+  }
+  else if(bind === 'mfix'){
+    if(!v) S.fixtureRef = null; else applyFixture(S.matchChamp, v);
+    save(); render(); return;
+  }
+  else if(bind === 'tclub'){
+    var prev = clubById(S.teams[t].clubId), prevName = prev ? prev.name : '';
+    switchClub(t, v);
+    var nc = clubById(v), nm = (S.teams[t].name || '').trim();
+    if(nc && (nm === '' || nm === 'Notre équipe' || nm === 'Adversaire' || nm === prevName)) S.teams[t].name = nc.name;
+    ui.find[t] = '';
+    save(); render(); return;
+  }
+  else if(bind === 'slot'){
+    var pos = parseInt(ds.pos, 10), L = S.lineup[t];
+    if(v){ var j = L.indexOf(v); if(j >= 0 && j !== pos) L[j] = L[pos]; }
+    L[pos] = v || null;
+    save(); render(); return;
+  }
+  else if(bind === 'champclub'){ ui.sheet['c' + t] = v; render(); return; }
+  save();
+});
+function readTextFile(file, cb){
+  var fr = new FileReader();
+  fr.onload = function(){
+    var txt;
+    try{ txt = new TextDecoder('utf-8', { fatal:true }).decode(fr.result); }
+    catch(e){ txt = new TextDecoder('windows-1252').decode(fr.result); }
+    cb(txt);
+  };
+  fr.onerror = function(){ ui.msg = 'Impossible de lire ce fichier.'; render(); };
+  fr.readAsArrayBuffer(file);
+}
+document.addEventListener('change', function(e){
+  var id = e.target.id, f = e.target.files && e.target.files[0];
+  if(id === 'csvfile' && f) importFile(f);
+  else if(id === 'logofile' && f) importLogo(f);
+  else if(id === 'fixfile' && f) readTextFile(f, importFixtures);
+  else if(id === 'memphoto' && f) readPhoto(f, function(url){ if(ui.sheet && ui.sheet.kind === 'editmember') ui.sheet.draft.photo = url; render(); });
+  else if(id === 'pphoto' && f && ui.photoTarget){
+    var tg = ui.photoTarget;
+    readPhoto(f, function(url){ var pp = findPlayer(tg.t, tg.pid); if(pp){ pp.photo = url; save(); } render(); });
+  }
+  else if(id === 'restorefile' && f) readTextFile(f, function(txt){
+    var obj = null;
+    try{ obj = JSON.parse(txt); }catch(err){}
+    if(!obj || obj.app !== 'volley-feuille-de-match' || !obj.data || !obj.data.teams || !obj.data.clubs){
+      ui.msg = 'Ce fichier n\'est pas une sauvegarde de cette application.'; render(); return;
+    }
+    ui.pendingRestore = obj; ui.sheet = { kind:'restore' }; render();
+  });
+  if(id === 'csvfile' || id === 'logofile' || id === 'fixfile' || id === 'memphoto' || id === 'pphoto' || id === 'restorefile'){ try{ e.target.value = ''; }catch(err){} }
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && ui.sheet){ ui.sheet = null; render(); return; }
+  if(e.key !== 'Enter') return;
+  var en = e.target.dataset && e.target.dataset.enter;
+  if(!en) return;
+  if(en === 'p0' || en === 'p1') addPlayer(parseInt(en.slice(1), 10));
+  else if(en === 'club') addClub();
+  else if(en === 'member') addMember();
+  else if(en === 'champ') addChamp();
+});
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible' && S.clock.running) keepAwake(); });
+
+setInterval(function(){
+  var txt = fmt(clockMs()), cs = document.querySelectorAll ? document.querySelectorAll('.clk') : [];
+  for(var ci = 0; ci < cs.length; ci++) cs[ci].textContent = txt;
+  if(S.tc){
+    var left = Math.ceil((S.tc.endsAt - Date.now()) / 1000);
+    if(left <= 0){ S.tc = null; save(); render(); }
+    else { var el = document.getElementById('tcleft'); if(el) el.textContent = left + ' s'; }
+  }
+}, 250);
+
+/* Demande au navigateur de ne pas effacer les données de l'application (utile hors ligne) */
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+
+render();
+})();
+</script>
+<script>
+/* Hors ligne : enregistre le service worker (nécessite https, ou localhost) */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
