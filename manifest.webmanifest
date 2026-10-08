@@ -1,6 +1,6 @@
 {
-  "name": "Feuille de match volley",
-  "short_name": "Volley",
+  "name": "Volley-Club Commentry",
+  "short_name": "V2C",
   "description": "Saisie des matchs de volley point par point, clubs, championnat et statistiques. Fonctionne hors ligne.",
   "id": "./index.html",
   "start_url": "./index.html",
