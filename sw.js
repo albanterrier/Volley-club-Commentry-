@@ -1,14 +1,15 @@
 /* Service worker : permet d'ouvrir l'application sans réseau.
    - Les fichiers de l'application sont mis en cache à la première visite.
    - Ensuite ils sont servis depuis le cache, et mis à jour en arrière-plan quand il y a du réseau.
-   - Pour forcer une mise à jour complète, changez le numéro de version ci-dessous. */
-const VERSION = 'v1';
+   - Pour forcer une mise à jour complète, changez le numéro de version ci-dessous.
+   - À l'installation, les fichiers sont rechargés depuis le serveur (jamais depuis un ancien cache du navigateur). */
+const VERSION = 'v2';
 const CACHE = 'volley-' + VERSION;
 const FONTS = 'volley-fonts';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png'];
 
 self.addEventListener('install', function(e){
-  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(SHELL); }).then(function(){ return self.skipWaiting(); }));
+  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(SHELL.map(function(u){ return new Request(u, { cache: 'reload' }); })); }).then(function(){ return self.skipWaiting(); }));
 });
 
 self.addEventListener('activate', function(e){
