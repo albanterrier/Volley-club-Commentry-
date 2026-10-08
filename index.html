@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#0F2438">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Feuille de match volley</title>
+<title>Volley-Club Commentry</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
-<meta name="apple-mobile-web-app-title" content="Volley">
+<meta name="apple-mobile-web-app-title" content="V2C">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1396,7 +1396,7 @@ function homeClubObj(){
 function menuView(){
   var c = homeClubObj(), live = S.stage === 'play' && hasContent() && !S.finished, w = setsWon();
   var out = '<div class="brand">' + (c && c.logo ? '<img class="logo" src="' + esc(c.logo) + '" alt="" width="120" height="120">' : '') +
-    '<h1>' + esc(c ? c.name : 'Feuille de match volley') + '</h1><p>Feuille de match</p></div>';
+    '<h1>' + esc(c ? c.name : 'Volley-Club Commentry') + '</h1></div>';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
   out += '<div class="menugrid">' +
     '<button class="menubtn' + (live ? ' live' : '') + '" data-act="tab" data-tab="match"><b>Match</b><span>' + (live ? 'Match en cours : ' + esc(tn(0)) + ' ' + w[0] + ' – ' + w[1] + ' ' + esc(tn(1)) : 'Jouer un nouveau match ou reprendre un match') + '</span></button>' +
