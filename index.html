@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0F2438">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -40,9 +40,9 @@
   --a:#5BA0EA; --a-ink:#07121C; --b:#F58A57; --b-ink:#1A0A02;
   --head-bg:#07101A; --head-ink:#E8EEF3;
 }
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);overflow-x:hidden;touch-action:pan-y;-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:16px;line-height:1.4;padding-bottom:28px;-webkit-tap-highlight-color:transparent}
+body{margin:0;max-width:100%;overflow-x:clip;touch-action:pan-y;background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:16px;line-height:1.4;padding-bottom:28px;-webkit-tap-highlight-color:transparent}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
@@ -63,7 +63,8 @@ header.top .clk{font-family:var(--font-d);font-size:30px;font-weight:700;font-va
 
 /* Tableau de score */
 main{max-width:720px;margin:0 auto}
-.board{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 12px 0}
+.board{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 12px 0}
+.swapbtn{position:absolute;left:50%;top:calc(50% + 6px);transform:translate(-50%,-50%);z-index:3;width:46px;height:46px;border-radius:50%;border:3px solid var(--bg);background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.35)}
 .tile{border-radius:16px;overflow:hidden;display:flex;flex-direction:column;background:var(--a);color:var(--a-ink)}
 .tile.b{background:var(--b);color:var(--b-ink)}
 .tilemain{background:none;border:0;color:inherit;padding:14px 8px 6px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;width:100%}
@@ -127,7 +128,7 @@ main{max-width:720px;margin:0 auto}
 .card.b{border-top:6px solid var(--b)}
 label.f{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
 input[type=text],input[type=number],input[type=date],input[type=time],input[inputmode],select,textarea{width:100%;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px 10px}
-textarea{min-height:120px;font-size:14px}
+textarea{min-height:120px;font-size:16px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .plist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
 .plist li{display:flex;align-items:center;gap:8px;min-height:52px;border-bottom:1px solid var(--line)}
@@ -141,7 +142,7 @@ textarea{min-height:120px;font-size:14px}
 .res .btn{min-height:48px}
 
 /* Tableaux */
-.tablewrap{overflow-x:auto;max-width:100%;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.tablewrap{overflow-x:auto;max-width:100%;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
 table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:14px}
 th,td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
 th:first-child,td:first-child{text-align:left;position:sticky;left:0;z-index:1;box-shadow:1px 0 0 var(--line)}
@@ -199,6 +200,15 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .brand .logo{background:transparent;padding:0}
 .brand h1{font-size:32px;font-weight:800;line-height:1.05}
 .brand p{margin:0;color:var(--muted);font-size:15px}
+/* Menu : Match (rouge) à gauche, trois boutons à droite, Données (gris) dessous */
+.menugrid2{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,88px) 76px;gap:12px;padding:18px 12px 0;max-width:560px;margin:0 auto}
+.mbtn{border:0;border-radius:16px;color:#fff;font-family:var(--font-d);font-weight:700;font-size:28px;line-height:1.05;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px 6px;min-width:0}
+.mbtn:active{filter:brightness(.9)}
+.m-match{grid-column:1;grid-row:1 / span 3;background:#C62828;font-size:46px}
+.m-clubs{grid-column:2;grid-row:1;background:#1D5FA8}
+.m-champ{grid-column:2;grid-row:2;background:#2E7D32}
+.m-cal{grid-column:2;grid-row:3;background:#6A3FA0}
+.m-data{grid-column:1 / span 2;grid-row:4;background:#5A6B7C}
 .menugrid{display:grid;grid-template-columns:1fr;gap:12px;padding:14px 12px 0;max-width:520px;margin:0 auto}
 .menubtn{width:100%;min-height:84px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:12px 18px;text-align:left}
 .menubtn b{font-family:var(--font-d);font-size:28px;font-weight:700;line-height:1.1}
@@ -303,7 +313,7 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'',
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], swap:false, midSwap:false,
     prefs:{ schema:true, players:false, sheet:false }
   };
 }
@@ -315,6 +325,10 @@ function migrate(s){
   if(s.prepared === undefined) s.prepared = (s.events.length > 0 || s.sets.length > 0 || s.teams.some(function(t){ return t.players.length > 0; }));
   if(s.matchChamp === undefined) s.matchChamp = s.fixtureRef ? s.fixtureRef.cid : '';
   if(!s.library) s.library = [];
+  if(!s.agenda) s.agenda = [];
+  if(s.swap === undefined) s.swap = false;
+  if(s.midSwap === undefined) s.midSwap = false;
+  s.library.forEach(function(e){ if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; });
   if(s.homeClub === undefined) s.homeClub = '';
   if(!s.stage) s.stage = s.prepared ? 'play' : 'home';
   s.prefs = Object.assign({}, d.prefs, s.prefs || {});
@@ -370,7 +384,7 @@ function logoHtml(clubId, px){
   if(!c || !c.logo) return '';
   return '<img class="logo" src="' + esc(c.logo) + '" alt="" width="' + px + '" height="' + px + '">';
 }
-var ui = { tab:'menu', dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
+var ui = { tab:'menu', clubView:'home', newClub:{ name:'', logo:'' }, createdId:null, calView:'list', ev:null, dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
 
 function tn(i){ return (S.teams[i].name || '').trim() || (i ? 'Équipe B' : 'Équipe A'); }
 function allPlayers(){ return S.teams[0].players.concat(S.teams[1].players); }
@@ -438,16 +452,24 @@ function rotate(t, dir){
   var L = S.lineup[t];
   S.lineup[t] = dir > 0 ? L.slice(1).concat(L[0]) : [L[5]].concat(L.slice(0,5));
 }
+function isDecisive(){ return S.sets.length === 2 * S.cfg.setsToWin - 2; }
+/* Bouton « inverser » : au début du 1er set et du set décisif, tant que le service n'est pas donné */
+function showSwap(){ return S.stage === 'play' && !S.finished && S.serving === null && S.cur[0] + S.cur[1] === 0 && (S.sets.length === 0 || isDecisive()); }
 function scoreFor(team){
   if(S.serving !== null && S.serving !== team) rotate(team, 1);
   S.cur[team]++; S.serving = team;
+  /* set décisif : changement de côté une seule fois, dès qu'une équipe atteint 8 points */
+  if(isDecisive() && !S.midSwap && Math.max(S.cur[0], S.cur[1]) >= 8){
+    S.swap = !S.swap; S.midSwap = true;
+    ui.msg = 'Changement de côté à 8 points : la saisie des scores est inversée.';
+  }
 }
 
 /* ---------- Historique (annuler) ---------- */
 function snap(){
   S.history.push({ ev:S.events.length, cur:S.cur.slice(), sets:S.sets.map(function(x){ return x.slice(); }),
     serving:S.serving, timeouts:S.timeouts.slice(), subs:S.subs.slice(), finished:S.finished,
-    lineup:S.lineup.map(function(a){ return a.slice(); }) });
+    lineup:S.lineup.map(function(a){ return a.slice(); }), swap:S.swap, midSwap:S.midSwap });
   if(S.history.length > 80) S.history.shift();
 }
 function undo(){
@@ -455,6 +477,7 @@ function undo(){
   if(!h) return;
   S.events.length = h.ev;
   S.cur = h.cur; S.sets = h.sets; S.serving = h.serving; S.timeouts = h.timeouts; S.subs = h.subs; S.finished = h.finished; S.lineup = h.lineup;
+  if(h.swap !== undefined){ S.swap = h.swap; S.midSwap = h.midSwap; }
   S.tc = null; ui.sheet = null;
   save(); render();
 }
@@ -479,13 +502,13 @@ function autoClock(){ if(!S.clock.running && S.clock.acc === 0 && S.events.lengt
 
 /* ---------- Actions de match ---------- */
 function commitPoint(team, how, pid){
-  snap(); autoClock();
+  ui.msg = ''; snap(); autoClock();
   scoreFor(team);
   addEvent(Object.assign({ type:'point', team:team, how:how }, pinfo(findPlayer(team, pid))));
   afterPoint();
 }
 function commitFault(team, kind, pid){
-  snap(); autoClock();
+  ui.msg = ''; snap(); autoClock();
   scoreFor(1 - team);
   addEvent(Object.assign({ type:'fault', team:team, how:kind, pointFor:1 - team }, pinfo(findPlayer(team, pid))));
   afterPoint();
@@ -521,25 +544,35 @@ function endSet(){
   S.sets.push([a,b]);
   S.cur = [0,0]; S.timeouts = [0,0]; S.subs = [0,0]; S.serving = null; S.tc = null;
   var w = setsWon();
-  ui.sheet = null;
+  ui.sheet = null; S.midSwap = false;
+  if(!(w[0] >= S.cfg.setsToWin || w[1] >= S.cfg.setsToWin)){
+    S.swap = !S.swap;
+    ui.msg = 'Changement de côté : la saisie des scores est inversée.';
+  }
   if(w[0] >= S.cfg.setsToWin || w[1] >= S.cfg.setsToWin){
     S.finished = true;
     addEvent({ type:'matchEnd', set:S.sets.length, how:w[0] + '-' + w[1], score:[a,b] });
     stopClock();
-    var fr = S.fixtureRef, fch = fr && champById(fr.cid), ff = fch && fixtureOf(fch, fr.fid), done = null;
-    if(ff) done = addToChamp(fr.cid, ff.home, ff.away, ff.id);
-    else if(champById(S.matchChamp)){
-      var mch = champById(S.matchChamp), k0 = S.teams[0].clubId, k1 = S.teams[1].clubId;
-      if(k0 && k1 && k0 !== k1 && mch.clubIds.indexOf(k0) >= 0 && mch.clubIds.indexOf(k1) >= 0) done = addToChamp(mch.id, k0, k1);
-      else ui.sheet = champSheet(mch.id);
+    var fr = S.fixtureRef, ae = (fr && !fr.cid) ? calEntry('', fr.fid) : null;
+    if(ae && ae.kind === 'amical'){
+      ae.f.result = { hs:w[0], as:w[1], sets:S.sets.map(function(x){ return x.slice(); }), source:'live', ref:S.created };
+      ui.msg = 'Résultat ajouté au calendrier.';
+    } else {
+      var fch = fr && champById(fr.cid), ff = fch && fixtureOf(fch, fr.fid), done = null;
+      if(ff) done = addToChamp(fr.cid, ff.home, ff.away, ff.id);
+      else if(champById(S.matchChamp)){
+        var mch = champById(S.matchChamp), k0 = S.teams[0].clubId, k1 = S.teams[1].clubId;
+        if(k0 && k1 && k0 !== k1 && mch.clubIds.indexOf(k0) >= 0 && mch.clubIds.indexOf(k1) >= 0) done = addToChamp(mch.id, k0, k1);
+        else ui.sheet = champSheet(mch.id);
+      }
+      if(done) ui.msg = ff ? 'Résultat ajouté au calendrier de ' + fch.name + '.' : 'Résultat ajouté à ' + champById(S.matchChamp).name + '.';
+      else if(!ui.sheet && S.champs.length) ui.sheet = champSheet(null);
     }
-    if(done) ui.msg = ff ? 'Résultat ajouté au calendrier de ' + fch.name + '.' : 'Résultat ajouté à ' + champById(S.matchChamp).name + '.';
-    else if(!ui.sheet && S.champs.length) ui.sheet = champSheet(null);
   }
   save(); render();
 }
 /* ---------- Bibliothèque de matchs (nouveau / reprendre) ---------- */
-var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded'];
+var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap'];
 function hasContent(){ return S.events.length > 0 || S.sets.length > 0; }
 function matchSnapshot(){
   var o = {};
@@ -568,7 +601,7 @@ function loadMatch(created){
 function resetForNew(){
   stopClock(); archiveCurrent();
   var keep = { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(a){ return a.slice(); }), cfg:S.cfg,
-    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub };
+    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, agenda:S.agenda };
   S = Object.assign(newState(), keep);
   S.stage = 'setup';
 }
@@ -583,10 +616,11 @@ function matchSummary(m){
   var n0 = ((m.teams[0].name || '').trim()) || 'Équipe A', n1 = ((m.teams[1].name || '').trim()) || 'Équipe B';
   return { title:((m.title || '').trim()) || (n0 + ' – ' + n1), w:w, cur:m.cur, finished:!!m.finished, setNo:(m.sets || []).length + 1, date:m.savedAt || m.created };
 }
+/* « Reprendre un match » : seulement les matchs non terminés (les autres restent consultables dans Données) */
 function savedMatches(){
   var out = [];
-  if(hasContent()) out.push({ cur:true, m:S });
-  S.library.forEach(function(e){ out.push({ cur:false, m:e }); });
+  if(hasContent() && !S.finished) out.push({ cur:true, m:S });
+  S.library.forEach(function(e){ if(!e.finished) out.push({ cur:false, m:e }); });
   return out;
 }
 
@@ -820,6 +854,43 @@ function weekLabel(ws){
 }
 function fixtureOf(ch, fid){ return ch.fixtures.filter(function(f){ return f.id === fid; })[0] || null; }
 function matchOf(ch, mid){ return mid ? (ch.matches.filter(function(m){ return m.id === mid; })[0] || null) : null; }
+/* Une « entrée » du calendrier : match de championnat (dans ch.fixtures), match amical ou autre événement (dans S.agenda) */
+function calEntry(cid, fid){
+  if(cid){
+    var ch = champById(cid), f = ch && fixtureOf(ch, fid);
+    return f ? { kind:'fixture', ch:ch, f:f, cid:cid, fid:fid, date:f.date, time:f.time || '', home:f.home, away:f.away, place:f.place || '', title:'' } : null;
+  }
+  var a = S.agenda.filter(function(x){ return x.id === fid; })[0];
+  if(!a) return null;
+  return { kind:a.kind === 'event' ? 'event' : 'amical', ch:null, f:a, cid:'', fid:fid, date:a.date, time:a.time || '', home:a.home, away:a.away, place:a.place || '', title:a.title || '' };
+}
+function calEntries(){
+  var out = [];
+  S.champs.forEach(function(ch){ ch.fixtures.forEach(function(f){ out.push(calEntry(ch.id, f.id)); }); });
+  S.agenda.forEach(function(a){ out.push(calEntry('', a.id)); });
+  return out.sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
+}
+function entryResult(e){
+  if(e.kind === 'fixture') return matchOf(e.ch, e.f.matchId);
+  if(e.kind === 'amical') return e.f.result || null;
+  return null;
+}
+function setEntryResult(e, res){
+  if(e.kind === 'fixture'){ setFixtureResult(e.ch, e.f, res); return; }
+  if(e.kind !== 'amical') return;
+  var r = res.split('-');
+  e.f.result = { hs:parseInt(r[0], 10), as:parseInt(r[1], 10), sets:null, source:'manual', ref:null };
+  save();
+}
+function clearEntryResult(e){
+  if(e.kind === 'fixture') clearFixtureResult(e.ch, e.f);
+  else if(e.kind === 'amical'){ e.f.result = null; save(); }
+}
+function deleteEntry(e){
+  if(e.kind === 'fixture') e.ch.fixtures = e.ch.fixtures.filter(function(f){ return f.id !== e.fid; });
+  else S.agenda = S.agenda.filter(function(a){ return a.id !== e.fid; });
+  save();
+}
 function setFixtureResult(ch, f, res){
   var r = res.split('-'), hs = parseInt(r[0], 10), as = parseInt(r[1], 10);
   var m = matchOf(ch, f.matchId);
@@ -835,13 +906,13 @@ function clearFixtureResult(ch, f){
   f.matchId = null; save();
 }
 function applyFixture(cid, fid){
-  var ch = champById(cid), f = ch && fixtureOf(ch, fid);
-  if(!f) return false;
-  S.matchChamp = cid;
-  S.fixtureRef = { cid:cid, fid:fid };
-  switchClub(0, f.home); switchClub(1, f.away);
-  S.teams[0].name = clubName(f.home); S.teams[1].name = clubName(f.away);
-  if(!(S.title || '').trim()) S.title = clubName(f.home) + ' – ' + clubName(f.away);
+  var e = calEntry(cid, fid);
+  if(!e || e.kind === 'event') return false;
+  S.matchChamp = cid || '';
+  S.fixtureRef = { cid:cid || '', fid:fid };
+  switchClub(0, e.home); switchClub(1, e.away);
+  S.teams[0].name = clubName(e.home); S.teams[1].name = clubName(e.away);
+  if(!(S.title || '').trim()) S.title = clubName(e.home) + ' – ' + clubName(e.away);
   return true;
 }
 function champSheet(cid){
@@ -855,48 +926,16 @@ function champSheet(cid){
   return sh;
 }
 function startFixture(cid, fid){
-  var ch = champById(cid), f = ch && fixtureOf(ch, fid);
-  if(!f) return;
+  var e = calEntry(cid, fid);
+  if(!e || e.kind === 'event') return;
   syncSquads();
   resetForNew();
   applyFixture(cid, fid);
   setTab('match'); ui.showSetup = false; ui.resume = false; ui.sheet = null; ui.msg = '';
   save(); render(); window.scrollTo(0,0);
 }
-function addFixture(ch, date, time, home, away){
-  ch.fixtures.push({ id:uid(), date:date, time:time || '', home:home, away:away, matchId:null });
-  save();
-}
-function importFixtures(txt){
-  var ch = curChamp();
-  if(!ch){ ui.msg = 'Créez d\'abord un championnat.'; render(); return; }
-  var rows = parseCSV(txt), added = 0, unknown = {}, badDate = 0;
-  var byName = {};
-  S.clubs.forEach(function(c){ byName[norm(c.name)] = c.id; });
-  rows.forEach(function(r){
-    var date = parseDate(r[0]);
-    if(!date){ if(norm(r[0]) !== 'date' && r.join('').trim()) badDate++; return; }
-    var time = parseTime(r[1]), off = time ? 2 : 1;
-    if(!time && r[1] !== undefined && r[1].trim() === '') off = 2;
-    var hn = (r[off] || '').trim(), an = (r[off + 1] || '').trim();
-    var h = byName[norm(hn)], a = byName[norm(an)];
-    if(!h){ unknown[hn] = true; } if(!a){ unknown[an] = true; }
-    if(!h || !a || h === a) return;
-    [h, a].forEach(function(id){ if(ch.clubIds.indexOf(id) < 0) ch.clubIds.push(id); });
-    ch.fixtures.push({ id:uid(), date:date, time:time, home:h, away:a, matchId:null });
-    added++;
-  });
-  var un = Object.keys(unknown).filter(Boolean);
-  ui.msg = added + ' match' + (added > 1 ? 's' : '') + ' ajouté' + (added > 1 ? 's' : '') + ' au calendrier.' +
-    (un.length ? ' Clubs inconnus (créez-les d\'abord dans l\'onglet Clubs) : ' + un.join(', ') + '.' : '') +
-    (badDate ? ' ' + badDate + ' ligne' + (badDate > 1 ? 's' : '') + ' sans date reconnue ignorée' + (badDate > 1 ? 's' : '') + '.' : '');
-  save(); render();
-}
-
 /* ---------- Logo ---------- */
-function importLogo(file){
-  var c = curClub();
-  if(!file || !c) return;
+function readLogo(file, cb){
   var fr = new FileReader();
   fr.onerror = function(){ ui.msg = 'Impossible de lire cette image.'; render(); };
   fr.onload = function(){
@@ -908,13 +947,16 @@ function importLogo(file){
       var cv = document.createElement('canvas');
       cv.width = Math.max(1, Math.round(w * k)); cv.height = Math.max(1, Math.round(h * k));
       cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-      c.logo = cv.toDataURL('image/png');
-      ui.msg = 'Logo enregistré pour ' + c.name + '.';
-      save(); render();
+      cb(cv.toDataURL('image/png'));
     };
     img.src = fr.result;
   };
   fr.readAsDataURL(file);
+}
+function importLogo(file){
+  var c = curClub();
+  if(!file || !c) return;
+  readLogo(file, function(url){ c.logo = url; ui.msg = 'Logo enregistré pour ' + c.name + '.'; save(); render(); });
 }
 
 /* ---------- Clubs et import CSV ---------- */
@@ -1163,11 +1205,12 @@ function matchView(){
   }
   out += '<div class="bigclock ' + (S.clock.running ? '' : 'paused') + '"><span class="clk" role="timer" aria-label="Temps de jeu">' + fmt(clockMs()) + '</span>' +
     '<button class="hbtn2" data-act="clock"' + (S.finished ? ' disabled' : '') + '>' + clockLabel() + '</button></div>';
-  out += '<div class="board">' + tile(0) + tile(1) + '</div>';
+  var ord = S.swap ? [1, 0] : [0, 1];
+  out += '<div class="board">' + tile(ord[0]) + tile(ord[1]) + (showSwap() ? '<button class="swapbtn" data-act="swap" aria-label="Inverser la position des équipes" title="Inverser la position des équipes"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/></svg></button>' : '') + '</div>';
   if(S.serving === null && S.cur[0] + S.cur[1] === 0 && !S.finished){
     out += '<p class="last">Touchez « Donner le service » pour l\'équipe qui sert en premier : la rotation automatique en dépend.</p>';
   }
-  out += '<div class="ctl">' + col(0) + col(1) + '</div>';
+  out += '<div class="ctl">' + col(ord[0]) + col(ord[1]) + '</div>';
   out += '<div class="actions"><button class="btn wide" data-act="undo"' + (S.history.length ? '' : ' disabled') + '>Annuler le dernier</button>' +
     '<button class="btn wide" data-act="endSetAsk"' + (S.finished ? ' disabled' : '') + '>Terminer le set</button></div>';
   out += '<div class="actions"><button class="btn wide" data-act="openSetup">Modifier la préparation</button><button class="btn wide" data-act="goHome">Changer de match</button></div>';
@@ -1267,12 +1310,12 @@ function setupView(){
     '<label class="f" for="mchamp">Championnat</label><select id="mchamp" data-bind="mchamp"' + (S.events.length ? ' disabled' : '') + '><option value="">Match amical ou hors championnat</option>' +
     S.champs.map(function(x){ return '<option value="' + x.id + '"' + (x.id === S.matchChamp ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
   if(!S.champs.length) out += '<p class="muted" style="margin:6px 0 0">Aucun championnat créé. Vous pouvez en créer un dans l\'onglet Championnat.</p>';
-  if(ch){
-    var open = ch.fixtures.filter(function(f){ return !f.matchId || (S.fixtureRef && S.fixtureRef.fid === f.id); })
-      .sort(function(a,b){ return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); });
-    out += '<label class="f" for="mfix">Match du calendrier</label><select id="mfix" data-bind="mfix"' + (S.events.length ? ' disabled' : '') + '><option value="">Match libre (hors calendrier)</option>' +
-      open.map(function(f){
-        return '<option value="' + f.id + '"' + (S.fixtureRef && S.fixtureRef.fid === f.id ? ' selected' : '') + '>' + esc(fmtDay(f.date) + (f.time ? ' ' + f.time : '') + ' · ' + clubName(f.home) + ' – ' + clubName(f.away)) + '</option>';
+  var open = ch ? ch.fixtures.map(function(f){ return calEntry(ch.id, f.id); }) : calEntries().filter(function(e){ return e.kind === 'amical'; });
+  open = open.filter(function(e){ return !entryResult(e) || (S.fixtureRef && S.fixtureRef.fid === e.fid); });
+  if(ch || open.length){
+    out += '<label class="f" for="mfix">' + (ch ? 'Match du calendrier' : 'Match amical du calendrier') + '</label><select id="mfix" data-bind="mfix"' + (S.events.length ? ' disabled' : '') + '><option value="">Match libre (hors calendrier)</option>' +
+      open.map(function(e){
+        return '<option value="' + e.fid + '"' + (S.fixtureRef && S.fixtureRef.fid === e.fid ? ' selected' : '') + '>' + esc(fmtDay(e.date) + (e.time ? ' ' + e.time : '') + ' · ' + clubName(e.home) + ' – ' + clubName(e.away)) + '</option>';
       }).join('') + '</select>';
     if(!open.length) out += '<p class="muted" style="margin:6px 0 0">Aucun match à jouer au calendrier de ce championnat.</p>';
   }
@@ -1291,14 +1334,64 @@ function setupView(){
 }
 
 /* ---------- Vue : clubs ---------- */
+function clubsBack(label, v){ return '<button class="btn wide" data-act="clubsGo" data-v="' + v + '">‹ ' + label + '</button>'; }
 function clubsView(){
+  var v = ui.clubView;
+  if(v === 'create') return clubsCreate();
+  if(v === 'created') return clubsCreated();
+  if(v === 'list') return clubsList();
+  if(v === 'edit') return clubsEdit();
+  return clubsHome();
+}
+function clubsHome(){
   var out = '<div class="stack">';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
-  out += '<section class="card"><h2>Clubs</h2>' +
-    (S.clubs.length ? '<div class="chips" style="margin-top:10px">' + S.clubs.map(function(c){ return chip('selClub', { cid:c.id }, logoHtml(c.id, 24) + esc(c.name) + ' <small>' + c.members.length + '</small>', c.id === ui.clubSel); }).join('') + '</div>' : '<p class="muted" style="margin-top:8px">Aucun club pour l\'instant. Créez-en un pour y ajouter des membres.</p>') +
-    '<label class="f" for="newclub">Ajouter un club</label><div class="addrow2"><input type="text" id="newclub" placeholder="Nom du club" data-enter="club" autocomplete="off"><button class="btn wide primary" data-act="addClub">Ajouter</button></div></section>';
-  var c = curClub();
-  if(c){
+  out += '<section class="card"><h2>Clubs</h2><p class="muted" style="margin:6px 0 16px">Que voulez-vous faire ?</p>' +
+    '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="clubsGo" data-v="create">Créer un club</button>' +
+    '<button class="bigbtn" data-act="clubsGo" data-v="list"' + (S.clubs.length ? '' : ' disabled') + '>Modifier un club' + (S.clubs.length ? ' <small>' + S.clubs.length + '</small>' : '') + '</button></div>' +
+    (S.clubs.length ? '' : '<p class="hint2">Aucun club pour l\'instant : commencez par en créer un.</p>') + '</section></div>';
+  return out;
+}
+function clubsCreate(){
+  var nc = ui.newClub, out = '<div class="stack">' + clubsBack('Clubs', 'home');
+  if(ui.msg) out += '<div class="banner" role="alert">' + esc(ui.msg) + '</div>';
+  out += '<section class="card"><h2>Créer un club</h2>' +
+    '<label class="f" for="ncname">Nom du club</label><input type="text" id="ncname" data-bind="ncname" value="' + esc(nc.name) + '" placeholder="Ex. Volley-Club Commentry" autocomplete="off" data-enter="clubcreate">' +
+    '<p class="f" style="margin:14px 0 4px;font-size:14px;color:var(--muted)">Logo (facultatif)</p>' +
+    '<div class="logoedit">' + (nc.logo ? '<img class="logo" src="' + esc(nc.logo) + '" alt="" width="64" height="64">' : '<span class="logo none" style="width:64px;height:64px">Pas de logo</span>') +
+    '<div class="btnrow" style="margin:0;flex:1"><input type="file" id="nclogo" class="vh" accept="image/*"><label for="nclogo" class="btn wide">' + (nc.logo ? 'Changer le logo' : 'Choisir un logo') + '</label>' +
+    (nc.logo ? '<button class="btn wide" data-act="ncLogoDel">Retirer le logo</button>' : '') + '</div></div>' +
+    '<div class="btnrow"><button class="btn wide primary" data-act="clubCreate">Créer le club</button></div></section></div>';
+  return out;
+}
+function clubsCreated(){
+  var c = clubById(ui.createdId);
+  if(!c){ ui.clubView = 'home'; return clubsHome(); }
+  return '<div class="stack"><section class="card"><h2>Club créé</h2>' +
+    '<div class="pcell" style="margin-top:12px">' + logoHtml(c.id, 56) + '<strong style="font-size:20px">' + esc(c.name) + '</strong></div>' +
+    '<p class="hint2" style="font-size:15px">Le club est créé. Vous pouvez maintenant le compléter (licenciés, import d\'un fichier, photos…) dans « Modifier un club ».</p>' +
+    '<div class="btnrow"><button class="btn wide primary" data-act="clubEdit" data-cid="' + c.id + '">Modifier ce club maintenant</button>' +
+    '<button class="btn wide" data-act="clubsGo" data-v="create">Créer un autre club</button>' +
+    '<button class="btn wide" data-act="clubsGo" data-v="home">Retour aux clubs</button></div></section></div>';
+}
+function clubsList(){
+  var out = '<div class="stack">' + clubsBack('Clubs', 'home');
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  out += '<section class="card"><h2>Modifier un club</h2>';
+  if(!S.clubs.length) out += '<p class="muted">Aucun club pour l\'instant.</p>';
+  else out += '<p class="muted" style="margin:6px 0 4px">Touchez un club pour le modifier.</p>' + S.clubs.slice().sort(function(a,b){ return a.name.localeCompare(b.name, 'fr'); }).map(function(c){
+    var n = c.members.length;
+    return '<div class="ritem"><button class="fx" data-act="clubEdit" data-cid="' + c.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 36) + '<span class="nm">' + esc(c.name) + '</span></span>' +
+      '<small>' + n + ' licencié' + (n > 1 ? 's' : '') + '</small></span><span class="rsc" aria-hidden="true">›</span></button></div>';
+  }).join('');
+  return out + '</section></div>';
+}
+function clubsEdit(){
+  var c = clubById(ui.clubSel);
+  if(!c){ ui.clubView = 'list'; return clubsList(); }
+  var out = '<div class="stack">' + clubsBack('Liste des clubs', 'list');
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  {
     var members = c.members.slice().sort(function(a,b){ return (a.nom || '').localeCompare(b.nom || '', 'fr') || (a.prenom || '').localeCompare(b.prenom || '', 'fr'); });
     out += '<section class="card"><h3>Club sélectionné</h3>' +
       '<label class="f" for="cname">Nom du club</label><input type="text" id="cname" data-bind="cname" value="' + esc(c.name) + '" autocomplete="off">' +
@@ -1331,61 +1424,65 @@ function clubsView(){
 
 /* ---------- Vue : championnat ---------- */
 function clubLine(id, px){ return logoHtml(id, px) + '<span class="nm">' + esc(clubName(id)) + '</span>'; }
-function calView(ch){
-  var fx = ch.fixtures.slice().sort(function(a,b){ return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); });
-  var shown = ui.calHideDone ? fx.filter(function(f){ return !matchOf(ch, f.matchId); }) : fx;
-  var today = isoOf(new Date()), thisWeek = weekStart(today);
-  var weeks = {}, order = [];
-  shown.forEach(function(f){ var w = weekStart(f.date); if(!weeks[w]){ weeks[w] = []; order.push(w); } weeks[w].push(f); });
-  var out = '';
-  if(fx.length){
-    out += '<div class="prefs" style="padding:0"><button class="chip tg ' + (ui.calHideDone ? 'sel' : '') + '" data-act="calHide" aria-pressed="' + (ui.calHideDone ? 'true' : 'false') + '">Masquer les matchs terminés</button></div>';
+function entryLine(id, px){ return id ? logoHtml(id, px) + '<span class="nm">' + esc(clubName(id)) + '</span>' : ''; }
+function calRow(e, today){
+  var res = entryResult(e), late = !res && e.date < today;
+  var ctx = e.kind === 'fixture' ? e.ch.name : (e.kind === 'amical' ? 'Match amical' : '');
+  if(e.kind === 'event'){
+    return '<button class="fx" data-act="openFixture" data-cid="" data-fid="' + e.fid + '"><span class="fxd">' + esc(fmtDay(e.date)) + (e.time ? '<small>' + esc(e.time) + '</small>' : '') + '</span>' +
+      '<span class="fxt"><span class="nm" style="font-weight:600">' + esc(e.title) + '</span>' + (e.place ? '<small style="color:var(--muted)">' + esc(e.place) + '</small>' : '') + '</span><span class="tag">événement</span></button>';
   }
-  if(!order.length){
-    out += '<section class="card"><p class="muted" style="margin:0">' + (fx.length ? 'Tous les matchs sont terminés.' : 'Aucun match au calendrier pour l\'instant. Ajoutez-en un ci-dessous ou importez un calendrier.') + '</p></section>';
-  }
-  order.forEach(function(w){
-    out += '<section class="card"><h3>' + weekLabel(w) + (w === thisWeek ? ' <span class="tag">cette semaine</span>' : '') + '</h3>' + weeks[w].map(function(f){
-      var m = matchOf(ch, f.matchId), late = !m && f.date < today;
-      var tag = m ? '<span class="tag">' + (m.source === 'live' ? 'joué' : 'saisi') + '</span>' : (late ? '<span class="tag warn">à renseigner</span>' : '<span class="tag">à venir</span>');
-      var hw = m && m.hs > m.as, aw = m && m.as > m.hs;
-      return '<button class="fx" data-act="openFixture" data-fid="' + f.id + '"><span class="fxd">' + esc(fmtDay(f.date)) + (f.time ? '<small>' + esc(f.time) + '</small>' : '') + '</span>' +
-        '<span class="fxt"><span class="fxteam ' + (hw ? 'win' : '') + '">' + clubLine(f.home, 24) + (m ? '<b>' + m.hs + '</b>' : '') + '</span>' +
-        '<span class="fxteam ' + (aw ? 'win' : '') + '">' + clubLine(f.away, 24) + (m ? '<b>' + m.as + '</b>' : '') + '</span></span>' + tag + '</button>';
-    }).join('') + '</section>';
-  });
-  if(ch.clubIds.length >= 2){
-    var opts = function(sel){ return ch.clubIds.map(function(id,i){ return '<option value="' + id + '"' + (i === sel ? ' selected' : '') + '>' + esc(clubName(id)) + '</option>'; }).join(''); };
-    out += '<section class="card"><h3>Ajouter un match au calendrier</h3>' +
-      '<div class="row2"><div><label class="f" for="fdate">Date</label><input type="date" id="fdate" value="' + today + '"></div>' +
-      '<div><label class="f" for="ftime">Heure (facultatif)</label><input type="time" id="ftime"></div></div>' +
-      '<label class="f" for="fhome">Club à domicile</label><select id="fhome">' + opts(0) + '</select>' +
-      '<label class="f" for="faway">Club à l\'extérieur</label><select id="faway">' + opts(1) + '</select>' +
-      '<div class="btnrow"><button class="btn wide primary" data-act="addFixture">Ajouter au calendrier</button></div></section>';
-  } else {
-    out += '<section class="card"><p class="muted" style="margin:0">Sélectionnez au moins deux clubs pour ce championnat (espace Championnat) avant d\'ajouter des matchs.</p></section>';
-  }
-  out += '<section class="card"><h3>Importer un calendrier</h3>' +
-    '<p class="muted" style="margin:0">Une ligne par match : date ; heure (facultative) ; club à domicile ; club à l\'extérieur. Dates AAAA-MM-JJ ou JJ/MM/AAAA. Les noms doivent correspondre à des clubs déjà créés.</p>' +
-    '<div class="btnrow"><input type="file" id="fixfile" class="vh" accept=".csv,.txt,text/csv,text/plain"><label for="fixfile" class="btn wide">Choisir un fichier CSV</label></div>' +
-    '<label class="f" for="fixtext">Ou collez le contenu ici</label><textarea id="fixtext" placeholder="10/10/2026;15:00;VBC Lyon;Club Dijon"></textarea>' +
-    '<div class="btnrow"><button class="btn wide" data-act="importFix">Importer le texte</button></div></section>';
-  return out;
+  var tag = res ? '<span class="tag">' + (res.source === 'live' ? 'joué' : 'saisi') + '</span>' : (late ? '<span class="tag warn">à renseigner</span>' : '<span class="tag">à venir</span>');
+  var hw = res && res.hs > res.as, aw = res && res.as > res.hs;
+  return '<button class="fx" data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '"><span class="fxd">' + esc(fmtDay(e.date)) + (e.time ? '<small>' + esc(e.time) + '</small>' : '') + '</span>' +
+    '<span class="fxt"><span class="fxteam ' + (hw ? 'win' : '') + '">' + entryLine(e.home, 24) + (res ? '<b>' + res.hs + '</b>' : '') + '</span>' +
+    '<span class="fxteam ' + (aw ? 'win' : '') + '">' + entryLine(e.away, 24) + (res ? '<b>' + res.as + '</b>' : '') + '</span>' +
+    '<small style="color:var(--muted)">' + esc(ctx) + (e.place ? ' · ' + esc(e.place) : '') + '</small></span>' + tag + '</button>';
 }
 function calendarView(){
+  if(ui.calView === 'create') return eventForm();
   var out = '<div class="stack">';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
-  out += '<section class="card"><h2>Calendrier</h2>';
-  if(S.champs.length){
-    out += '<label class="f" for="champsel">Championnat</label><select id="champsel" data-bind="champsel">' +
-      S.champs.map(function(c){ return '<option value="' + c.id + '"' + (c.id === ui.champSel ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>';
-  } else {
-    out += '<p class="muted" style="margin:8px 0 0">Aucun championnat pour l\'instant. Créez-en un dans l\'espace Championnat, puis ajoutez ses matchs ici.</p><div class="btnrow"><button class="btn wide" data-act="tab" data-tab="champ">Aller au championnat</button></div>';
+  out += '<section class="card"><h2>Calendrier</h2><p class="muted" style="margin:6px 0 14px">Matchs et événements du club.</p>' +
+    '<button class="bigbtn primary" data-act="calCreate" style="min-height:68px;font-size:24px">Créer un événement</button></section>';
+  var all = calEntries(), today = isoOf(new Date());
+  var shown = ui.calHideDone ? all.filter(function(e){ return e.kind === 'event' ? e.date >= today : !entryResult(e); }) : all;
+  if(all.length){
+    out += '<div class="prefs" style="padding:0"><button class="chip tg ' + (ui.calHideDone ? 'sel' : '') + '" data-act="calHide" aria-pressed="' + (ui.calHideDone ? 'true' : 'false') + '">Masquer ce qui est terminé</button></div>';
   }
-  out += '</section>';
-  var ch = curChamp();
-  if(!ch) return out + '</div>';
-  return out + calView(ch) + '</div>';
+  var weeks = {}, order = [], thisWeek = weekStart(today);
+  shown.forEach(function(e){ var w = weekStart(e.date); if(!weeks[w]){ weeks[w] = []; order.push(w); } weeks[w].push(e); });
+  if(!order.length){
+    out += '<section class="card"><p class="muted" style="margin:0">' + (all.length ? 'Tout est terminé.' : 'Aucun événement pour l\'instant. Touchez « Créer un événement » pour commencer.') + '</p></section>';
+  }
+  order.forEach(function(w){
+    out += '<section class="card"><h3>' + weekLabel(w) + (w === thisWeek ? ' <span class="tag">cette semaine</span>' : '') + '</h3>' + weeks[w].map(function(e){ return calRow(e, today); }).join('') + '</section>';
+  });
+  return out + '</div>';
+}
+function eventForm(){
+  var ev = ui.ev, isMatch = ev.kind === 'match', out = '<div class="stack"><button class="btn wide" data-act="calBack">‹ Calendrier</button>';
+  if(ui.msg) out += '<div class="banner" role="alert">' + esc(ui.msg) + '</div>';
+  out += '<section class="card"><h2>Créer un événement</h2>' +
+    group('Type', chip('evKind', { k:'match' }, 'Match', isMatch) + chip('evKind', { k:'event' }, 'Autre événement', !isMatch)) +
+    '<div class="row2"><div><label class="f" for="evdate">Date</label><input type="date" id="evdate" data-bind="evf" data-k="date" value="' + esc(ev.date) + '"></div>' +
+    '<div><label class="f" for="evtime">Heure (facultatif)</label><input type="time" id="evtime" data-bind="evf" data-k="time" value="' + esc(ev.time) + '"></div></div>';
+  if(isMatch){
+    var ch = champById(ev.target), list = ch ? ch.clubIds.map(function(id){ return clubById(id); }).filter(Boolean) : S.clubs;
+    out += group('Rattacher à', chip('evTarget', { t:'amical' }, 'Match amical', !ev.target) + S.champs.map(function(c){ return chip('evTarget', { t:c.id }, esc(c.name), ev.target === c.id); }).join(''));
+    if(list.length < 2){
+      out += '<p class="hint2">' + (ch ? 'Ce championnat doit contenir au moins deux clubs (espace Championnat).' : 'Il faut au moins deux clubs. Créez-les dans l\'espace Clubs.') + '</p>';
+    } else {
+      var opts = function(sel){ return '<option value="">— Choisir —</option>' + list.map(function(c){ return '<option value="' + c.id + '"' + (c.id === sel ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join(''); };
+      out += '<label class="f" for="evhome">Club à domicile</label><select id="evhome" data-bind="evf" data-k="home">' + opts(ev.home) + '</select>' +
+        '<label class="f" for="evaway">Club à l\'extérieur</label><select id="evaway" data-bind="evf" data-k="away">' + opts(ev.away) + '</select>';
+    }
+  } else {
+    out += '<label class="f" for="evtitle">Titre</label><input type="text" id="evtitle" data-bind="evf" data-k="title" value="' + esc(ev.title) + '" placeholder="Ex. Entraînement, réunion, tournoi" autocomplete="off">';
+  }
+  out += '<label class="f" for="evplace">Lieu (facultatif)</label><input type="text" id="evplace" data-bind="evf" data-k="place" value="' + esc(ev.place) + '" placeholder="Ex. Gymnase municipal" autocomplete="off">' +
+    '<div class="btnrow"><button class="btn wide primary" data-act="evSave">Créer l\'événement</button></div></section></div>';
+  return out;
 }
 function champView(){
   var out = '<div class="stack">';
@@ -1445,18 +1542,14 @@ function champView(){
 /* ---------- Menu principal ---------- */
 /* Le menu est volontairement identique en toutes circonstances. */
 function menuView(){
-  var items = [
-    ['match', 'Match', 'Jouer un nouveau match ou reprendre un match'],
-    ['clubs', 'Clubs', 'Licenciés, logos et photos'],
-    ['champ', 'Championnat', 'Classement et résultats'],
-    ['cal', 'Calendrier', 'Matchs à venir, semaine par semaine'],
-    ['data', 'Données', 'Équipes et joueurs']
-  ];
   var out = '<div class="brand"><img class="logo" src="' + LOGO_V2C + '" alt="" width="132" height="132"><h1>Volley-Club Commentry</h1></div>';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
-  out += '<div class="menugrid">' + items.map(function(it){
-    return '<button class="menubtn" data-act="tab" data-tab="' + it[0] + '"><b>' + it[1] + '</b><span>' + it[2] + '</span></button>';
-  }).join('') + '</div>';
+  out += '<div class="menugrid2">' +
+    '<button class="mbtn m-match" data-act="tab" data-tab="match">Match</button>' +
+    '<button class="mbtn m-clubs" data-act="tab" data-tab="clubs">Clubs</button>' +
+    '<button class="mbtn m-champ" data-act="tab" data-tab="champ">Championnat</button>' +
+    '<button class="mbtn m-cal" data-act="tab" data-tab="cal">Calendrier</button>' +
+    '<button class="mbtn m-data" data-act="tab" data-tab="data">Données</button></div>';
   out += '<div class="stack"><section class="card"><h3>Sauvegarde</h3><p class="muted" style="margin:0">Les données restent sur cet appareil. Faites une sauvegarde pour les conserver ou les transférer sur un autre téléphone.</p>' +
     '<div class="btnrow"><button class="btn wide" data-act="backup">Sauvegarder toutes les données</button>' +
     '<input type="file" id="restorefile" class="vh" accept=".json,application/json"><label for="restorefile" class="btn wide">Restaurer une sauvegarde</label></div></section></div>';
@@ -1651,18 +1744,21 @@ function sheetView(){
         '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
     }
   } else if(sh.kind === 'fixture'){
-    var fch = champById(sh.cid), fx = fch && fixtureOf(fch, sh.fid);
-    if(!fx){ inner = '<h2>Match introuvable</h2>'; }
-    else {
-      var fm = matchOf(fch, fx.matchId);
-      inner = '<h2>' + esc(clubName(fx.home)) + ' – ' + esc(clubName(fx.away)) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fx.date)) + (fx.time ? ' à ' + esc(fx.time) : '') + ' · ' + esc(fch.name) + '</p>';
+    var fe = calEntry(sh.cid, sh.fid);
+    if(!fe){ inner = '<h2>Événement introuvable</h2>'; }
+    else if(fe.kind === 'event'){
+      inner = '<h2>' + esc(fe.title) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' +
+        '<div class="btnrow"><button class="btn wide danger" data-act="fixDel">Supprimer l\'événement</button></div>';
+    } else {
+      var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Match amical';
+      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>';
       if(fm){
-        inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(s){ return s[0] + '-' + s[1]; }).join(', ') + '</p>' : '');
+        inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
       } else {
-        inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera remplacé. Exportez-le avant si besoin.</p>' : '') +
+        inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Reprendre un match ».</p>' : '') +
           '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Jouer ce match</button></div>';
       }
-      inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fx.home)) + ')</label><select id="fres">' +
+      inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
         RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
         '<div class="btnrow"><button class="btn wide" data-act="fixRes">Enregistrer le résultat</button>' +
         (fm ? '<button class="btn wide" data-act="fixClear">Effacer le résultat</button>' : '') +
@@ -1749,12 +1845,36 @@ function addPlayer(t){
   placeNew(t, { id:uid(), num:num, name:name, licence:'', mid:'' });
   ui.focus = 'newnum' + t; render();
 }
-function addClub(){
-  var el = document.getElementById('newclub'), name = el.value.trim();
-  if(!name){ el.focus(); return; }
+function createClub(){
+  var nc = ui.newClub, name = (nc.name || '').trim();
+  if(!name){ ui.msg = 'Saisissez le nom du club.'; render(); return; }
+  if(S.clubs.some(function(c){ return norm(c.name) === norm(name); })){ ui.msg = 'Un club porte déjà ce nom.'; render(); return; }
   var c = { id:uid(), name:name, members:[] };
-  S.clubs.push(c); ui.clubSel = c.id; ui.msg = '';
-  save(); ui.focus = 'newclub'; render();
+  if(nc.logo) c.logo = nc.logo;
+  S.clubs.push(c); ui.clubSel = c.id; ui.createdId = c.id; ui.clubView = 'created'; ui.newClub = { name:'', logo:'' }; ui.msg = '';
+  save(); render(); window.scrollTo(0,0);
+}
+function saveEvent(){
+  var ev = ui.ev, date = parseDate(ev.date), time = parseTime(ev.time), place = (ev.place || '').trim();
+  if(!date){ ui.msg = 'Choisissez une date.'; render(); return; }
+  if(ev.kind === 'event'){
+    var title = (ev.title || '').trim();
+    if(!title){ ui.msg = 'Saisissez un titre.'; render(); return; }
+    S.agenda.push({ id:uid(), kind:'event', title:title, date:date, time:time, place:place });
+    ui.msg = 'Événement « ' + title + ' » créé.';
+  } else {
+    if(!ev.home || !ev.away){ ui.msg = 'Choisissez les deux clubs.'; render(); return; }
+    if(ev.home === ev.away){ ui.msg = 'Choisissez deux clubs différents.'; render(); return; }
+    var ch = champById(ev.target);
+    if(ch){
+      ch.fixtures.push({ id:uid(), date:date, time:time, place:place, home:ev.home, away:ev.away, matchId:null });
+      ui.msg = 'Match créé dans ' + ch.name + '.';
+    } else {
+      S.agenda.push({ id:uid(), kind:'match', date:date, time:time, place:place, home:ev.home, away:ev.away, result:null });
+      ui.msg = 'Match amical créé.';
+    }
+  }
+  save(); ui.calView = 'list'; ui.ev = null; render(); window.scrollTo(0,0);
 }
 function addMember(){
   var c = curClub();
@@ -1787,7 +1907,11 @@ document.addEventListener('click', function(e){
   var act = b.dataset.act, d = b.dataset, t = parseInt(d.team, 10), sh = ui.sheet;
   if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = null; render(); return; }
   switch(act){
-    case 'tab': setTab(d.tab); ui.showSetup = false; ui.sheet = null; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'tab':
+      setTab(d.tab); ui.showSetup = false; ui.sheet = null; ui.msg = '';
+      if(d.tab === 'clubs') ui.clubView = 'home';
+      if(d.tab === 'cal'){ ui.calView = 'list'; ui.ev = null; }
+      render(); window.scrollTo(0,0); break;
     case 'dataTeams': ui.dataView = 'teams'; ui.dataTeam = null; render(); window.scrollTo(0,0); break;
     case 'dataPlayers': ui.dataView = 'players'; ui.dataPlayer = null; ui.pfilter = ''; render(); window.scrollTo(0,0); break;
     case 'dataTeamSel': ui.dataTeam = d.key; render(); window.scrollTo(0,0); break;
@@ -1842,6 +1966,7 @@ document.addEventListener('click', function(e){
       if(!savedMatches().length) ui.resume = false;
       ui.sheet = null; save(); render(); break;
     case 'clock': toggleClock(); break;
+    case 'swap': S.swap = !S.swap; save(); render(); break;
     case 'serve':
       S.serving = (S.serving === t ? null : t);
       if(S.serving !== null && !S.clock.running && !S.finished) startClock();
@@ -1878,7 +2003,10 @@ document.addEventListener('click', function(e){
       if(!m) break;
       var num = document.getElementById('newnum' + t).value.trim();
       placeNew(t, { id:uid(), num:num, name:memberName(m), licence:m.licence, mid:m.id });
-      ui.find[t] = ''; ui.focus = 'find' + t; render();
+      /* pas de clavier : on ne redonne pas le focus au champ de recherche, et on ferme celui qui serait resté ouvert */
+      ui.find[t] = ''; ui.focus = null;
+      try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(err){}
+      render();
       break;
     }
     case 'share': doShare(matchById(d.mid)); break;
@@ -1899,8 +2027,6 @@ document.addEventListener('click', function(e){
         render(); window.scrollTo(0,0);
       }
       break;
-    case 'selClub': ui.clubSel = d.cid; ui.msg = ''; render(); break;
-    case 'addClub': addClub(); break;
     case 'importText': {
       var txt = document.getElementById('csvtext').value;
       if(!txt.trim()){ ui.msg = 'Collez d\'abord le contenu du fichier.'; render(); break; }
@@ -1925,9 +2051,10 @@ document.addEventListener('click', function(e){
           ch2.fixtures = ch2.fixtures.filter(function(f2){ return f2.home !== dc.id && f2.away !== dc.id; });
         });
         S.teams.forEach(function(tm){ if(tm.clubId === dc.id) tm.clubId = ''; });
+        S.agenda = S.agenda.filter(function(a2){ return a2.kind === 'event' || (a2.home !== dc.id && a2.away !== dc.id); });
         ui.clubSel = null;
       }
-      ui.sheet = null; save(); render(); break;
+      ui.clubView = 'list'; ui.sheet = null; save(); render(); break;
     }
     case 'addChamp': addChamp(); break;
     case 'toggleChampClub': {
@@ -1953,37 +2080,35 @@ document.addEventListener('click', function(e){
     case 'delChampAsk': ui.sheet = { kind:'delchamp' }; render(); break;
     case 'calHide': ui.calHideDone = !ui.calHideDone; render(); break;
     case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; ui.msg = ''; save(); render(); } break; }
-    case 'openFixture': { var oc = curChamp(); if(oc){ ui.sheet = { kind:'fixture', cid:oc.id, fid:d.fid }; render(); } break; }
+    case 'openFixture': ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break;
     case 'playFixture': startFixture(sh.cid, sh.fid); break;
     case 'fixRes': {
-      var rc = champById(sh.cid), rf = rc && fixtureOf(rc, sh.fid);
-      if(rf){ setFixtureResult(rc, rf, document.getElementById('fres').value); }
+      var re1 = calEntry(sh.cid, sh.fid);
+      if(re1) setEntryResult(re1, document.getElementById('fres').value);
       ui.sheet = null; render(); break;
     }
     case 'fixClear': {
-      var cc = champById(sh.cid), cf = cc && fixtureOf(cc, sh.fid);
-      if(cf) clearFixtureResult(cc, cf);
+      var re2 = calEntry(sh.cid, sh.fid);
+      if(re2) clearEntryResult(re2);
       ui.sheet = null; render(); break;
     }
     case 'fixDel': {
-      var dc2 = champById(sh.cid);
-      if(dc2){ dc2.fixtures = dc2.fixtures.filter(function(f){ return f.id !== sh.fid; }); save(); }
+      var re3 = calEntry(sh.cid, sh.fid);
+      if(re3) deleteEntry(re3);
       ui.sheet = null; render(); break;
     }
-    case 'addFixture': {
-      var fc = curChamp();
-      if(!fc) break;
-      var fd = parseDate(document.getElementById('fdate').value), ft = parseTime(document.getElementById('ftime').value);
-      var fh = document.getElementById('fhome').value, fa = document.getElementById('faway').value;
-      if(!fd){ ui.msg = 'Choisissez une date.'; render(); break; }
-      if(fh === fa){ ui.msg = 'Choisissez deux clubs différents.'; render(); break; }
-      addFixture(fc, fd, ft, fh, fa); ui.msg = ''; render(); break;
-    }
-    case 'importFix': {
-      var itx = document.getElementById('fixtext').value;
-      if(!itx.trim()){ ui.msg = 'Collez d\'abord le contenu du calendrier.'; render(); break; }
-      importFixtures(itx); break;
-    }
+    case 'calCreate': ui.calView = 'create'; ui.ev = { kind:'match', title:'', date:isoOf(new Date()), time:'', place:'', target:'', home:'', away:'' }; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'calBack': ui.calView = 'list'; ui.ev = null; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'evKind': ui.ev.kind = d.k; ui.msg = ''; render(); break;
+    case 'evTarget': ui.ev.target = d.t === 'amical' ? '' : d.t; ui.ev.home = ''; ui.ev.away = ''; ui.msg = ''; render(); break;
+    case 'evSave': saveEvent(); break;
+    case 'clubsGo':
+      ui.clubView = d.v; ui.msg = '';
+      if(d.v === 'create') ui.newClub = { name:'', logo:'' };
+      render(); window.scrollTo(0,0); break;
+    case 'clubEdit': ui.clubSel = d.cid; ui.clubView = 'edit'; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'ncLogoDel': ui.newClub.logo = ''; render(); break;
+    case 'clubCreate': createClub(); break;
     case 'delChampOk': {
       var dch = curChamp();
       if(dch) S.champs = S.champs.filter(function(x){ return x.id !== dch.id; });
@@ -2019,6 +2144,8 @@ document.addEventListener('input', function(e){
   else if(bind === 'cname'){ var c = curClub(); if(c) c.name = v; }
   else if(bind === 'champsel'){ ui.champSel = v; render(); return; }
   else if(bind === 'emf'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
+  else if(bind === 'ncname'){ ui.newClub.name = v; return; }
+  else if(bind === 'evf'){ if(ui.ev) ui.ev[ds.k] = v; return; }
   else if(bind === 'mchamp'){
     S.matchChamp = v;
     if(S.fixtureRef && S.fixtureRef.cid !== v) S.fixtureRef = null;
@@ -2060,7 +2187,7 @@ document.addEventListener('change', function(e){
   var id = e.target.id, f = e.target.files && e.target.files[0];
   if(id === 'csvfile' && f) importFile(f);
   else if(id === 'logofile' && f) importLogo(f);
-  else if(id === 'fixfile' && f) readTextFile(f, importFixtures);
+  else if(id === 'nclogo' && f) readLogo(f, function(url){ ui.newClub.logo = url; render(); });
   else if(id === 'memphoto' && f) readPhoto(f, function(url){ if(ui.sheet && ui.sheet.kind === 'editmember') ui.sheet.draft.photo = url; render(); });
   else if(id === 'pphoto' && f && ui.photoTarget){
     var tg = ui.photoTarget;
@@ -2074,7 +2201,7 @@ document.addEventListener('change', function(e){
     }
     ui.pendingRestore = obj; ui.sheet = { kind:'restore' }; render();
   });
-  if(id === 'csvfile' || id === 'logofile' || id === 'fixfile' || id === 'memphoto' || id === 'pphoto' || id === 'restorefile'){ try{ e.target.value = ''; }catch(err){} }
+  if(id === 'csvfile' || id === 'logofile' || id === 'nclogo' || id === 'memphoto' || id === 'pphoto' || id === 'restorefile'){ try{ e.target.value = ''; }catch(err){} }
 });
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape' && ui.sheet){ ui.sheet = null; render(); return; }
@@ -2082,7 +2209,7 @@ document.addEventListener('keydown', function(e){
   var en = e.target.dataset && e.target.dataset.enter;
   if(!en) return;
   if(en === 'p0' || en === 'p1') addPlayer(parseInt(en.slice(1), 10));
-  else if(en === 'club') addClub();
+  else if(en === 'clubcreate') createClub();
   else if(en === 'member') addMember();
   else if(en === 'champ') addChamp();
 });
