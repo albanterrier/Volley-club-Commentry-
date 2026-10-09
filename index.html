@@ -236,6 +236,13 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .fxt small{opacity:1;color:var(--muted);font-weight:400}
 .rsc{font-family:var(--font-d);font-weight:800;font-size:24px;white-space:nowrap}
 
+/* Lien Sauvegarde et mention en bas du menu */
+.menulink{display:flex;justify-content:flex-end;padding:6px 14px 0}
+.linkbtn{background:none;border:0;padding:12px 4px;min-height:44px;font:inherit;font-size:16px;color:#1D5FA8;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .linkbtn{color:#7DB4F0}}
+:root[data-theme="dark"] .linkbtn{color:#7DB4F0}
+.menufoot{margin:0;padding:22px 12px 10px;text-align:center;color:var(--muted);font-style:italic;font-size:14px}
+
 /* Calendrier */
 .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
 .seg button{background:none;border:0;min-height:48px;font-weight:600;color:var(--muted)}
@@ -1109,7 +1116,7 @@ function copyText(text){
 
 /* ---------- Vues : commun ---------- */
 function inSetup(){ return ui.tab === 'match' && (S.stage === 'setup' || (ui.showSetup && S.stage === 'play')); }
-function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', data:'Données' }[ui.tab] || ''; }
+function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', data:'Données', backup:'Sauvegarde' }[ui.tab] || ''; }
 function clockLabel(){ return S.clock.running ? 'Pause' : (S.clock.acc > 0 ? 'Reprendre' : 'Démarrer'); }
 /* Résultats des sets déjà joués : « Set 1 » avec le score dessous. Cinq colonnes réservées, rien pour les sets non joués. */
 function setsStrip(){
@@ -1543,15 +1550,21 @@ function champView(){
 /* Le menu est volontairement identique en toutes circonstances. */
 function menuView(){
   var out = '<div class="brand"><img class="logo" src="' + LOGO_V2C + '" alt="" width="132" height="132"><h1>Volley-Club Commentry</h1></div>';
-  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
   out += '<div class="menugrid2">' +
     '<button class="mbtn m-match" data-act="tab" data-tab="match">Match</button>' +
     '<button class="mbtn m-clubs" data-act="tab" data-tab="clubs">Clubs</button>' +
     '<button class="mbtn m-champ" data-act="tab" data-tab="champ">Championnat</button>' +
     '<button class="mbtn m-cal" data-act="tab" data-tab="cal">Calendrier</button>' +
     '<button class="mbtn m-data" data-act="tab" data-tab="data">Données</button></div>';
-  out += '<div class="stack"><section class="card"><h3>Sauvegarde</h3><p class="muted" style="margin:0">Les données restent sur cet appareil. Faites une sauvegarde pour les conserver ou les transférer sur un autre téléphone.</p>' +
-    '<div class="btnrow"><button class="btn wide" data-act="backup">Sauvegarder toutes les données</button>' +
+  out += '<div class="menulink"><button class="linkbtn" data-act="tab" data-tab="backup">Sauvegarde</button></div>';
+  out += '<p class="menufoot">Tous droits réservés</p>';
+  return out;
+}
+function backupView(){
+  var out = '<div class="stack">';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  out += '<section class="card"><h2>Sauvegarde</h2><p class="muted" style="margin:6px 0 0">Les données restent sur cet appareil. Faites une sauvegarde pour les conserver ou les transférer sur un autre téléphone.</p>' +
+    '<div class="btnrow"><button class="btn wide primary" data-act="backup">Sauvegarder toutes les données</button>' +
     '<input type="file" id="restorefile" class="vh" accept=".json,application/json"><label for="restorefile" class="btn wide">Restaurer une sauvegarde</label></div></section></div>';
   return out;
 }
@@ -1810,7 +1823,7 @@ function sheetView(){
 }
 
 function render(){
-  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : matchView())) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : dataView()))));
+  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : matchView())) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : (ui.tab === 'backup' ? backupView() : dataView())))));
   var warn = ui.warn ? '<div class="banner" role="alert">' + esc(ui.warn) + '</div>' : '';
   document.getElementById('app').innerHTML = header() + '<main>' + warn + main + (ui.tab === 'menu' ? '' : menuBtn()) + '</main>';
   document.getElementById('sheet').innerHTML = ui.sheet ? sheetView() : '';
@@ -1947,7 +1960,7 @@ document.addEventListener('click', function(e){
       if(pin && pin.click) pin.click();
       break;
     }
-    case 'restoreOk': if(ui.pendingRestore){ applyBackup(ui.pendingRestore); ui.pendingRestore = null; setTab('menu'); ui.sheet = null; ui.msg = 'Sauvegarde restaurée.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } break;
+    case 'restoreOk': if(ui.pendingRestore){ applyBackup(ui.pendingRestore); ui.pendingRestore = null; ui.sheet = null; ui.msg = 'Sauvegarde restaurée.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } break;
     case 'restoreNo': ui.pendingRestore = null; ui.sheet = null; render(); break;
     case 'openSetup': ui.showSetup = true; ui.msg = ''; render(); window.scrollTo(0,0); break;
     case 'startMatch': S.prepared = true; S.stage = 'play'; ui.showSetup = false; ui.msg = ''; save(); render(); window.scrollTo(0,0); break;
