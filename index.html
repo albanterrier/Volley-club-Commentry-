@@ -1131,12 +1131,11 @@ function header(){
   if(ui.tab === 'menu') return '';
   if(ui.tab === 'match' && S.stage === 'home') return plain('Match', 'Nouveau match ou reprise');
   if(inSetup()) return plain('Préparation du match', (S.title || '').trim() || 'Nouveau match');
-  if(S.stage !== 'play') return plain(tabTitle());
+  /* Le score n'apparaît en haut que dans la saisie des points ; partout ailleurs, on affiche le nom de l'espace. */
+  if(ui.tab !== 'match' || S.stage !== 'play') return plain(tabTitle());
   var w = setsWon();
   var lab = S.finished ? 'Match terminé' : 'Set ' + setNumber();
-  var left = '<div class="hset"><strong>' + lab + '</strong><span>Sets gagnés ' + w[0] + ' – ' + w[1] + '</span></div>';
-  if(ui.tab === 'match') return '<header class="top">' + left + setsStrip() + '</header>';
-  return '<header class="top">' + left + '<div class="clock"><span class="clk" role="timer" aria-label="Temps de jeu">' + fmt(clockMs()) + '</span><button class="hbtn" data-act="clock">' + clockLabel() + '</button></div></header>';
+  return '<header class="top"><div class="hset"><strong>' + lab + '</strong><span>Sets gagnés ' + w[0] + ' – ' + w[1] + '</span></div>' + setsStrip() + '</header>';
 }
 function menuBtn(){ return '<div class="stack" style="padding-top:4px"><button class="btn wide" data-act="tab" data-tab="menu">‹ Retour au menu</button></div>'; }
 function logHtmlOf(m, n, newestFirst){
