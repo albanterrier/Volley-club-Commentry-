@@ -505,7 +505,8 @@ function keepAwake(){
 function startClock(){ S.clock.since = Date.now(); S.clock.running = true; keepAwake(); }
 function stopClock(){ if(S.clock.running){ S.clock.acc += Date.now() - S.clock.since; S.clock.running = false; } }
 function toggleClock(){ if(S.clock.running) stopClock(); else startClock(); save(); render(); }
-function autoClock(){ if(!S.clock.running && S.clock.acc === 0 && S.events.length === 0) startClock(); }
+/* Saisir un point relance le chrono s'il était à l'arrêt (au tout début, en pause ou après un retour au menu) */
+function autoClock(){ if(!S.clock.running && !S.finished) startClock(); }
 
 /* ---------- Actions de match ---------- */
 function commitPoint(team, how, pid){
