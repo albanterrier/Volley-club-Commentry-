@@ -99,6 +99,8 @@ main{max-width:720px;margin:0 auto}
 .courtbox{max-width:360px;margin:0 auto;padding:14px 12px 0}
 .chead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}
 .cname{font-family:var(--font-d);font-weight:700;font-size:21px;line-height:1.1;display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere}
+.cname.pill{padding:3px 12px;border-radius:12px}
+.tpill{display:inline-block;padding:2px 12px;border-radius:12px}
 .cname.a{color:var(--a)}
 .cname.b{color:var(--b)}
 .cbtns{display:flex;gap:6px;flex-shrink:0}
@@ -740,6 +742,121 @@ function evTextOf(m, e){
 }
 function evText(e){ return evTextOf(S, e); }
 
+/* ---------- Couleurs des équipes, tirées des logos ---------- */
+/* Chaque logo donne ses couleurs dominantes (hors transparence et blanc). Une équipe prend un fondu entre 2 d'entre elles.
+   Si les deux équipes sont trop proches, on cherche parmi les 3 couleurs dominantes de chacune une combinaison plus distincte. */
+var PAL_VER = 1, SEP_MIN = 28;
+var DEF_COLORS = [ { c1:'#1D5FA8', c2:'#1D5FA8' }, { c1:'#C2410C', c2:'#C2410C' } ];
+function toHex(r, g, b){ return '#' + [r, g, b].map(function(v){ return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'); }).join('').toUpperCase(); }
+function rgbOf(h){ return [parseInt(h.slice(1,3), 16), parseInt(h.slice(3,5), 16), parseInt(h.slice(5,7), 16)]; }
+function lin(v){ v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+function lumOf(h){ var c = rgbOf(h).map(lin); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }
+function contrastOf(h1, h2){ var a = lumOf(h1) + 0.05, b = lumOf(h2) + 0.05; return a > b ? a / b : b / a; }
+function labOf(h){
+  var c = rgbOf(h).map(lin);
+  var x = (c[0] * 0.4124 + c[1] * 0.3576 + c[2] * 0.1805) / 0.95047, y = c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722, z = (c[0] * 0.0193 + c[1] * 0.1192 + c[2] * 0.9505) / 1.08883;
+  function f(t){ return t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116; }
+  var fx = f(x), fy = f(y), fz = f(z);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+function deltaE(l1, l2){ return Math.sqrt(Math.pow(l1[0] - l2[0], 2) + Math.pow(l1[1] - l2[1], 2) + Math.pow(l1[2] - l2[2], 2)); }
+function mixHex(h1, h2, k){ var a = rgbOf(h1), b = rgbOf(h2); return toHex(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k); }
+/* data : pixels RGBA (Uint8ClampedArray). Retourne jusqu'à 4 couleurs dominantes (hex), de la plus à la moins présente. */
+function paletteFromPixels(data){
+  var buckets = {}, total = 0, i;
+  for(i = 0; i < data.length; i += 4){
+    var a = data[i + 3];
+    if(a < 140) continue;                                   /* transparent : ignoré */
+    var r = data[i], g = data[i + 1], b = data[i + 2];
+    if(r > 228 && g > 228 && b > 228) continue;             /* blanc (fond) : ignoré */
+    var k = (r >> 3) * 1024 + (g >> 3) * 32 + (b >> 3);
+    var o = buckets[k] || (buckets[k] = { n:0, r:0, g:0, b:0 });
+    o.n++; o.r += r; o.g += g; o.b += b; total++;
+  }
+  if(!total) return [];
+  var list = Object.keys(buckets).map(function(k){ return buckets[k]; }).sort(function(x, y){ return y.n - x.n; });
+  var clusters = [];
+  /* regroupement selon la perception (Lab) : tous les noirs et bruns très sombres comptent pour une seule couleur,
+     et deux teintes proches (écart ΔE < 22) sont fusionnées */
+  list.forEach(function(o){
+    var lab = labOf(toHex(o.r / o.n, o.g / o.n, o.b / o.n)), best = null, bd = 1e9;
+    var dark = lab[0] < 20;
+    clusters.forEach(function(c){
+      if(dark && c.dark){ best = c; bd = 0; return; }
+      var d = deltaE(labOf(toHex(c.r / c.n, c.g / c.n, c.b / c.n)), lab);
+      if(d < bd){ bd = d; best = c; }
+    });
+    if(best && bd < 22){ best.n += o.n; best.r += o.r; best.g += o.g; best.b += o.b; if(dark) best.dark = true; }
+    else clusters.push({ n:o.n, r:o.r, g:o.g, b:o.b, dark:dark });
+  });
+  /* une couleur vive d'un logo compte plus qu'un gris (ombrages, dégradés) : on pondère par la saturation */
+  clusters.forEach(function(c){
+    var l = labOf(toHex(c.r / c.n, c.g / c.n, c.b / c.n));
+    c.score = c.n * (1 + Math.sqrt(l[1] * l[1] + l[2] * l[2]) / 40);
+  });
+  clusters.sort(function(x, y){ return y.score - x.score; });
+  /* on garde les couleurs significatives et vraiment différentes entre elles (écart ΔE >= 28) */
+  var kept = [];
+  clusters.forEach(function(c){
+    if(kept.length >= 4) return;
+    if(c.n < total * 0.02 && kept.length >= 2) return;
+    var lab = labOf(toHex(c.r / c.n, c.g / c.n, c.b / c.n));
+    if(kept.some(function(k){ return deltaE(labOf(toHex(k.r / k.n, k.g / k.n, k.b / k.n)), lab) < 28; })) return;
+    kept.push(c);
+  });
+  return kept.map(function(c){ return toHex(c.r / c.n, c.g / c.n, c.b / c.n); });
+}
+function extractPalette(src, cb){
+  try{
+    var img = new Image();
+    img.onload = function(){
+      try{
+        var n = 56, cv = document.createElement('canvas'); cv.width = n; cv.height = n;
+        var ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, n, n);
+        cb(paletteFromPixels(ctx.getImageData(0, 0, n, n).data));
+      }catch(e){ cb(null); }
+    };
+    img.onerror = function(){ cb(null); };
+    img.src = src;
+  }catch(e){ cb(null); }
+}
+function computePalette(club){
+  if(!club || !club.logo) return;
+  extractPalette(club.logo, function(list){ club.pal = list || []; club.palv = PAL_VER; save(); render(); });
+}
+function ensurePalettes(){ S.clubs.forEach(function(c){ if(c.logo && c.palv !== PAL_VER) computePalette(c); }); }
+function gradientsOf(pal){
+  var p = (pal || []).slice(0, 3);
+  if(!p.length) return [];
+  if(p.length === 1) return [{ c1:p[0], c2:mixHex(p[0], lumOf(p[0]) > 0.3 ? '#000000' : '#FFFFFF', 0.38), pen:0 }];
+  var out = [];
+  for(var i = 0; i < p.length; i++) for(var j = i + 1; j < p.length; j++) out.push({ c1:p[i], c2:p[j], pen:i + j });
+  return out.sort(function(a, b){ return a.pen - b.pen; });
+}
+function meanLab(g){ var a = labOf(g.c1), b = labOf(g.c2); return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]; }
+function rgbaOf(h, a){ var c = rgbOf(h); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+function inkFor(c1, c2){
+  var cands = ['#FFFFFF', '#10161C'], best = cands[0], bs = -1;
+  cands.forEach(function(ink){ var m = Math.min(contrastOf(ink, c1), contrastOf(ink, c2)); if(m > bs){ bs = m; best = ink; } });
+  return best;
+}
+/* Couleurs des deux équipes : { def, c1, c2, bg, ink } ; def = true quand le club n'a pas de logo exploitable (couleurs par défaut). */
+function teamColors(m){
+  m = m || S;
+  function palOf(t){ var c = clubById(m.teams[t].clubId); return (c && c.logo && c.pal && c.pal.length) ? c.pal : null; }
+  var A = gradientsOf(palOf(0)), B = gradientsOf(palOf(1)), defA = !A.length, defB = !B.length;
+  if(defA) A = [{ c1:DEF_COLORS[0].c1, c2:DEF_COLORS[0].c2, pen:0 }];
+  if(defB) B = [{ c1:DEF_COLORS[1].c1, c2:DEF_COLORS[1].c2, pen:0 }];
+  var best = null;
+  A.forEach(function(a){ B.forEach(function(b){
+    var sep = deltaE(meanLab(a), meanLab(b)), sc = { ok:sep >= SEP_MIN, cost:a.pen + b.pen, sep:sep };
+    var better = !best || (sc.ok !== best.sc.ok ? sc.ok : (sc.ok ? (sc.cost < best.sc.cost || (sc.cost === best.sc.cost && sc.sep > best.sc.sep)) : sc.sep > best.sc.sep));
+    if(better) best = { a:a, b:b, sc:sc };
+  }); });
+  function fin(g, def){ return def ? { def:true } : { def:false, c1:g.c1, c2:g.c2, bg:'linear-gradient(135deg,' + g.c1 + ',' + g.c2 + ')', ink:inkFor(g.c1, g.c2) }; }
+  return [fin(best.a, defA), fin(best.b, defB)];
+}
+
 /* ---------- Photos et avatars ---------- */
 function readPhoto(file, cb){
   var fr = new FileReader();
@@ -846,7 +963,7 @@ function applyBackup(obj){
   var d = migrate(JSON.parse(JSON.stringify(obj.data)));
   d.clock = { running:false, since:0, acc:(d.clock && d.clock.acc) || 0 };
   d.tc = null;
-  S = d; save();
+  S = d; save(); ensurePalettes();
 }
 
 /* ---------- Championnat ---------- */
@@ -1032,7 +1149,7 @@ function readLogo(file, cb){
 function importLogo(file){
   var c = curClub();
   if(!file || !c) return;
-  readLogo(file, function(url){ c.logo = url; ui.msg = 'Logo enregistré pour ' + c.name + '.'; save(); render(); });
+  readLogo(file, function(url){ c.logo = url; delete c.pal; delete c.palv; ui.msg = 'Logo enregistré pour ' + c.name + '.'; save(); render(); computePalette(c); });
 }
 
 /* ---------- Clubs et import CSV ---------- */
@@ -1228,39 +1345,56 @@ function statTableOf(m, t){
 function statTable(t){ return statTableOf(S, t); }
 
 /* ---------- Vue : match ---------- */
+function teamStyle(t, extra){
+  var tc = teamColors()[t];
+  return tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + ';' + (extra || '') + '"';
+}
 function tile(t){
   var dis = S.finished;
-  return '<div class="tile ' + (t ? 'b' : 'a') + '">' +
+  return '<div class="tile ' + (t ? 'b' : 'a') + '"' + teamStyle(t) + '>' +
     '<button class="tilemain" data-act="openPoint" data-team="' + t + '"' + (dis ? ' disabled' : '') + ' aria-label="Marquer un point pour ' + esc(tn(t)) + ', score actuel ' + S.cur[t] + '">' +
     '<span class="tname">' + logoHtml(S.teams[t].clubId, 34) + '<span>' + esc(tn(t)) + '</span></span><span class="score">' + S.cur[t] + '</span><span class="hint">' + (dis ? '' : 'Toucher pour marquer') + '</span></button>' +
     '<button class="srv ' + (S.serving === t ? 'on' : '') + '" data-act="serve" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>' + (S.serving === t ? 'Au service' : 'Donner le service') + '</button></div>';
 }
 function col(t){
-  var dis = S.finished;
+  var dis = S.finished, st = teamStyle(t, 'border-color:transparent');
   return '<div class="col ' + (t ? 'b' : 'a') + '">' +
-    '<button class="btn" data-act="openSub" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>Remplacement <small>' + S.subs[t] + '/6</small></button>' +
-    '<button class="btn" data-act="timeout" data-team="' + t + '"' + ((dis || S.timeouts[t] >= 2) ? ' disabled' : '') + '>Temps mort <small>' + S.timeouts[t] + '/2</small></button></div>';
+    '<button class="btn" data-act="openSub" data-team="' + t + '"' + (dis ? ' disabled' : '') + st + '>Remplacement <small>' + S.subs[t] + '/6</small></button>' +
+    '<button class="btn" data-act="timeout" data-team="' + t + '"' + ((dis || S.timeouts[t] >= 2) ? ' disabled' : '') + st + '>Temps mort <small>' + S.timeouts[t] + '/2</small></button></div>';
 }
 function playerBtn(t, i){
-  var p = findPlayer(t, S.lineup[t][i]);
+  var p = findPlayer(t, S.lineup[t][i]), tc = teamColors()[t];
   var srv = (i === 0 && S.serving === t);
   var label = 'Poste ' + (i + 1) + (p ? ', ' + plabel(p.num, p.name) : ', vide') + (srv ? ', au service' : '');
-  return '<button class="pl ' + (t ? 'b' : 'a') + (srv ? ' srv2' : '') + (p ? '' : ' empty') + '" data-act="' + (p ? 'openPlayer' : 'openLineup') + '" data-team="' + t + '"' + (p ? ' data-pid="' + p.id + '"' : '') + ' aria-label="' + esc(label) + '">' + (p ? esc(p.num || '–') : '+') + '</button>';
+  var st = (p && !tc.def) ? ' style="background:' + tc.bg + ';color:' + tc.ink + ';border-color:' + tc.ink + '"' : '';
+  return '<button class="pl ' + (t ? 'b' : 'a') + (srv ? ' srv2' : '') + (p ? '' : ' empty') + '" data-act="' + (p ? 'openPlayer' : 'openLineup') + '" data-team="' + t + '"' + (p ? ' data-pid="' + p.id + '"' : '') + st + ' aria-label="' + esc(label) + '">' + (p ? esc(p.num || '–') : '+') + '</button>';
 }
 function teamBar(t){
-  return '<div class="chead"><span class="cname ' + (t ? 'b' : 'a') + '">' + logoHtml(S.teams[t].clubId, 28) + '<span>' + esc(tn(t)) + '</span></span>' +
+  var tc = teamColors()[t];
+  return '<div class="chead"><span class="cname ' + (t ? 'b' : 'a') + (tc.def ? '' : ' pill') + '"' + (tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + '"') + '>' + logoHtml(S.teams[t].clubId, 28) + '<span>' + esc(tn(t)) + '</span></span>' +
     '<span class="cbtns"><button class="mini" data-act="openLineup" data-team="' + t + '">Composition</button>' +
     '<button class="mini" data-act="rot" data-team="' + t + '" data-dir="-1" aria-label="Rotation inverse de ' + esc(tn(t)) + '">↺</button>' +
     '<button class="mini" data-act="rot" data-team="' + t + '" data-dir="1" aria-label="Faire tourner ' + esc(tn(t)) + '">↻</button></span></div>';
 }
 /* Terrain vu de dessus : l'équipe A en haut, l'équipe B en bas, filet au milieu.
-   Haut (face au filet vers le bas) : fond 1-6-5 puis avant 2-3-4. Bas (face au filet vers le haut) : avant 4-3-2 puis fond 5-6-1. */
+   Haut (face au filet vers le bas) : fond 1-6-5 puis avant 2-3-4. Bas (face au filet vers le haut) : avant 4-3-2 puis fond 5-6-1.
+   Les couleurs des logos teintent chaque moitié de terrain, remplissent les cercles et colorent le nom de l'équipe. */
 function half(t, pos){
-  var g = pos === 'top' ? [[0,5,4],[1,2,3]] : [[3,2,1],[4,5,0]];
-  return '<div class="half ' + pos + '">' + g.map(function(row){ return '<div class="rowp">' + row.map(function(i){ return playerBtn(t, i); }).join('') + '</div>'; }).join('') + '</div>';
+  var g = pos === 'top' ? [[0,5,4],[1,2,3]] : [[3,2,1],[4,5,0]], tc = teamColors()[t];
+  var tint = tc.def ? '' : ' style="background:linear-gradient(135deg,' + rgbaOf(tc.c1, 0.16) + ',' + rgbaOf(tc.c2, 0.16) + ')"';
+  return '<div class="half ' + pos + '"' + tint + '>' + g.map(function(row){ return '<div class="rowp">' + row.map(function(i){ return playerBtn(t, i); }).join('') + '</div>'; }).join('') + '</div>';
 }
 function courtBoard(){
   return '<div class="courtbox">' + teamBar(0) + '<div class="court" role="group" aria-label="Terrain, vue de dessus">' + half(0,'top') + '<div class="netbar" aria-hidden="true"></div>' + half(1,'bot') + '</div>' + teamBar(1) + '</div>';
+}
+/* Cartes de statistiques : liseré et nom aux couleurs du club (d'un match quelconque) */
+function cardStyle(m, t){
+  var tc = teamColors(m)[t];
+  return tc.def ? '' : ' style="border-top-color:transparent;background:linear-gradient(90deg,' + tc.c1 + ',' + tc.c2 + ') top left/100% 6px no-repeat border-box,var(--surface)"';
+}
+function pillHtml(m, t, text){
+  var tc = teamColors(m)[t];
+  return tc.def ? esc(text) : '<span class="tpill" style="background:' + tc.bg + ';color:' + tc.ink + '">' + esc(text) + '</span>';
 }
 function prefRow(){
   var items = [['schema','Schéma'],['players','Résultats par joueur'],['sheet','Feuille de match']];
@@ -1292,8 +1426,8 @@ function matchView(){
   out += prefRow();
   if(S.prefs.schema) out += courtBoard();
   if(S.prefs.players){
-    out += '<div class="stack" style="padding-bottom:0"><section class="card a"><h3>' + esc(tn(0)) + '</h3>' + statTable(0) + '</section>' +
-      '<section class="card b"><h3>' + esc(tn(1)) + '</h3>' + statTable(1) + '</section></div>';
+    out += '<div class="stack" style="padding-bottom:0"><section class="card a"' + cardStyle(S, 0) + '><h3>' + pillHtml(S, 0, tn(0)) + '</h3>' + statTable(0) + '</section>' +
+      '<section class="card b"' + cardStyle(S, 1) + '><h3>' + pillHtml(S, 1, tn(1)) + '</h3>' + statTable(1) + '</section></div>';
   }
   if(S.prefs.sheet){
     var log = logHtml(15);
@@ -1700,7 +1834,7 @@ function dataMatchView(){
     '<div class="setline">' + m.sets.map(function(s,i){ return '<span class="setchip" title="Set ' + (i+1) + '">' + s[0] + '–' + s[1] + '</span>'; }).join('') +
     (m.finished ? '' : '<span class="setchip" style="border-color:var(--gold)" title="Set en cours">' + m.cur[0] + '–' + m.cur[1] + '</span>') + '</div></section>';
   [t, 1 - t].forEach(function(tt){
-    out += '<section class="card ' + (tt ? 'b' : 'a') + '"><h3>Performances · ' + esc(tnOf(m, tt)) + '</h3>' + statTableOf(m, tt) + '</section>';
+    out += '<section class="card ' + (tt ? 'b' : 'a') + '"' + cardStyle(m, tt) + '><h3>Performances · ' + pillHtml(m, tt, tnOf(m, tt)) + '</h3>' + statTableOf(m, tt) + '</section>';
   });
   var log = logHtmlOf(m, 0, false);
   out += '<details class="card"><summary>Feuille de match <small>&nbsp;(' + m.events.length + ' événement' + (m.events.length > 1 ? 's' : '') + ')</small></summary>' +
@@ -1945,6 +2079,7 @@ function createClub(){
   if(nc.logo) c.logo = nc.logo;
   S.clubs.push(c); ui.clubSel = c.id; ui.createdId = c.id; ui.clubView = 'created'; ui.newClub = { name:'', logo:'' }; ui.msg = '';
   save(); render(); window.scrollTo(0,0);
+  if(c.logo) computePalette(c);
 }
 function saveEvent(){
   var ev = ui.ev, date = parseDate(ev.date), time = parseTime(ev.time), place = (ev.place || '').trim();
@@ -2173,7 +2308,7 @@ document.addEventListener('click', function(e){
     }
     case 'delChampAsk': ui.sheet = { kind:'delchamp' }; render(); break;
     case 'calHide': ui.calHideDone = !ui.calHideDone; render(); break;
-    case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; ui.msg = ''; save(); render(); } break; }
+    case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; delete lc.pal; delete lc.palv; ui.msg = ''; save(); render(); } break; }
     case 'openFixture': ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break;
     case 'playFixture': startFixture(sh.cid, sh.fid); break;
     case 'fixRes': {
@@ -2327,6 +2462,7 @@ if(window.addEventListener) window.addEventListener('popstate', onPop);
 try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 
 render();
+ensurePalettes();   /* palettes de couleurs des logos déjà enregistrés */
 })();
 </script>
 <script>
