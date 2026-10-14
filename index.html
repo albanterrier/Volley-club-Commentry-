@@ -235,6 +235,8 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .fxt .nm{font-weight:600;overflow-wrap:anywhere}
 .fxt small{opacity:1;color:var(--muted);font-weight:400}
 .rsc{font-family:var(--font-d);font-weight:800;font-size:24px;white-space:nowrap}
+.playc{width:30px;height:30px;border-radius:50%;background:#2E7D32;color:#fff;display:flex;align-items:center;justify-content:center}
+.ritem .rinfo{cursor:default}
 
 /* Lien Sauvegarde et mention en bas du menu */
 .menulink{display:flex;justify-content:flex-end;padding:6px 14px 0}
@@ -320,7 +322,7 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], swap:false, midSwap:false,
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], swap:false, midSwap:false, starters:[[],[]], subPairs:[[],[]],
     prefs:{ schema:true, players:false, sheet:false }
   };
 }
@@ -335,7 +337,9 @@ function migrate(s){
   if(!s.agenda) s.agenda = [];
   if(s.swap === undefined) s.swap = false;
   if(s.midSwap === undefined) s.midSwap = false;
-  s.library.forEach(function(e){ if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; });
+  if(!s.starters) s.starters = [[],[]];
+  if(!s.subPairs) s.subPairs = [[],[]];
+  s.library.forEach(function(e){ if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; if(!e.starters) e.starters = [[],[]]; if(!e.subPairs) e.subPairs = [[],[]]; });
   if(s.homeClub === undefined) s.homeClub = '';
   if(!s.stage) s.stage = s.prepared ? 'play' : 'home';
   s.prefs = Object.assign({}, d.prefs, s.prefs || {});
@@ -421,9 +425,16 @@ function curChamp(){ var c = champById(ui.champSel); if(!c && S.champs.length){ 
    Sur le menu, il n'y a plus d'entrée à retirer : « précédent » quitte alors l'application. */
 var histDepth = 0, ignorePop = false;
 function pauseMatchClock(){ if(S.clock.running){ stopClock(); save(); } }
+/* Quitter l'espace Match : le match est mis en pause, et en y revenant on retrouve le choix « nouveau match / match existant » */
+function leaveMatchTab(){
+  if(S.stage === 'play') S.stage = 'home';
+  ui.showSetup = false; ui.resume = false;
+  pauseMatchClock(); save();
+}
 function setTab(t){
   var from = ui.tab;
   if(t === from) return;
+  if(from === 'match') leaveMatchTab();
   if(t === 'menu'){
     ui.tab = 'menu'; ui.sheet = null; ui.showSetup = false;
     pauseMatchClock();
@@ -447,6 +458,7 @@ function onPop(){
       try{ history.pushState({ v:'tab' }, ''); }catch(e){ histDepth = 0; }
       render(); return;
     }
+    if(ui.tab === 'match') leaveMatchTab();
     histDepth = 0; ui.tab = 'menu'; ui.showSetup = false; ui.resume = false;
     pauseMatchClock();
     render(); window.scrollTo(0,0);
@@ -476,7 +488,8 @@ function scoreFor(team){
 function snap(){
   S.history.push({ ev:S.events.length, cur:S.cur.slice(), sets:S.sets.map(function(x){ return x.slice(); }),
     serving:S.serving, timeouts:S.timeouts.slice(), subs:S.subs.slice(), finished:S.finished,
-    lineup:S.lineup.map(function(a){ return a.slice(); }), swap:S.swap, midSwap:S.midSwap });
+    lineup:S.lineup.map(function(a){ return a.slice(); }), swap:S.swap, midSwap:S.midSwap,
+    starters:S.starters.map(function(a){ return a.slice(); }), subPairs:JSON.parse(JSON.stringify(S.subPairs)) });
   if(S.history.length > 80) S.history.shift();
 }
 function undo(){
@@ -485,6 +498,7 @@ function undo(){
   S.events.length = h.ev;
   S.cur = h.cur; S.sets = h.sets; S.serving = h.serving; S.timeouts = h.timeouts; S.subs = h.subs; S.finished = h.finished; S.lineup = h.lineup;
   if(h.swap !== undefined){ S.swap = h.swap; S.midSwap = h.midSwap; }
+  if(h.starters){ S.starters = h.starters; S.subPairs = h.subPairs; }
   S.tc = null; ui.sheet = null;
   save(); render();
 }
@@ -527,14 +541,60 @@ function afterPoint(){
   ui.sheet = w !== null ? { kind:'setend', winner:w } : null;
   render();
 }
-function commitSub(team, outId, inId){
-  var L = S.lineup[team], idx = L.indexOf(outId), o = findPlayer(team, outId), i = findPlayer(team, inId);
-  if(idx < 0 || !o || !i) return;
-  snap();
-  L[idx] = inId; S.subs[team]++;
-  addEvent(Object.assign({ type:'sub', team:team, how:'entre ' + plabel(i.num, i.name) }, pinfo(o)));
-  save();
+/* ---------- Remplacements : 6 par set ; règle du titulaire ---------- */
+/* Un titulaire (joueur sur le terrain au début du set) sort au plus une fois par set et ne revient qu'à sa position,
+   à la place du remplaçant qui l'a remplacé. Ce remplaçant ne peut être remplacé que par lui, puis ne revient plus.
+   subPairs[t] : { starter, sub, done } — « done » quand le titulaire est revenu (ou après un remplacement exceptionnel). */
+function pairOfSub(t, id){ return S.subPairs[t].filter(function(x){ return x.sub === id; })[0] || null; }
+function pairOfStarter(t, id){ return S.subPairs[t].filter(function(x){ return x.starter === id; })[0] || null; }
+/* remplaçants qui peuvent entrer librement : jamais entrés dans ce set, et pas un titulaire déjà sorti */
+function freeBench(t){
+  return benchOf(t).filter(function(p){ return !pairOfSub(t, p.id) && !pairOfStarter(t, p.id); });
 }
+function subOuts(t, exceptional){
+  return onCourt(t).filter(function(p){
+    if(exceptional) return true;
+    var asSub = pairOfSub(t, p.id);
+    if(asSub) return !asSub.done;          /* remplaçant sur le terrain : seul son titulaire peut revenir */
+    if(pairOfStarter(t, p.id)) return false; /* titulaire déjà sorti puis revenu : plus de sortie dans ce set */
+    return true;
+  });
+}
+function subIns(t, outId, exceptional){
+  if(!exceptional){
+    var asSub = pairOfSub(t, outId);
+    if(asSub && !asSub.done){
+      var back = benchOf(t).filter(function(p){ return p.id === asSub.starter; });
+      if(back.length) return back;
+    }
+  }
+  return freeBench(t);
+}
+function commitSub(team, outId, inId, exceptional){
+  var L = S.lineup[team], idx = L.indexOf(outId), o = findPlayer(team, outId), i = findPlayer(team, inId);
+  if(idx < 0 || !o || !i) return false;
+  if(!exceptional){
+    if(S.subs[team] >= 6) return false;
+    if(!subOuts(team, false).some(function(p){ return p.id === outId; })) return false;
+    if(!subIns(team, outId, false).some(function(p){ return p.id === inId; })) return false;
+  }
+  snap();
+  if(!S.starters[team].length) S.starters[team] = L.filter(Boolean);   /* les titulaires du set sont ceux qui étaient sur le terrain */
+  var pairs = S.subPairs[team], back = pairOfSub(team, outId);
+  if(exceptional){
+    if(back) back.done = true;                                        /* le titulaire remplacé ne pourra plus revenir */
+    pairs.push({ starter:outId, sub:inId, done:true, exc:true });
+  } else if(back && !back.done){
+    back.done = true;                                                 /* retour du titulaire à sa position */
+  } else {
+    pairs.push({ starter:outId, sub:inId, done:false });
+  }
+  L[idx] = inId; S.subs[team]++;
+  addEvent(Object.assign({ type:'sub', team:team, exc:!!exceptional, how:'entre ' + plabel(i.num, i.name) + (exceptional ? ' (blessure)' : '') }, pinfo(o)));
+  save();
+  return true;
+}
+
 function callTimeout(team){
   if(S.timeouts[team] >= 2 || S.finished) return;
   snap(); S.timeouts[team]++;
@@ -550,7 +610,7 @@ function endSet(){
   var a = S.cur[0], b = S.cur[1];
   addEvent({ type:'setEnd', how:a + '-' + b });
   S.sets.push([a,b]);
-  S.cur = [0,0]; S.timeouts = [0,0]; S.subs = [0,0]; S.serving = null; S.tc = null;
+  S.cur = [0,0]; S.timeouts = [0,0]; S.subs = [0,0]; S.starters = [[],[]]; S.subPairs = [[],[]]; S.serving = null; S.tc = null;
   var w = setsWon();
   ui.sheet = null; S.midSwap = false;
   if(!(w[0] >= S.cfg.setsToWin || w[1] >= S.cfg.setsToWin)){
@@ -580,7 +640,7 @@ function endSet(){
   save(); render();
 }
 /* ---------- Bibliothèque de matchs (nouveau / reprendre) ---------- */
-var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap'];
+var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap','starters','subPairs'];
 function hasContent(){ return S.events.length > 0 || S.sets.length > 0; }
 function matchSnapshot(){
   var o = {};
@@ -606,12 +666,20 @@ function loadMatch(created){
   S.tc = null; S.prepared = true; S.stage = 'play';
   return true;
 }
+function keepShared(){
+  return { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(x){ return x.slice(); }), cfg:S.cfg,
+    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, agenda:S.agenda };
+}
 function resetForNew(){
   stopClock(); archiveCurrent();
-  var keep = { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(a){ return a.slice(); }), cfg:S.cfg,
-    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, agenda:S.agenda };
-  S = Object.assign(newState(), keep);
+  S = Object.assign(newState(), keepShared());
   S.stage = 'setup';
+}
+/* Supprime le match courant (sans l'archiver) : on repart d'un match vierge, équipes et joueurs conservés */
+function discardCurrent(){
+  stopClock();
+  S = Object.assign(newState(), keepShared());
+  S.stage = 'home';
 }
 function newMatch(){
   resetForNew();
@@ -624,7 +692,7 @@ function matchSummary(m){
   var n0 = ((m.teams[0].name || '').trim()) || 'Équipe A', n1 = ((m.teams[1].name || '').trim()) || 'Équipe B';
   return { title:((m.title || '').trim()) || (n0 + ' – ' + n1), w:w, cur:m.cur, finished:!!m.finished, setNo:(m.sets || []).length + 1, date:m.savedAt || m.created };
 }
-/* « Reprendre un match » : seulement les matchs non terminés (les autres restent consultables dans Données) */
+/* « Match existant » : seulement les matchs non terminés (les autres restent consultables dans Données) */
 function savedMatches(){
   var out = [];
   if(hasContent() && !S.finished) out.push({ cur:true, m:S });
@@ -663,7 +731,7 @@ function evTextOf(m, e){
   switch(e.type){
     case 'point': return 'Point ' + tnOf(m, e.team) + (who ? ' · ' + who : '') + ' · ' + (HOW[e.how] || e.how);
     case 'fault': return 'Faute ' + tnOf(m, e.team) + ' · ' + e.how + (who ? ' · ' + who : '');
-    case 'sub': return 'Remplacement ' + tnOf(m, e.team) + ' · sort ' + (who || '?') + ' · ' + e.how;
+    case 'sub': return (e.exc ? 'Remplacement exceptionnel ' : 'Remplacement ') + tnOf(m, e.team) + ' · sort ' + (who || '?') + ' · ' + e.how;
     case 'timeout': return 'Temps mort ' + tnOf(m, e.team);
     case 'setEnd': return 'Fin du set ' + e.set + ' · ' + e.how.replace('-', ' – ');
     case 'matchEnd': return 'Fin du match · ' + e.how.replace('-', ' – ') + ' en sets';
@@ -1130,7 +1198,7 @@ function setsStrip(){
 function header(){
   function plain(t, sub){ return '<header class="top"><div class="hset"><strong>' + esc(t) + '</strong>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</div></header>'; }
   if(ui.tab === 'menu') return '';
-  if(ui.tab === 'match' && S.stage === 'home') return plain('Match', 'Nouveau match ou reprise');
+  if(ui.tab === 'match' && S.stage === 'home') return plain('Match', 'Nouveau match ou match existant');
   if(inSetup()) return plain('Préparation du match', (S.title || '').trim() || 'Nouveau match');
   /* Le score n'apparaît en haut que dans la saisie des points ; partout ailleurs, on affiche le nom de l'espace. */
   if(ui.tab !== 'match' || S.stage !== 'play') return plain(tabTitle());
@@ -1246,16 +1314,17 @@ function homeView(){
   if(!ui.resume){
     out += '<section class="card"><h2>Match</h2><p class="muted" style="margin:6px 0 16px">Que voulez-vous faire ?</p>' +
       '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="newPlay">Jouer un nouveau match</button>' +
-      '<button class="bigbtn" data-act="showResume"' + (list.length ? '' : ' disabled') + '>Reprendre un match' + (list.length ? ' <small>' + list.length + '</small>' : '') + '</button></div>' +
+      '<button class="bigbtn" data-act="showResume"' + (list.length ? '' : ' disabled') + '>Match existant' + (list.length ? ' <small>' + list.length + '</small>' : '') + '</button></div>' +
       (list.length ? '' : '<p class="hint2">Aucun match enregistré pour l\'instant.</p>') + '</section>';
   } else {
-    out += '<section class="card"><h2>Reprendre un match</h2><div style="margin-top:8px">' + list.map(function(it){
+    out += '<section class="card"><h2>Match existant</h2><div style="margin-top:8px">' + (list.length ? list.map(function(it){
       var m = it.m, sm = matchSummary(m);
       var sub = fmtWhen(sm.date) + (sm.finished ? '' : ' · set ' + sm.setNo + ' (' + sm.cur[0] + '–' + sm.cur[1] + ')');
-      return '<div class="ritem"><button class="fx" data-act="resumeMatch" data-mid="' + esc(m.created) + '"><span class="fxt"><span class="nm">' + esc(sm.title) + '</span><small>' + esc(sub) + '</small></span>' +
-        '<span class="rsc" aria-label="Sets gagnés">' + sm.w[0] + ' – ' + sm.w[1] + '</span><span class="tag">' + (sm.finished ? 'terminé' : 'en cours') + '</span></button>' +
-        (it.cur ? '' : '<button class="delwrap" data-act="delLibAsk" data-mid="' + esc(m.created) + '" aria-label="Supprimer ' + esc(sm.title) + '"><span class="delc" aria-hidden="true">' + xIcon(30) + '</span></button>') + '</div>';
-    }).join('') + '</div><div class="btnrow"><button class="btn wide" data-act="hideResume">Retour</button></div></section>';
+      return '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="nm">' + esc(sm.title) + '</span><small>' + esc(sub) + '</small></span>' +
+        '<span class="rsc" aria-label="Sets gagnés">' + sm.w[0] + ' – ' + sm.w[1] + '</span></div>' +
+        '<button class="delwrap" data-act="resumeMatch" data-mid="' + esc(m.created) + '" aria-label="Reprendre ' + esc(sm.title) + '"><span class="playc" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" focusable="false"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span></button>' +
+        '<button class="delwrap" data-act="delLibAsk" data-mid="' + esc(m.created) + '" aria-label="Supprimer ' + esc(sm.title) + '"><span class="delc" aria-hidden="true">' + xIcon(30) + '</span></button></div>';
+    }).join('') : '<p class="muted">Aucun match enregistré pour l\'instant.</p>') + '</div><div class="btnrow"><button class="btn wide" data-act="hideResume">Retour</button></div></section>';
   }
   return out + '</div>';
 }
@@ -1707,12 +1776,22 @@ function sheetView(){
     var kinds = FAULTS.map(function(k){ return chip('pickHow', { how:k }, esc(k), sh.how === k); }).join('');
     inner = '<h2>Faute de ' + esc(tn(sh.team)) + '</h2><p class="hint2" style="margin-top:4px">Le point est donné à ' + esc(tn(1 - sh.team)) + '.</p>' +
       group('Type de faute', kinds) + group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''));
+  } else if(sh.kind === 'subask'){
+    inner = '<h2>' + esc(tn(sh.team)) + ' · ' + S.subs[sh.team] + '/6</h2><p class="hint2" style="font-size:16px">Les remplacements ont tous été utilisés pour ce set. Effectuer un remplacement exceptionnel pour blessure ?</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="subExc">Oui</button><button class="btn wide" data-act="closeSheet">Non</button></div>';
   } else if(sh.kind === 'sub'){
-    var outs = whoChips(sh.team, sh.out, false).replace(/pickWho/g, 'pickOut');
-    var ins = whoChips(sh.team, sh.in, true).replace(/pickWho/g, 'pickIn');
-    inner = '<h2>Remplacement · ' + esc(tn(sh.team)) + '</h2>' + group('Joueur qui sort', outs || '<span class="muted">Personne en jeu.</span>') +
-      group('Joueur qui entre', ins || '<span class="muted">Personne sur le banc.</span>') +
-      '<p class="hint2">Le remplaçant prend le poste du joueur qui sort.</p>';
+    var tm = sh.team, outsP = subOuts(tm, sh.exc).slice().sort(sortP);
+    var outChips = outsP.map(function(p){ return chip('pickOut', { pid:p.id }, '<b>' + esc(p.num) + '</b>' + esc(p.name), sh.out === p.id); }).join('');
+    inner = '<h2>' + (sh.exc ? 'Remplacement exceptionnel' : 'Remplacement') + ' · ' + esc(tn(tm)) + ' <small>' + S.subs[tm] + '/6</small></h2>' +
+      '<p class="hint2" style="margin-top:4px">' + (sh.exc ? 'Blessure : le joueur remplacé ne pourra plus revenir dans ce set.' : 'Un titulaire ne sort qu\'une fois par set et ne revient qu\'à sa position, à la place de son remplaçant.') + '</p>' +
+      group('Joueur qui sort', outChips || '<span class="muted">Personne ne peut sortir.</span>');
+    if(sh.out !== undefined){
+      var insP = subIns(tm, sh.out, sh.exc).slice().sort(sortP);
+      var inChips = insP.map(function(p){ return chip('pickIn', { pid:p.id }, '<b>' + esc(p.num) + '</b>' + esc(p.name), sh.in === p.id); }).join('');
+      var pr = !sh.exc ? pairOfSub(tm, sh.out) : null;
+      inner += group('Joueur qui entre', inChips || '<span class="muted">Aucun remplaçant disponible.</span>') +
+        (pr && !pr.done ? '<p class="hint2">Seul le titulaire qu\'il a remplacé peut revenir à sa place.</p>' : '');
+    }
   } else if(sh.kind === 'player'){
     var p = findPlayer(sh.team, sh.pid);
     if(!p){ inner = '<h2>Joueur introuvable</h2>'; }
@@ -1768,7 +1847,7 @@ function sheetView(){
       if(fm){
         inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
       } else {
-        inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Reprendre un match ».</p>' : '') +
+        inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
           '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Jouer ce match</button></div>';
       }
       inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
@@ -1778,11 +1857,11 @@ function sheetView(){
         '<button class="btn wide danger" data-act="fixDel">Supprimer du calendrier</button></div>';
     }
   } else if(sh.kind === 'dellib'){
-    var de = S.library.filter(function(x){ return x.created === sh.mid; })[0];
-    inner = '<h2>Supprimer ' + esc(de ? matchSummary(de).title : 'ce match') + ' ?</h2><p class="hint2">Les données de ce match enregistré seront perdues. Exportez-les avant si besoin. Un résultat déjà ajouté à un championnat n\'est pas supprimé.</p>' +
+    var de = sh.mid === S.created ? S : S.library.filter(function(x){ return x.created === sh.mid; })[0];
+    inner = '<h2>Supprimer ' + esc(de ? matchSummary(de).title : 'ce match') + ' ?</h2><p class="hint2">Les données de ce match seront perdues. Exportez-les avant si besoin. Un résultat déjà ajouté à un championnat n\'est pas supprimé.</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="delLibOk">Oui, supprimer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'newmatch'){
-    inner = '<h2>Commencer un nouveau match ?</h2><p class="hint2">' + (hasContent() ? 'Le match en cours est conservé : vous pourrez le retrouver avec « Reprendre un match » sur l\'écran Match. ' : '') + 'Les équipes, joueurs, clubs et championnats sont conservés.</p>' +
+    inner = '<h2>Commencer un nouveau match ?</h2><p class="hint2">' + (hasContent() ? 'Le match en cours est conservé : vous pourrez le retrouver avec « Match existant » sur l\'écran Match. ' : '') + 'Les équipes, joueurs, clubs et championnats sont conservés.</p>' +
       '<div class="btnrow"><button class="btn wide primary" data-act="newMatchOk">Nouveau match</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'editmember'){
     var dr = sh.draft;
@@ -1817,7 +1896,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore'];
+  var own = ['setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -1839,8 +1918,8 @@ function tryCommit(){
   } else if(sh.kind === 'fault' && sh.how !== undefined && sh.pid !== undefined){
     commitFault(sh.team, sh.how, sh.pid || null);
   } else if(sh.kind === 'sub' && sh.out !== undefined && sh.in !== undefined){
-    commitSub(sh.team, sh.out, sh.in);
-    ui.sheet = null; render();
+    if(commitSub(sh.team, sh.out, sh.in, sh.exc)) ui.sheet = null; else delete sh.in;
+    render();
   } else {
     render();
   }
@@ -1975,7 +2054,8 @@ document.addEventListener('click', function(e){
       save(); render(); window.scrollTo(0,0); break;
     case 'delLibAsk': ui.sheet = { kind:'dellib', mid:d.mid }; render(); break;
     case 'delLibOk':
-      S.library = S.library.filter(function(x){ return x.created !== sh.mid; });
+      if(sh.mid === S.created) discardCurrent();
+      else S.library = S.library.filter(function(x){ return x.created !== sh.mid; });
       if(!savedMatches().length) ui.resume = false;
       ui.sheet = null; save(); render(); break;
     case 'clock': toggleClock(); break;
@@ -1988,7 +2068,8 @@ document.addEventListener('click', function(e){
     case 'rot': manualRotate(t, parseInt(d.dir, 10)); break;
     case 'openPoint': ui.sheet = { kind:'point', team:t }; render(); break;
     case 'openFault': ui.sheet = { kind:'fault', team:t }; render(); break;
-    case 'openSub': ui.sheet = { kind:'sub', team:t }; render(); break;
+    case 'openSub': ui.sheet = S.subs[t] >= 6 ? { kind:'subask', team:t } : { kind:'sub', team:t, exc:false }; render(); break;
+    case 'subExc': ui.sheet = { kind:'sub', team:sh.team, exc:true }; render(); break;
     case 'openPlayer': ui.sheet = { kind:'player', team:t, pid:d.pid }; render(); break;
     case 'openLineup': ui.sheet = { kind:'lineup', team:t }; render(); break;
     case 'openChamp': ui.sheet = champSheet(S.matchChamp); render(); break;
@@ -2003,7 +2084,7 @@ document.addEventListener('click', function(e){
       else { sh.how = d.how; tryCommit(); }
       break;
     case 'pickWho': sh.pid = d.pid; tryCommit(); break;
-    case 'pickOut': sh.out = d.pid; tryCommit(); break;
+    case 'pickOut': sh.out = d.pid; delete sh.in; tryCommit(); break;
     case 'pickIn': sh.in = d.pid; tryCommit(); break;
     case 'delP':
       S.teams[t].players = S.teams[t].players.filter(function(x){ return x.id !== d.pid; });
