@@ -298,6 +298,17 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .rotbtn.a{border-color:var(--a)}
 .rotbtn.b{border-color:var(--b)}
 
+/* Commandes sous le chrono : annuler / lecture-pause / stop */
+.cbar{display:flex;justify-content:center;gap:clamp(2px,1vw,5px);width:100%}
+.cbtn{flex:0 0 auto;width:clamp(24px,7.6vw,32px);height:clamp(28px,8.4vw,36px);border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
+.cbtn .ico{width:68%;height:68%}
+.cbtn:disabled{opacity:.4;cursor:default}
+.cbtn.stop{color:#C62828;border-color:#C62828}
+.ico-undo{-webkit-mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAC40lEQVR42u2aTWgTQRTHf01bW6tSrIiKCCKKiChV8INWECwqClZbq3jz4EVqwa+rIIIIoqCeRNCDB+mhIJiDVS9SQfSioKAnQdGLEBWNStvUmh52FpawmZmkk812834wp7zsm/dmZ+a9fwKCIAiCIAiCUJPUV+i5C4A9QDuQBX7VUlK7gW9AXo1R4HitBH8ImAgE748JYGPSgz8I5EKC98fFOE465TD4QaBRYzM3qSvfa1h5f+xLYvA9lsEPJTH4vcCYRfCPgOZaDf5x3IOvK/OeHwJmGexywE2VqHL5C3wCXgPv4pCwLmDcYuUrMT4AV4E11Qq+GfhSpeALi6pbwJKoE7A1BsEHR1Ztx8jYErME5IF/wNkot8DnGCYhD/TXwiGoGzlgR9KuwTnAMqADWGhh/xVYBfyJ4k3Yb/kmDDsohOpV4fXGwt/5KA/FA5Z9wEOgyYG/RnX96Xz9tnxbZnQzdNfg61Rc22FXd/ZsQ0E2Ekc1KA9cd+ivX+Nn3NGWK5m+InpgJSSxRcCkxtfaOIqiGxz70hVlu6rZMXYDGSovi7/SJKDH9iENFZhYGlgNbFd78bk6tFzTpvlslIQz33DetCc9AUcNekFLkoNvAN5rEvCylIelZmACLhlksXRSV74OOGcotsZUB5k41uH9vmAqt69FoQcAtAK7VV3+DPhYxG4F0Iknb48A34vYrVeSW1tBG7wY2GZZRP0EVmp8OGMn3h8egqfumRC70wX9QSakQksBdxwoQv+Bw1G8iq0qw2ET6AzYdRSp1TN4/x7xGXAkiV2Ista36fauaOx6A3ZPHQR/YxpbueRSuMUgXQX1PJ3WZ2NnIgecAG5HeRovxdPiTQ1In6ZXXx6wu1zmqg+rm6EqnFR7PjiheyGv4WCBzaT6bpB52ImdvvSdpkz52/U1uAk4oq7BJ8ADNckwpahLXYP3gRchNk3AMWBzyBb7ofr+t+q6zSIIgiAIgiAIgiBMnynKf3FQsrqXNQAAAABJRU5ErkJggg==);mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAC40lEQVR42u2aTWgTQRTHf01bW6tSrIiKCCKKiChV8INWECwqClZbq3jz4EVqwa+rIIIIoqCeRNCDB+mhIJiDVS9SQfSioKAnQdGLEBWNStvUmh52FpawmZmkk812834wp7zsm/dmZ+a9fwKCIAiCIAiCUJPUV+i5C4A9QDuQBX7VUlK7gW9AXo1R4HitBH8ImAgE748JYGPSgz8I5EKC98fFOE465TD4QaBRYzM3qSvfa1h5f+xLYvA9lsEPJTH4vcCYRfCPgOZaDf5x3IOvK/OeHwJmGexywE2VqHL5C3wCXgPv4pCwLmDcYuUrMT4AV4E11Qq+GfhSpeALi6pbwJKoE7A1BsEHR1Ztx8jYErME5IF/wNkot8DnGCYhD/TXwiGoGzlgR9KuwTnAMqADWGhh/xVYBfyJ4k3Yb/kmDDsohOpV4fXGwt/5KA/FA5Z9wEOgyYG/RnX96Xz9tnxbZnQzdNfg61Rc22FXd/ZsQ0E2Ekc1KA9cd+ivX+Nn3NGWK5m+InpgJSSxRcCkxtfaOIqiGxz70hVlu6rZMXYDGSovi7/SJKDH9iENFZhYGlgNbFd78bk6tFzTpvlslIQz33DetCc9AUcNekFLkoNvAN5rEvCylIelZmACLhlksXRSV74OOGcotsZUB5k41uH9vmAqt69FoQcAtAK7VV3+DPhYxG4F0Iknb48A34vYrVeSW1tBG7wY2GZZRP0EVmp8OGMn3h8egqfumRC70wX9QSakQksBdxwoQv+Bw1G8iq0qw2ET6AzYdRSp1TN4/x7xGXAkiV2Ista36fauaOx6A3ZPHQR/YxpbueRSuMUgXQX1PJ3WZ2NnIgecAG5HeRovxdPiTQ1In6ZXXx6wu1zmqg+rm6EqnFR7PjiheyGv4WCBzaT6bpB52ImdvvSdpkz52/U1uAk4oq7BJ8ADNckwpahLXYP3gRchNk3AMWBzyBb7ofr+t+q6zSIIgiAIgiAIgiBMnynKf3FQsrqXNQAAAABJRU5ErkJggg==)}
+.ico-play{-webkit-mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACN0lEQVR42u3aS4iNYRjA8Z+7xZBrFClJGJfNlLIQsbCwsrDEziW5xMKWxoIdFmSHrMzKynWaxEKKjIQhJbMhE9LUqXEZi+/9apoFzjkz5nzn+f71dDbn9H7P/7y9l+d7KCkpKSkpCcuEOn8/HcswC9/wM4q4ubiMCgZTfMZJTGv25Beid0jiw6MX25pZwJ0/JD80rmNRsyW/8h+Tz6MfRzGxWQTsrFJAHt1Y14gJja/y+7NrHGcNHuA8ZhRZwLg6x9qHl2kmFVLASDA/baFdWB5RQM5GPMFxTCnKInikxkXwb/Eam6PNgKEsTeeLK+mUGU5AvsDuQA9217ngFlJAzkxcxD20RhSQsx5PcQpTIwqASTiG59gSUUDOEtzENcyLKCBnO17h0Eg9e9EESHeJM3iEtogCctrwEGfRElGAVGc4iGdp1wgnIGcx7mJrVAEwGZdUWZRtJgEwJ+0UYQWQVZ9CCxBdQHdkAX3oiCpgQFZs7Y8o4J2spHYj2hrwA+ewWvbeoaajZFF5jD3pM9Qu8BWHsbbe5Is4AzpwAB9H8jZVBN5iP25FOwh9x2msGo3kG30G3MdevIh2FP6SVvcNo518o82AQVyVdZR8+l+DNoqAN7Legc5ot8EKTqSTXOdYPMBYzoCu9K/3RKsHfMAubBrr5GsRMFjHWL9wAStkfQCFpOna5KqlVfBGSbgtcKssLMB7gZulyV5ADG+X70O7grXL19uI1CJrXqjI6nIDSkpKSkpKSorCb1gswdC7cMNXAAAAAElFTkSuQmCC);mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACN0lEQVR42u3aS4iNYRjA8Z+7xZBrFClJGJfNlLIQsbCwsrDEziW5xMKWxoIdFmSHrMzKynWaxEKKjIQhJbMhE9LUqXEZi+/9apoFzjkz5nzn+f71dDbn9H7P/7y9l+d7KCkpKSkpCcuEOn8/HcswC9/wM4q4ubiMCgZTfMZJTGv25Beid0jiw6MX25pZwJ0/JD80rmNRsyW/8h+Tz6MfRzGxWQTsrFJAHt1Y14gJja/y+7NrHGcNHuA8ZhRZwLg6x9qHl2kmFVLASDA/baFdWB5RQM5GPMFxTCnKInikxkXwb/Eam6PNgKEsTeeLK+mUGU5AvsDuQA9217ngFlJAzkxcxD20RhSQsx5PcQpTIwqASTiG59gSUUDOEtzENcyLKCBnO17h0Eg9e9EESHeJM3iEtogCctrwEGfRElGAVGc4iGdp1wgnIGcx7mJrVAEwGZdUWZRtJgEwJ+0UYQWQVZ9CCxBdQHdkAX3oiCpgQFZs7Y8o4J2spHYj2hrwA+ewWvbeoaajZFF5jD3pM9Qu8BWHsbbe5Is4AzpwAB9H8jZVBN5iP25FOwh9x2msGo3kG30G3MdevIh2FP6SVvcNo518o82AQVyVdZR8+l+DNoqAN7Legc5ot8EKTqSTXOdYPMBYzoCu9K/3RKsHfMAubBrr5GsRMFjHWL9wAStkfQCFpOna5KqlVfBGSbgtcKssLMB7gZulyV5ADG+X70O7grXL19uI1CJrXqjI6nIDSkpKSkpKSorCb1gswdC7cMNXAAAAAElFTkSuQmCC)}
+.ico-stop{-webkit-mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABbUlEQVR42u3ay0rDQBiG4dekgqBWQZqu1I3upHpHUi9NaS9AL0c3HjaJYGxRkB6iiyqoK1vjPz/O90KWTTvPJNOWDCillFJKKaVibKmm86TAHrALZEALWAXWajr/E/AM3AMFcA1cAlVowCOgDwyAV+NjAPSATqjBnwDjAAP/foyAboiZ9zD4zwimV0Lf0eA/jjOrRTAFHoCmswX9Ediad2FMFnijfYeDB9h8/2z8NcCO46/1bQuAtmOAtgVAyzFAZgHQdAywbgGQOgZILQAajgEasQMsWwAksd8C/yoBCEAAAhCAAAQgAAEI4OdVjscztQCYOAYYxw4wsQCYxn4LDB0DDC0ACscAhQVA7hggtwC4dQxwN+8LFnk4mgAlET8crYALh7N/bvkj7ZDZpgRPGyQOrMW7ThBGwHGoy67DbGdGGWDgJXD625mva5tcwtdtchmwAmzUuMC9MNsmlwM3wJXzP2ZKKaWUUkopx70BZH8ZljjaXNgAAAAASUVORK5CYII=);mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABbUlEQVR42u3ay0rDQBiG4dekgqBWQZqu1I3upHpHUi9NaS9AL0c3HjaJYGxRkB6iiyqoK1vjPz/O90KWTTvPJNOWDCillFJKKaVibKmm86TAHrALZEALWAXWajr/E/AM3AMFcA1cAlVowCOgDwyAV+NjAPSATqjBnwDjAAP/foyAboiZ9zD4zwimV0Lf0eA/jjOrRTAFHoCmswX9Ediad2FMFnijfYeDB9h8/2z8NcCO46/1bQuAtmOAtgVAyzFAZgHQdAywbgGQOgZILQAajgEasQMsWwAksd8C/yoBCEAAAhCAAAQgAAEI4OdVjscztQCYOAYYxw4wsQCYxn4LDB0DDC0ACscAhQVA7hggtwC4dQxwN+8LFnk4mgAlET8crYALh7N/bvkj7ZDZpgRPGyQOrMW7ThBGwHGoy67DbGdGGWDgJXD625mva5tcwtdtchmwAmzUuMC9MNsmlwM3wJXzP2ZKKaWUUkopx70BZH8ZljjaXNgAAAAASUVORK5CYII=)}
+.ico-pause{-webkit-mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABOUlEQVR42u2asUvDQBhHXyrWQevopoOIk9YhuriIf4X1j3ZwrRHUVVBBHCpoHHoBlXBwMW0jfQ9uuY/73eXdZftARERERJaTlRnlrgE5sA88AZOGOZvAKbAFPAIf/0HqCVAAZRgvwKhBzmVYW+UUwHHXP34APHw7dDUmwDAhZwi81+Tchz1ao9eygHNgu2a+D1wk3v5qzfwOcNZlAbuR2t4CcuYuIJaXJeRk8zpzjyVHAQpQgAIUoAAFKEABClCAAhSgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKCCVz0itTMgpG+6xcAG3kdo4IaeI1G66/KIGTFvZ6trkDhJyDsOa3zl3wEbXf6s83FJ16GfSWuQqRvxslByH7FbJZiShDxwB68AV8PqHF5UDb8A10+ZJEREREZEW+AIkczzis8nklQAAAABJRU5ErkJggg==);mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABOUlEQVR42u2asUvDQBhHXyrWQevopoOIk9YhuriIf4X1j3ZwrRHUVVBBHCpoHHoBlXBwMW0jfQ9uuY/73eXdZftARERERJaTlRnlrgE5sA88AZOGOZvAKbAFPAIf/0HqCVAAZRgvwKhBzmVYW+UUwHHXP34APHw7dDUmwDAhZwi81+Tchz1ao9eygHNgu2a+D1wk3v5qzfwOcNZlAbuR2t4CcuYuIJaXJeRk8zpzjyVHAQpQgAIUoAAFKEABClCAAhSgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKCCVz0itTMgpG+6xcAG3kdo4IaeI1G66/KIGTFvZ6trkDhJyDsOa3zl3wEbXf6s83FJ16GfSWuQqRvxslByH7FbJZiShDxwB68AV8PqHF5UDb8A10+ZJEREREZEW+AIkczzis8nklQAAAABJRU5ErkJggg==)}
+
 /* Calendrier */
 .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
 .seg button{background:none;border:0;min-height:48px;font-weight:600;color:var(--muted)}
@@ -557,18 +568,34 @@ function snap(){
   S.history.push({ ev:S.events.length, cur:S.cur.slice(), sets:S.sets.map(function(x){ return x.slice(); }),
     serving:S.serving, timeouts:S.timeouts.slice(), subs:S.subs.slice(), finished:S.finished,
     lineup:S.lineup.map(function(a){ return a.slice(); }), swap:S.swap, midSwap:S.midSwap,
-    starters:S.starters.map(function(a){ return a.slice(); }), subPairs:JSON.parse(JSON.stringify(S.subPairs)) });
+    starters:S.starters.map(function(a){ return a.slice(); }), subPairs:JSON.parse(JSON.stringify(S.subPairs)),
+    clk:{ running:S.clock.running, acc:clockMs() } });
   if(S.history.length > 80) S.history.shift();
 }
 function undo(){
   var h = S.history.pop();
   if(!h) return;
+  var removed = S.events.length > h.ev;            /* un événement va être retiré (et pas seulement une rotation) */
   S.events.length = h.ev;
   S.cur = h.cur; S.sets = h.sets; S.serving = h.serving; S.timeouts = h.timeouts; S.subs = h.subs; S.finished = h.finished; S.lineup = h.lineup;
   if(h.swap !== undefined){ S.swap = h.swap; S.midSwap = h.midSwap; }
   if(h.starters){ S.starters = h.starters; S.subPairs = h.subPairs; }
   S.tc = null; ui.sheet = null;
+  if(removed){
+    /* le chrono revient au niveau de l'événement d'avant (ou à zéro s'il n'y en a pas) ; son état (marche / pause) est conservé,
+       sauf si c'est ce point qui l'avait fait démarrer : il s'arrête alors à zéro */
+    var prev = S.events[S.events.length - 1], target = prev ? prev.t : 0;
+    if(!prev && h.clk && !h.clk.running && h.clk.acc === 0){ S.clock = { running:false, since:0, acc:0 }; }
+    else { var was = S.clock.running; S.clock.acc = target; S.clock.since = Date.now(); S.clock.running = was; }
+  }
   save(); render();
+}
+/* texte décrivant la dernière action annulable (pour la fenêtre de confirmation) */
+function lastActionText(){
+  var h = S.history[S.history.length - 1];
+  if(!h) return '';
+  if(S.events.length > h.ev) return evText(S.events[S.events.length - 1]);
+  return 'Rotation d\'une équipe';
 }
 function addEvent(e){
   var base = { n:S.events.length + 1, set:setNumber(), t:clockMs(), ts:new Date().toISOString(), score:S.cur.slice() };
@@ -1489,9 +1516,17 @@ function ibtn(t, kind){
     ((dis || (!sub && n >= 2)) ? ' disabled' : '') + teamStyle(t, 'border-color:transparent') + ' aria-label="' + esc(label) + '" title="' + esc(label) + '">' +
     '<span class="ico ' + (sub ? 'ico-sub' : 'ico-to') + '" aria-hidden="true"></span><span class="cnt">' + n + '/' + max + '</span></button>';
 }
+function cbtn(act, icon, label, extra, dis){
+  return '<button class="cbtn' + (extra ? ' ' + extra : '') + '" data-act="' + act + '"' + (dis ? ' disabled' : '') + ' aria-label="' + esc(label) + '" title="' + esc(label) + '"><span class="ico ico-' + icon + '" aria-hidden="true"></span></button>';
+}
+/* Chrono, puis dessous : annuler le dernier · lecture / pause (un seul bouton qui alterne) · stop (terminer le set) */
 function clockBox(){
-  return '<div class="clkbox ' + (S.clock.running ? '' : 'paused') + '"><span class="clk" role="timer" aria-label="Temps de jeu">' + fmt(clockMs()) + '</span>' +
-    '<button class="hbtn2 sm" data-act="clock"' + (S.finished ? ' disabled' : '') + '>' + clockLabel() + '</button></div>';
+  var run = S.clock.running, fin = S.finished;
+  return '<div class="clkbox ' + (run ? '' : 'paused') + '"><span class="clk" role="timer" aria-label="Temps de jeu">' + fmt(clockMs()) + '</span>' +
+    '<div class="cbar">' +
+    cbtn('undoAsk', 'undo', 'Annuler le dernier événement', '', !S.history.length) +
+    cbtn('clock', run ? 'pause' : 'play', run ? 'Mettre le chrono en pause' : (S.clock.acc > 0 ? 'Reprendre le chrono' : 'Démarrer le chrono'), '', fin) +
+    cbtn('endSetAsk', 'stop', 'Terminer le set', 'stop', fin) + '</div></div>';
 }
 function ctlRow(ord){
   return '<div class="ctlrow"><div class="ig left">' + ibtn(ord[0], 'sub') + ibtn(ord[0], 'to') + '</div>' + clockBox() +
@@ -1552,8 +1587,6 @@ function matchView(){
     out += '<p class="last">Touchez « Donner le service » pour l\'équipe qui sert en premier : la rotation automatique en dépend.</p>';
   }
   out += ctlRow(ord);
-  out += '<div class="actions"><button class="btn wide" data-act="undo"' + (S.history.length ? '' : ' disabled') + '>Annuler le dernier</button>' +
-    '<button class="btn wide" data-act="endSetAsk"' + (S.finished ? ' disabled' : '') + '>Terminer le set</button></div>';
   out += '<div class="actions"><button class="btn wide" data-act="openSetup">Modifier la préparation</button><button class="btn wide" data-act="goHome">Changer de match</button></div>';
   out += prefRow();
   if(S.prefs.schema) out += courtBoard();
@@ -2138,6 +2171,10 @@ function sheetView(){
     var kinds = FAULTS.map(function(k){ return chip('pickHow', { how:k }, esc(k), sh.how === k); }).join('');
     inner = '<h2>Faute de ' + esc(tn(sh.team)) + '</h2><p class="hint2" style="margin-top:4px">Le point est donné à ' + esc(tn(1 - sh.team)) + '.</p>' +
       group('Type de faute', kinds) + group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''));
+  } else if(sh.kind === 'undoask'){
+    inner = '<h2>Annuler le dernier événement ?</h2><p class="hint2" style="font-size:16px;margin-top:8px"><b>' + esc(lastActionText()) + '</b></p>' +
+      '<p class="hint2">Le score, les remplacements et le chrono reviennent au point d\'avant.</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="undoOk">Oui, annuler</button><button class="btn wide" data-act="closeSheet">Non</button></div>';
   } else if(sh.kind === 'subask'){
     inner = '<h2>' + esc(tn(sh.team)) + ' · ' + S.subs[sh.team] + '/6</h2><p class="hint2" style="font-size:16px">Les remplacements ont tous été utilisés pour ce set. Effectuer un remplacement exceptionnel pour blessure ?</p>' +
       '<div class="btnrow"><button class="btn wide primary" data-act="subExc">Oui</button><button class="btn wide" data-act="closeSheet">Non</button></div>';
@@ -2262,7 +2299,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo'];
+  var own = ['setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -2453,6 +2490,8 @@ document.addEventListener('click', function(e){
     case 'timeout': callTimeout(t); break;
     case 'tcStop': S.tc = null; save(); render(); break;
     case 'undo': undo(); break;
+    case 'undoOk': ui.sheet = null; undo(); break;
+    case 'undoAsk': if(S.history.length){ ui.sheet = { kind:'undoask' }; render(); } break;
     case 'endSetAsk': ui.sheet = { kind:'endask' }; render(); break;
     case 'endSetOk': endSet(); break;
     case 'closeSheet': ui.sheet = null; render(); break;
