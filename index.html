@@ -109,7 +109,8 @@ main{max-width:720px;margin:0 auto}
 .half.top{grid-template-rows:2fr 1fr;background:rgba(29,95,168,.09)}
 .half.bot{grid-template-rows:1fr 2fr;background:rgba(194,65,12,.09)}
 .rowp{display:grid;grid-template-columns:repeat(3,1fr);justify-items:center;align-items:center}
-.half .rowp:first-child{border-bottom:2px solid var(--ink)}
+/* ligne des 3 m : sous la 1re rangée de chaque moitié (le bouton de rotation précède les rangées, d'où first-of-type) */
+.half .rowp:first-of-type{border-bottom:2px solid var(--ink)}
 .netbar{height:8px;background:var(--ink);margin:0 -9px;border-radius:2px;position:relative;z-index:2}
 .pl{width:50px;height:50px;border-radius:50%;border:3px solid var(--a);background:var(--surface);font-family:var(--font-d);font-weight:800;font-size:23px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
 .pl.b{border-color:var(--b)}
@@ -263,6 +264,32 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .sw{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);padding:0;position:relative}
 .sw.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
 .sw.other{display:inline-flex;align-items:center;justify-content:center;background:conic-gradient(#D32F2F,#FBC02D,#2E7D32,#1565C0,#6A1B9A,#D32F2F);color:#fff;font-weight:800;font-size:20px;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+
+/* Écran de match : logo sur la tuile, boutons image, chrono central, rotation sur le terrain */
+.tilebox{position:relative;display:flex;flex-direction:column;padding-top:23.4%}
+.tilebox .tile{flex:1}
+.tlogo{position:absolute;top:0;left:50%;transform:translateX(-50%);width:33.33%;aspect-ratio:1/1;box-sizing:border-box;object-fit:contain;background:#fff;border-radius:16%;padding:3%;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:2}
+.tilebox .tilemain{padding-top:24px}
+.ctlrow{display:flex;align-items:center;gap:8px;padding:12px 12px 0}
+.ig{display:flex;gap:6px;flex:0 0 auto}
+.ibtn{width:clamp(48px,14.5vw,58px);min-height:78px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 0 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ibtn.a{border-color:var(--a)}
+.ibtn.b{border-color:var(--b)}
+.ibtn:disabled{opacity:.4;cursor:default}
+.ibtn .cnt{font-size:13px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.ico{display:block;width:34px;height:34px;background-color:currentColor;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain}
+.ico-sub{-webkit-mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAFiklEQVR42u2czW9VRRiHn17UYrqwleICxK0LNw0ErbBAXfiBbojUSIP10hsbiYn+CyVp3ZsYEqLGxIW2ifR/cIFosXZjJGEhfkDBW+HWL0iwHy7u3LSZO+ej52POnDnvL5lNe++dOfOc88477/zuBZFIJBIp3SdTUKxqQAO4Cmzk3C6rvmoy7WYNARcsgNDbd8BTMv2b6gc+AFYLgNFpa8BnwGCVQfQAY8DvBYLQ2y3gvSqGsbDwtK7u1t3AtOH/XyqYcYB/bnj/FDAQ8VRWJoxFhacF4GltUmcNr5uM0dcZw/vmtLt/P3CximEsKjzdVqFih+G9DwLzhqdoNKS/4+o1W9+zCPSFjK1ZlTAWNzyFaQ9wTXvvXWDY8NoDwL/aa28Aj0X04X0YiwpP32vhKUpBE70vIbiwfr7xKYylCU9RGgkJRUGh7WTCDeoYsFz2MBa1SH6Uwd1lyrzOq6b/fTplX7uBTww3QaddVNfsfXiKegJnY+wp5jK8gw8A35YljD0XkaGczuHR7lOhKghGUEaVRjuAd1TINfXZVHNRuK4E3DUf53zX7FOL+kbEQp+1HgE+DQhjP7kA5GdtUD9uM6tJo2GVRSXNqNLokOHar7sAZEob1CXL/R8FflGTc9TyutlKUEHIXXuAe9rADlWgDDSpXfOK2lw6oRltcDMVAHLDxaejo8Pa4O4Bj3oOZGnL9bZUCHNKCxlvylzXKwrKdeBlFwdY14Asq3KGqCD1Ajc1KOMyLW6lwIshKeMk8KtqL8rU5aO9hhT4iAGEnr9fdfR6vPCF6Snw+RAQW5sL8tIXpqfAqxEgXAESdnSQZ7NSwr+UYGBFqZ8K+MLqIZ23DGWHjQLDUxN3fGHNvMLYTkMK3AHR2dEWCSTqZPMcsAvz6eQs8X1hpoO0afXZ51Rf1sLYCyqlXdJAUCCQAeBsSHiaBw5qT9Gc4XVnYvQVxxd2MCS8r6qxWitY2gQivjCHgAwhvjAngERlT7ptNUq2fGGF2VvzAuKTL8xqGMsDSNzsKY1s+sIGaXvZrGRjWQLJOjwlSWfz9IVZCWNZAXkm5NH+A5jAD19YjbbH7VbIpvJZF4D8kGN4ClNRvrBB2p43Uxi74gKQy9rnLGmbuzxVpC9smLYHLrNjjKyANAw73CGLZZiifGGmIu6UC0BqwNfaZ12IWW8qs/Rjjv9I6fTJMsvab8iwTnkORM/0vnBtH3LWkGHt8hRGLm7RrIEMGNLfDz0F8j7d379xcqfeMKS/T3oGo9dQFnrTVSCmBX4ev36ZoWHYEO50FUjQAt8owUS/xKZPbZJgr/BilqmuDSBBC3yf40B061HLAOYI3ab2vWUA8rBhgX/ccSBRppB+uivKM3kOIGvV2Ty7+KoE60hU9bhlCMWHywQE4AnaZosHSrCGbNcytJD3AKou0y8ehTk+6wLELhAI9kTfzCrVFSDJ5qMDZkmlxc/bHoCLegv4W6XQr/s4H2UC0gvc0Uoy4wKkON0P/EV3nWxcgBSnN+g+x84SigBJoFMGKOvA2wLEPygCxDEoAsQxKM4B8aWtEf7dkVyB9KQE4qtu03YYbqSYj0Rzm6akfc3zMkghSgNkAvjNQxjrwLtIfU4WdYHhWdorMASIlE580iieFxfLpB7aB1Nel9/LBmQZzw+oyqZjCkoTOJHTZtIrIKNqwlbIyA1ewO7eGyB1bcH9h/axqwApQGOG7OdPyvcDll4AOUm333WNZL8vIkBS6jXa3zzNY5MmQLapEc9glBrIcQ9hlBbIq57CKCWQEwYYPrfEJQVbWgEeqli5ZtuqWX6kq6LER9s2gZxWe44qwJiQRV0kaa9PGhEoUjoRxVBQcXFUpqY4mcrvy/j/E39Oq65BaQoQN0ornTPvYzIdIpGoW/8DBDw0dcQQhDEAAAAASUVORK5CYII=);mask-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAFiklEQVR42u2czW9VRRiHn17UYrqwleICxK0LNw0ErbBAXfiBbojUSIP10hsbiYn+CyVp3ZsYEqLGxIW2ifR/cIFosXZjJGEhfkDBW+HWL0iwHy7u3LSZO+ej52POnDnvL5lNe++dOfOc88477/zuBZFIJBIp3SdTUKxqQAO4Cmzk3C6rvmoy7WYNARcsgNDbd8BTMv2b6gc+AFYLgNFpa8BnwGCVQfQAY8DvBYLQ2y3gvSqGsbDwtK7u1t3AtOH/XyqYcYB/bnj/FDAQ8VRWJoxFhacF4GltUmcNr5uM0dcZw/vmtLt/P3CximEsKjzdVqFih+G9DwLzhqdoNKS/4+o1W9+zCPSFjK1ZlTAWNzyFaQ9wTXvvXWDY8NoDwL/aa28Aj0X04X0YiwpP32vhKUpBE70vIbiwfr7xKYylCU9RGgkJRUGh7WTCDeoYsFz2MBa1SH6Uwd1lyrzOq6b/fTplX7uBTww3QaddVNfsfXiKegJnY+wp5jK8gw8A35YljD0XkaGczuHR7lOhKghGUEaVRjuAd1TINfXZVHNRuK4E3DUf53zX7FOL+kbEQp+1HgE+DQhjP7kA5GdtUD9uM6tJo2GVRSXNqNLokOHar7sAZEob1CXL/R8FflGTc9TyutlKUEHIXXuAe9rADlWgDDSpXfOK2lw6oRltcDMVAHLDxaejo8Pa4O4Bj3oOZGnL9bZUCHNKCxlvylzXKwrKdeBlFwdY14Asq3KGqCD1Ajc1KOMyLW6lwIshKeMk8KtqL8rU5aO9hhT4iAGEnr9fdfR6vPCF6Snw+RAQW5sL8tIXpqfAqxEgXAESdnSQZ7NSwr+UYGBFqZ8K+MLqIZ23DGWHjQLDUxN3fGHNvMLYTkMK3AHR2dEWCSTqZPMcsAvz6eQs8X1hpoO0afXZ51Rf1sLYCyqlXdJAUCCQAeBsSHiaBw5qT9Gc4XVnYvQVxxd2MCS8r6qxWitY2gQivjCHgAwhvjAngERlT7ptNUq2fGGF2VvzAuKTL8xqGMsDSNzsKY1s+sIGaXvZrGRjWQLJOjwlSWfz9IVZCWNZAXkm5NH+A5jAD19YjbbH7VbIpvJZF4D8kGN4ClNRvrBB2p43Uxi74gKQy9rnLGmbuzxVpC9smLYHLrNjjKyANAw73CGLZZiifGGmIu6UC0BqwNfaZ12IWW8qs/Rjjv9I6fTJMsvab8iwTnkORM/0vnBtH3LWkGHt8hRGLm7RrIEMGNLfDz0F8j7d379xcqfeMKS/T3oGo9dQFnrTVSCmBX4ev36ZoWHYEO50FUjQAt8owUS/xKZPbZJgr/BilqmuDSBBC3yf40B061HLAOYI3ab2vWUA8rBhgX/ccSBRppB+uivKM3kOIGvV2Ty7+KoE60hU9bhlCMWHywQE4AnaZosHSrCGbNcytJD3AKou0y8ehTk+6wLELhAI9kTfzCrVFSDJ5qMDZkmlxc/bHoCLegv4W6XQr/s4H2UC0gvc0Uoy4wKkON0P/EV3nWxcgBSnN+g+x84SigBJoFMGKOvA2wLEPygCxDEoAsQxKM4B8aWtEf7dkVyB9KQE4qtu03YYbqSYj0Rzm6akfc3zMkghSgNkAvjNQxjrwLtIfU4WdYHhWdorMASIlE580iieFxfLpB7aB1Nel9/LBmQZzw+oyqZjCkoTOJHTZtIrIKNqwlbIyA1ewO7eGyB1bcH9h/axqwApQGOG7OdPyvcDll4AOUm333WNZL8vIkBS6jXa3zzNY5MmQLapEc9glBrIcQ9hlBbIq57CKCWQEwYYPrfEJQVbWgEeqli5ZtuqWX6kq6LER9s2gZxWe44qwJiQRV0kaa9PGhEoUjoRxVBQcXFUpqY4mcrvy/j/E39Oq65BaQoQN0ornTPvYzIdIpGoW/8DBDw0dcQQhDEAAAAASUVORK5CYII=)}
+.ico-to{-webkit-mask-image:url(data:image/png;base64,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);mask-image:url(data:image/png;base64,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)}
+.clkbox{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.clkbox .clk{font-family:var(--font-d);font-weight:800;font-size:clamp(24px,8vw,32px);line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.clkbox.paused .clk{opacity:.5}
+.hbtn2.sm{min-height:34px;padding:0 6px;font-size:12px;max-width:100%;white-space:nowrap}
+.half{position:relative}
+.rotbtn{position:absolute;left:4px;z-index:3;width:32px;height:32px;border-radius:50%;border:2px solid var(--ink);background:var(--surface);color:var(--ink);padding:0;display:flex;align-items:center;justify-content:center}
+.half.top .rotbtn{top:4px}
+.half.bot .rotbtn{bottom:4px}
+.rotbtn.a{border-color:var(--a)}
+.rotbtn.b{border-color:var(--b)}
 
 /* Calendrier */
 .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
@@ -1418,18 +1445,32 @@ function teamStyle(t, extra){
   var tc = teamColors()[t];
   return tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + ';' + (tc.sh ? tc.sh + ';' : '') + (extra || '') + '"';
 }
+function tileLogo(clubId){
+  var c = clubById(clubId);
+  return (c && c.logo) ? '<img class="tlogo" src="' + esc(c.logo) + '" alt="">' : '';
+}
 function tile(t){
   var dis = S.finished;
-  return '<div class="tile ' + (t ? 'b' : 'a') + '"' + teamStyle(t) + '>' +
+  return '<div class="tilebox">' + tileLogo(S.teams[t].clubId) + '<div class="tile ' + (t ? 'b' : 'a') + '"' + teamStyle(t) + '>' +
     '<button class="tilemain" data-act="openPoint" data-team="' + t + '"' + (dis ? ' disabled' : '') + ' aria-label="Marquer un point pour ' + esc(tn(t)) + ', score actuel ' + S.cur[t] + '">' +
-    '<span class="tname">' + logoHtml(S.teams[t].clubId, 34) + '<span>' + esc(tn(t)) + '</span></span><span class="score">' + S.cur[t] + '</span><span class="hint">' + (dis ? '' : 'Toucher pour marquer') + '</span></button>' +
-    '<button class="srv ' + (S.serving === t ? 'on' : '') + '" data-act="serve" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>' + (S.serving === t ? 'Au service' : 'Donner le service') + '</button></div>';
+    '<span class="tname"><span>' + esc(tn(t)) + '</span></span><span class="score">' + S.cur[t] + '</span><span class="hint">' + (dis ? '' : 'Toucher pour marquer') + '</span></button>' +
+    '<button class="srv ' + (S.serving === t ? 'on' : '') + '" data-act="serve" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>' + (S.serving === t ? 'Au service' : 'Donner le service') + '</button></div></div>';
 }
-function col(t){
-  var dis = S.finished, st = teamStyle(t, 'border-color:transparent');
-  return '<div class="col ' + (t ? 'b' : 'a') + '">' +
-    '<button class="btn" data-act="openSub" data-team="' + t + '"' + (dis ? ' disabled' : '') + st + '>Remplacement <small>' + S.subs[t] + '/6</small></button>' +
-    '<button class="btn" data-act="timeout" data-team="' + t + '"' + ((dis || S.timeouts[t] >= 2) ? ' disabled' : '') + st + '>Temps mort <small>' + S.timeouts[t] + '/2</small></button></div>';
+/* Boutons Remplacement / Temps mort : images + décompte dessous ; couleurs de l'équipe */
+function ibtn(t, kind){
+  var dis = S.finished, sub = kind === 'sub', n = sub ? S.subs[t] : S.timeouts[t], max = sub ? 6 : 2;
+  var label = (sub ? 'Remplacement' : 'Temps mort') + ' de ' + tn(t) + ', ' + n + ' sur ' + max;
+  return '<button class="ibtn ' + (t ? 'b' : 'a') + '" data-act="' + (sub ? 'openSub' : 'timeout') + '" data-team="' + t + '"' +
+    ((dis || (!sub && n >= 2)) ? ' disabled' : '') + teamStyle(t, 'border-color:transparent') + ' aria-label="' + esc(label) + '" title="' + esc(label) + '">' +
+    '<span class="ico ' + (sub ? 'ico-sub' : 'ico-to') + '" aria-hidden="true"></span><span class="cnt">' + n + '/' + max + '</span></button>';
+}
+function clockBox(){
+  return '<div class="clkbox ' + (S.clock.running ? '' : 'paused') + '"><span class="clk" role="timer" aria-label="Temps de jeu">' + fmt(clockMs()) + '</span>' +
+    '<button class="hbtn2 sm" data-act="clock"' + (S.finished ? ' disabled' : '') + '>' + clockLabel() + '</button></div>';
+}
+function ctlRow(ord){
+  return '<div class="ctlrow"><div class="ig left">' + ibtn(ord[0], 'sub') + ibtn(ord[0], 'to') + '</div>' + clockBox() +
+    '<div class="ig right">' + ibtn(ord[1], 'sub') + ibtn(ord[1], 'to') + '</div></div>';
 }
 function playerBtn(t, i){
   var p = findPlayer(t, S.lineup[t][i]), tc = teamColors()[t];
@@ -1440,10 +1481,7 @@ function playerBtn(t, i){
 }
 function teamBar(t){
   var tc = teamColors()[t];
-  return '<div class="chead"><span class="cname ' + (t ? 'b' : 'a') + (tc.def ? '' : ' pill') + '"' + (tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + '"') + '>' + logoHtml(S.teams[t].clubId, 28) + '<span>' + esc(tn(t)) + '</span></span>' +
-    '<span class="cbtns"><button class="mini" data-act="openLineup" data-team="' + t + '">Composition</button>' +
-    '<button class="mini" data-act="rot" data-team="' + t + '" data-dir="-1" aria-label="Rotation inverse de ' + esc(tn(t)) + '">↺</button>' +
-    '<button class="mini" data-act="rot" data-team="' + t + '" data-dir="1" aria-label="Faire tourner ' + esc(tn(t)) + '">↻</button></span></div>';
+  return '<div class="chead"><span class="cname ' + (t ? 'b' : 'a') + (tc.def ? '' : ' pill') + '"' + (tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + '"') + '>' + logoHtml(S.teams[t].clubId, 28) + '<span>' + esc(tn(t)) + '</span></span></div>';
 }
 /* Terrain vu de dessus : l'équipe A en haut, l'équipe B en bas, filet au milieu.
    Haut (face au filet vers le bas) : fond 1-6-5 puis avant 2-3-4. Bas (face au filet vers le haut) : avant 4-3-2 puis fond 5-6-1.
@@ -1451,7 +1489,9 @@ function teamBar(t){
 function half(t, pos){
   var g = pos === 'top' ? [[0,5,4],[1,2,3]] : [[3,2,1],[4,5,0]], tc = teamColors()[t];
   var tint = tc.def ? '' : ' style="background:' + tc.tint + '"';
-  return '<div class="half ' + pos + '"' + tint + '>' + g.map(function(row){ return '<div class="rowp">' + row.map(function(i){ return playerBtn(t, i); }).join('') + '</div>'; }).join('') + '</div>';
+  var rot = '<button class="rotbtn ' + (t ? 'b' : 'a') + '" data-act="rot" data-team="' + t + '" data-dir="1"' + teamStyle(t, 'border-color:transparent') + ' aria-label="Faire tourner ' + esc(tn(t)) + '" title="Rotation de ' + esc(tn(t)) + '">' +
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button>';
+  return '<div class="half ' + pos + '"' + tint + '>' + rot + g.map(function(row){ return '<div class="rowp">' + row.map(function(i){ return playerBtn(t, i); }).join('') + '</div>'; }).join('') + '</div>';
 }
 function courtBoard(){
   return '<div class="courtbox">' + teamBar(0) + '<div class="court" role="group" aria-label="Terrain, vue de dessus">' + half(0,'top') + '<div class="netbar" aria-hidden="true"></div>' + half(1,'bot') + '</div>' + teamBar(1) + '</div>';
@@ -1481,14 +1521,12 @@ function matchView(){
   if(S.tc && S.tc.endsAt > Date.now()){
     out += '<div class="tcbar"><span>Temps mort ' + esc(tn(S.tc.team)) + '</span><span id="tcleft">' + Math.ceil((S.tc.endsAt - Date.now())/1000) + ' s</span><button data-act="tcStop">Fermer</button></div>';
   }
-  out += '<div class="bigclock ' + (S.clock.running ? '' : 'paused') + '"><span class="clk" role="timer" aria-label="Temps de jeu">' + fmt(clockMs()) + '</span>' +
-    '<button class="hbtn2" data-act="clock"' + (S.finished ? ' disabled' : '') + '>' + clockLabel() + '</button></div>';
   var ord = S.swap ? [1, 0] : [0, 1];
   out += '<div class="board">' + tile(ord[0]) + tile(ord[1]) + (showSwap() ? '<button class="swapbtn" data-act="swap" aria-label="Inverser la position des équipes" title="Inverser la position des équipes"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/></svg></button>' : '') + '</div>';
   if(S.serving === null && S.cur[0] + S.cur[1] === 0 && !S.finished){
     out += '<p class="last">Touchez « Donner le service » pour l\'équipe qui sert en premier : la rotation automatique en dépend.</p>';
   }
-  out += '<div class="ctl">' + col(ord[0]) + col(ord[1]) + '</div>';
+  out += ctlRow(ord);
   out += '<div class="actions"><button class="btn wide" data-act="undo"' + (S.history.length ? '' : ' disabled') + '>Annuler le dernier</button>' +
     '<button class="btn wide" data-act="endSetAsk"' + (S.finished ? ' disabled' : '') + '>Terminer le set</button></div>';
   out += '<div class="actions"><button class="btn wide" data-act="openSetup">Modifier la préparation</button><button class="btn wide" data-act="goHome">Changer de match</button></div>';
@@ -2028,7 +2066,7 @@ function sheetView(){
     var how = Object.keys(HOW).map(function(k){ return chip('pickHow', { how:k }, HOW[k], sh.how === k); }).join('') + chip('pickHow', { how:'oppfault' }, 'Faute adverse', false);
     inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2>' + group('Comment ?', how) +
       group('Qui a marqué ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''));
-    if(!onCourt(sh.team).length) inner += '<p class="hint2">Aucun joueur en jeu. Placez vos joueurs avec « Composition ».</p>';
+    if(!onCourt(sh.team).length) inner += '<p class="hint2">Aucun joueur en jeu. Touchez un poste vide du terrain pour placer vos joueurs.</p>';
   } else if(sh.kind === 'fault'){
     var kinds = FAULTS.map(function(k){ return chip('pickHow', { how:k }, esc(k), sh.how === k); }).join('');
     inner = '<h2>Faute de ' + esc(tn(sh.team)) + '</h2><p class="hint2" style="margin-top:4px">Le point est donné à ' + esc(tn(1 - sh.team)) + '.</p>' +
