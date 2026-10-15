@@ -247,6 +247,23 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 :root[data-theme="dark"] .linkbtn{color:#7DB4F0}
 .menufoot{margin:0;padding:22px 12px 10px;text-align:center;color:var(--muted);font-style:italic;font-size:14px}
 
+/* Page « Logo et couleurs » */
+.lookgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lookcard{border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:8px;display:flex;flex-direction:column;gap:6px;text-align:left;font-weight:600;font-size:14px;min-width:0}
+.lookcard.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.lookcard .pv{display:block;height:52px;border-radius:8px;border:1px solid rgba(0,0,0,.15)}
+.lookprev{display:flex;gap:12px;align-items:stretch}
+.pvtile{flex:1;border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:116px;text-align:center}
+.pvtile .pvn{font-family:var(--font-d);font-weight:700;font-size:18px;line-height:1.1;overflow-wrap:anywhere}
+.pvtile b{font-family:var(--font-d);font-size:60px;font-weight:800;line-height:1}
+.pvside{display:flex;flex-direction:column;gap:8px;justify-content:center;min-width:112px}
+.pvbtn{padding:9px 10px;border-radius:10px;font-weight:600;font-size:14px;text-align:center}
+.pvcirc{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:800;font-size:22px;align-self:center;border:3px solid transparent}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);padding:0;position:relative}
+.sw.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
+.sw.other{display:inline-flex;align-items:center;justify-content:center;background:conic-gradient(#D32F2F,#FBC02D,#2E7D32,#1565C0,#6A1B9A,#D32F2F);color:#fff;font-weight:800;font-size:20px;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+
 /* Calendrier */
 .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
 .seg button{background:none;border:0;min-height:48px;font-weight:600;color:var(--muted)}
@@ -833,27 +850,79 @@ function gradientsOf(pal){
   for(var i = 0; i < p.length; i++) for(var j = i + 1; j < p.length; j++) out.push({ c1:p[i], c2:p[j], pen:i + j });
   return out.sort(function(a, b){ return a.pen - b.pen; });
 }
-function meanLab(g){ var a = labOf(g.c1), b = labOf(g.c2); return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]; }
 function rgbaOf(h, a){ var c = rgbOf(h); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
-function inkFor(c1, c2){
-  var cands = ['#FFFFFF', '#10161C'], best = cands[0], bs = -1;
-  cands.forEach(function(ink){ var m = Math.min(contrastOf(ink, c1), contrastOf(ink, c2)); if(m > bs){ bs = m; best = ink; } });
-  return best;
+
+/* Styles de remplissage (tuiles de score, boutons, cercles, pastilles, liserés) */
+var STYLES = [['fondu', 'Fondu'], ['diagonale', 'Diagonale'], ['horizontal', 'Bandes horizontales'], ['vertical', 'Bandes verticales'], ['rayures', 'Rayures'], ['radial', 'Radial'], ['uni', 'Couleur unie']];
+var BASIC_COLORS = [['#D32F2F', 'Rouge'], ['#F57C00', 'Orange'], ['#FBC02D', 'Jaune'], ['#2E7D32', 'Vert'], ['#1565C0', 'Bleu'], ['#6A1B9A', 'Violet'], ['#D81B60', 'Rose'], ['#111111', 'Noir'], ['#FFFFFF', 'Blanc'], ['#757575', 'Gris']];
+/* 1 à 3 couleurs ; une seule couleur donne un style à deux tons (variante plus claire ou plus sombre), sauf « unie » */
+function fillCols(cols, style){
+  cols = (cols || []).filter(function(h){ return /^#[0-9A-Fa-f]{6}$/.test(h); }).map(function(h){ return h.toUpperCase(); }).slice(0, 3);
+  if(!cols.length) cols = [DEF_COLORS[0].c1];
+  if(style === 'uni') return [cols[0]];
+  if(cols.length === 1) cols = [cols[0], mixHex(cols[0], lumOf(cols[0]) > 0.3 ? '#000000' : '#FFFFFF', 0.38)];
+  return cols;
 }
-/* Couleurs des deux équipes : { def, c1, c2, bg, ink } ; def = true quand le club n'a pas de logo exploitable (couleurs par défaut). */
+/* mode : 'bar' = version horizontale pour le liseré ; alpha : transparence (teinte des demi-terrains) */
+function styleCss(style, cols, mode, alpha){
+  var c = fillCols(cols, style), n = c.length, bar = mode === 'bar', i;
+  if(alpha != null) c = c.map(function(h){ return rgbaOf(h, alpha); });
+  function pct(v){ return +v.toFixed(2); }
+  function hard(angle){ var st = []; for(i = 0; i < n; i++) st.push(c[i] + ' ' + pct(i * 100 / n) + '%', c[i] + ' ' + pct((i + 1) * 100 / n) + '%'); return 'linear-gradient(' + angle + ',' + st.join(',') + ')'; }
+  function stripes(w){ var st = []; for(i = 0; i < n; i++) st.push(c[i] + ' ' + (i * w) + 'px', c[i] + ' ' + ((i + 1) * w) + 'px'); return 'repeating-linear-gradient(135deg,' + st.join(',') + ')'; }
+  switch(style){
+    case 'uni': return 'linear-gradient(' + c[0] + ',' + c[0] + ')';
+    case 'diagonale': return hard(bar ? '90deg' : '135deg');
+    case 'horizontal': return hard(bar ? '90deg' : '180deg');
+    case 'vertical': return hard('90deg');
+    case 'rayures': return stripes(bar ? 8 : 12);
+    case 'radial': return bar ? 'linear-gradient(90deg,' + c.join(',') + ')' : 'radial-gradient(circle at 30% 30%,' + c.join(',') + ')';
+    default: return 'linear-gradient(' + (bar ? '90deg' : '135deg') + ',' + c.join(',') + ')';
+  }
+}
+function inkForList(cols){
+  var cands = ['#FFFFFF', '#10161C'], best = cands[0], bs = -1;
+  cands.forEach(function(ink){ var m = Math.min.apply(null, cols.map(function(h){ return contrastOf(ink, h); })); if(m > bs){ bs = m; best = ink; } });
+  return { ink:best, min:bs };
+}
+function buildSpec(style, cols){
+  var c = fillCols(cols, style), k = inkForList(c);
+  return { def:false, style:style, cols:c, c1:c[0], c2:c[c.length - 1],
+    bg:styleCss(style, c), bar:styleCss(style, c, 'bar'), tint:styleCss(style, c, null, 0.16),
+    ink:k.ink, sh:k.min < 3 ? (k.ink === '#FFFFFF' ? 'text-shadow:0 1px 3px rgba(0,0,0,.6)' : 'text-shadow:0 1px 3px rgba(255,255,255,.7)') : '' };
+}
+function meanLabCols(cols){
+  var l = cols.map(labOf);
+  return [0, 1, 2].map(function(i){ return l.reduce(function(s, v){ return s + v[i]; }, 0) / l.length; });
+}
+function lookOf(club){ return (club && club.look && club.look.mode === 'custom') ? club.look : null; }
+/* Couleurs « automatiques » d'un club (tirées de son logo), ou null */
+function autoColsOf(club){
+  if(!(club && club.logo && club.pal && club.pal.length)) return null;
+  var g = gradientsOf(club.pal)[0];
+  return g ? [g.c1, g.c2] : null;
+}
+function candidatesOf(club){
+  var lk = lookOf(club);
+  if(lk) return [{ style:lk.style || 'fondu', cols:fillCols(lk.colors, lk.style || 'fondu'), pen:0 }];
+  if(club && club.logo && club.pal && club.pal.length) return gradientsOf(club.pal).map(function(g){ return { style:'fondu', cols:[g.c1, g.c2], pen:g.pen }; });
+  return [];
+}
+/* Couleurs des deux équipes d'un match : { def, style, cols, c1, c2, bg, bar, tint, ink, sh } ; def = true : couleurs par défaut.
+   Réglage « automatique » : si les deux équipes se ressemblent trop, on cherche une combinaison plus distincte avec la 3e couleur dominante.
+   Réglage personnalisé d'un club : respecté tel quel. */
 function teamColors(m){
   m = m || S;
-  function palOf(t){ var c = clubById(m.teams[t].clubId); return (c && c.logo && c.pal && c.pal.length) ? c.pal : null; }
-  var A = gradientsOf(palOf(0)), B = gradientsOf(palOf(1)), defA = !A.length, defB = !B.length;
-  if(defA) A = [{ c1:DEF_COLORS[0].c1, c2:DEF_COLORS[0].c2, pen:0 }];
-  if(defB) B = [{ c1:DEF_COLORS[1].c1, c2:DEF_COLORS[1].c2, pen:0 }];
+  var A = candidatesOf(clubById(m.teams[0].clubId)), B = candidatesOf(clubById(m.teams[1].clubId)), defA = !A.length, defB = !B.length;
+  if(defA) A = [{ style:'fondu', cols:[DEF_COLORS[0].c1], pen:0 }];
+  if(defB) B = [{ style:'fondu', cols:[DEF_COLORS[1].c1], pen:0 }];
   var best = null;
   A.forEach(function(a){ B.forEach(function(b){
-    var sep = deltaE(meanLab(a), meanLab(b)), sc = { ok:sep >= SEP_MIN, cost:a.pen + b.pen, sep:sep };
+    var sep = deltaE(meanLabCols(a.cols), meanLabCols(b.cols)), sc = { ok:sep >= SEP_MIN, cost:a.pen + b.pen, sep:sep };
     var better = !best || (sc.ok !== best.sc.ok ? sc.ok : (sc.ok ? (sc.cost < best.sc.cost || (sc.cost === best.sc.cost && sc.sep > best.sc.sep)) : sc.sep > best.sc.sep));
     if(better) best = { a:a, b:b, sc:sc };
   }); });
-  function fin(g, def){ return def ? { def:true } : { def:false, c1:g.c1, c2:g.c2, bg:'linear-gradient(135deg,' + g.c1 + ',' + g.c2 + ')', ink:inkFor(g.c1, g.c2) }; }
+  function fin(g, def){ return def ? { def:true } : buildSpec(g.style, g.cols); }
   return [fin(best.a, defA), fin(best.b, defB)];
 }
 
@@ -1347,7 +1416,7 @@ function statTable(t){ return statTableOf(S, t); }
 /* ---------- Vue : match ---------- */
 function teamStyle(t, extra){
   var tc = teamColors()[t];
-  return tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + ';' + (extra || '') + '"';
+  return tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + ';' + (tc.sh ? tc.sh + ';' : '') + (extra || '') + '"';
 }
 function tile(t){
   var dis = S.finished;
@@ -1366,12 +1435,12 @@ function playerBtn(t, i){
   var p = findPlayer(t, S.lineup[t][i]), tc = teamColors()[t];
   var srv = (i === 0 && S.serving === t);
   var label = 'Poste ' + (i + 1) + (p ? ', ' + plabel(p.num, p.name) : ', vide') + (srv ? ', au service' : '');
-  var st = (p && !tc.def) ? ' style="background:' + tc.bg + ';color:' + tc.ink + ';border-color:' + tc.ink + '"' : '';
+  var st = (p && !tc.def) ? ' style="background:' + tc.bg + ';color:' + tc.ink + ';border-color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + '"' : '';
   return '<button class="pl ' + (t ? 'b' : 'a') + (srv ? ' srv2' : '') + (p ? '' : ' empty') + '" data-act="' + (p ? 'openPlayer' : 'openLineup') + '" data-team="' + t + '"' + (p ? ' data-pid="' + p.id + '"' : '') + st + ' aria-label="' + esc(label) + '">' + (p ? esc(p.num || '–') : '+') + '</button>';
 }
 function teamBar(t){
   var tc = teamColors()[t];
-  return '<div class="chead"><span class="cname ' + (t ? 'b' : 'a') + (tc.def ? '' : ' pill') + '"' + (tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + '"') + '>' + logoHtml(S.teams[t].clubId, 28) + '<span>' + esc(tn(t)) + '</span></span>' +
+  return '<div class="chead"><span class="cname ' + (t ? 'b' : 'a') + (tc.def ? '' : ' pill') + '"' + (tc.def ? '' : ' style="background:' + tc.bg + ';color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + '"') + '>' + logoHtml(S.teams[t].clubId, 28) + '<span>' + esc(tn(t)) + '</span></span>' +
     '<span class="cbtns"><button class="mini" data-act="openLineup" data-team="' + t + '">Composition</button>' +
     '<button class="mini" data-act="rot" data-team="' + t + '" data-dir="-1" aria-label="Rotation inverse de ' + esc(tn(t)) + '">↺</button>' +
     '<button class="mini" data-act="rot" data-team="' + t + '" data-dir="1" aria-label="Faire tourner ' + esc(tn(t)) + '">↻</button></span></div>';
@@ -1381,7 +1450,7 @@ function teamBar(t){
    Les couleurs des logos teintent chaque moitié de terrain, remplissent les cercles et colorent le nom de l'équipe. */
 function half(t, pos){
   var g = pos === 'top' ? [[0,5,4],[1,2,3]] : [[3,2,1],[4,5,0]], tc = teamColors()[t];
-  var tint = tc.def ? '' : ' style="background:linear-gradient(135deg,' + rgbaOf(tc.c1, 0.16) + ',' + rgbaOf(tc.c2, 0.16) + ')"';
+  var tint = tc.def ? '' : ' style="background:' + tc.tint + '"';
   return '<div class="half ' + pos + '"' + tint + '>' + g.map(function(row){ return '<div class="rowp">' + row.map(function(i){ return playerBtn(t, i); }).join('') + '</div>'; }).join('') + '</div>';
 }
 function courtBoard(){
@@ -1390,11 +1459,11 @@ function courtBoard(){
 /* Cartes de statistiques : liseré et nom aux couleurs du club (d'un match quelconque) */
 function cardStyle(m, t){
   var tc = teamColors(m)[t];
-  return tc.def ? '' : ' style="border-top-color:transparent;background:linear-gradient(90deg,' + tc.c1 + ',' + tc.c2 + ') top left/100% 6px no-repeat border-box,var(--surface)"';
+  return tc.def ? '' : ' style="border-top-color:transparent;background:' + tc.bar + ' top left/100% 6px no-repeat border-box,var(--surface)"';
 }
 function pillHtml(m, t, text){
   var tc = teamColors(m)[t];
-  return tc.def ? esc(text) : '<span class="tpill" style="background:' + tc.bg + ';color:' + tc.ink + '">' + esc(text) + '</span>';
+  return tc.def ? esc(text) : '<span class="tpill" style="background:' + tc.bg + ';color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + '">' + esc(text) + '</span>';
 }
 function prefRow(){
   var items = [['schema','Schéma'],['players','Résultats par joueur'],['sheet','Feuille de match']];
@@ -1551,6 +1620,7 @@ function clubsView(){
   if(v === 'created') return clubsCreated();
   if(v === 'list') return clubsList();
   if(v === 'edit') return clubsEdit();
+  if(v === 'logo') return clubsLogo();
   return clubsHome();
 }
 function clubsHome(){
@@ -1607,8 +1677,8 @@ function clubsEdit(){
       '<label class="f" for="cname">Nom du club</label><input type="text" id="cname" data-bind="cname" value="' + esc(c.name) + '" autocomplete="off">' +
       '<p class="f" style="margin:14px 0 4px;font-size:14px;color:var(--muted)">Logo</p>' +
       '<div class="logoedit">' + (c.logo ? logoHtml(c.id, 64) : '<span class="logo none" style="width:64px;height:64px">Pas de logo</span>') +
-      '<div class="btnrow" style="margin:0;flex:1"><input type="file" id="logofile" class="vh" accept="image/*"><label for="logofile" class="btn wide">' + (c.logo ? 'Changer le logo' : 'Choisir un logo') + '</label>' +
-      (c.logo ? '<button class="btn wide" data-act="logoDel">Retirer le logo</button>' : '') + '</div></div></section>';
+      '<span class="actcell"><button class="delwrap" data-act="clubLogo" aria-label="Logo et couleurs de ' + esc(c.name) + '"><span class="editc">' + GEAR + '</span></button>' +
+      (c.logo ? '<button class="delwrap" data-act="logoRemoveAsk" aria-label="Retirer le logo de ' + esc(c.name) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</span></div></section>';
     out += '<section class="card"><h3>Importer des membres</h3>' +
       '<p class="muted" style="margin:0">Fichier CSV avec les colonnes licence, nom, prénom, âge (avec ou sans ligne d\'en-tête). Les séparateurs ; , et tabulation sont reconnus. Une licence déjà présente est mise à jour.</p>' +
       '<div class="btnrow"><input type="file" id="csvfile" class="vh" accept=".csv,.txt,text/csv,text/plain"><label for="csvfile" class="btn wide">Choisir un fichier CSV</label></div>' +
@@ -1628,6 +1698,59 @@ function clubsEdit(){
             '<button class="delwrap" data-act="delMemberAsk" data-mid="' + m.id + '" aria-label="Supprimer ' + esc(memberName(m)) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></span></td></tr>';
         }).join('') + '</tbody></table></div>' : '<p class="muted">Aucun membre dans ce club.</p>') +
       '<div class="btnrow"><button class="btn wide danger" data-act="delClubAsk">Supprimer ce club</button></div></section>';
+  }
+  return out + '</div>';
+}
+
+/* ---------- Page d'un club : logo et couleurs de saisie des points ---------- */
+function specCss(sp){ return 'background:' + sp.bg + ';color:' + sp.ink + (sp.sh ? ';' + sp.sh : ''); }
+/* Réglage courant d'un club, tel qu'il apparaîtrait seul à l'écran */
+function clubSpec(c){
+  var lk = lookOf(c);
+  if(lk) return buildSpec(lk.style || 'fondu', lk.colors);
+  var ac = autoColsOf(c);
+  return buildSpec('fondu', ac || [DEF_COLORS[0].c1]);
+}
+function lookPreview(c, sp){
+  return '<div class="lookprev" aria-label="Aperçu"><div class="pvtile" style="' + specCss(sp) + '"><span class="pvn">' + esc(c.name) + '</span><b>12</b></div>' +
+    '<div class="pvside"><span class="pvbtn" style="' + specCss(sp) + '">Remplacement</span><span class="pvbtn" style="' + specCss(sp) + '">Temps mort</span>' +
+    '<span class="pvcirc" style="' + specCss(sp) + ';border-color:' + sp.ink + '">7</span></div></div>';
+}
+function clubsLogo(){
+  var c = clubById(ui.clubSel);
+  if(!c){ ui.clubView = 'list'; return clubsList(); }
+  var lk = lookOf(c), custom = !!lk, sp = clubSpec(c), ac = autoColsOf(c);
+  var baseCols = lk ? lk.colors : (ac || [DEF_COLORS[0].c1]);
+  var out = '<div class="stack"><button class="btn wide" data-act="clubEdit" data-cid="' + c.id + '">‹ ' + esc(c.name) + '</button>';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  out += '<section class="card"><h2>Logo</h2><div class="logoedit" style="margin-top:10px">' + (c.logo ? logoHtml(c.id, 72) : '<span class="logo none" style="width:72px;height:72px">Pas de logo</span>') +
+    '<div class="btnrow" style="margin:0;flex:1"><input type="file" id="logofile" class="vh" accept="image/*"><label for="logofile" class="btn wide">' + (c.logo ? 'Changer le logo' : 'Choisir un logo') + '</label></div></div></section>';
+  out += '<section class="card"><h2>Couleurs de la saisie des points</h2>' +
+    '<p class="muted" style="margin:6px 0 10px">Elles colorent les scores, les boutons Remplacement et Temps mort, le terrain et les tableaux de statistiques. ' + (custom ? 'Réglage personnalisé.' : (ac ? 'Réglage automatique : couleurs tirées du logo.' : 'Réglage automatique : sans logo, couleurs par défaut.')) + '</p>' +
+    '<p class="f" style="margin:0 0 6px">Aperçu</p>' + lookPreview(c, sp) + '</section>';
+  /* propositions : automatique + styles, chacun avec son aperçu */
+  var autoSp = buildSpec('fondu', ac || [DEF_COLORS[0].c1]);
+  out += '<section class="card"><h3>Style</h3><div class="lookgrid">' +
+    '<button class="lookcard ' + (!custom ? 'sel' : '') + '" data-act="lookAuto" aria-pressed="' + (!custom) + '"><span class="pv" style="' + specCss(autoSp) + '"></span><span>Automatique <small>(par défaut)</small></span></button>' +
+    STYLES.map(function(st){
+      var p = buildSpec(st[0], baseCols), on = custom && (lk.style || 'fondu') === st[0];
+      return '<button class="lookcard ' + (on ? 'sel' : '') + '" data-act="lookStyle" data-s="' + st[0] + '" aria-pressed="' + on + '"><span class="pv" style="' + specCss(p) + '"></span><span>' + st[1] + '</span></button>';
+    }).join('') + '</div></section>';
+  if(custom){
+    var logoCols = (c.logo && c.pal) ? c.pal : [];
+    out += '<section class="card"><h3>Couleurs <small>(1 à 3)</small></h3>';
+    lk.colors.forEach(function(col, k){
+      var up = col.toUpperCase();
+      function sw(hex, name){ return '<button class="sw ' + (hex.toUpperCase() === up ? 'sel' : '') + '" style="background:' + hex + '" data-act="lookColor" data-slot="' + k + '" data-c="' + hex + '" aria-label="' + esc(name) + '" aria-pressed="' + (hex.toUpperCase() === up) + '"></button>'; }
+      out += '<div class="slot"><p class="f" style="margin:12px 0 6px">Couleur ' + (k + 1) + (k ? ' <button class="delwrap" data-act="lookDel" data-slot="' + k + '" aria-label="Retirer la couleur ' + (k + 1) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</p>' +
+        (logoCols.length ? '<p class="muted" style="margin:0 0 4px">Couleurs du logo</p><div class="swatches">' + logoCols.map(function(h){ return sw(h, 'Couleur du logo ' + h); }).join('') + '</div>' : '') +
+        '<p class="muted" style="margin:8px 0 4px">Couleurs usuelles</p><div class="swatches">' + BASIC_COLORS.map(function(b){ return sw(b[0], b[1]); }).join('') +
+        '<label class="sw other" aria-label="Autre couleur (palette)"><input type="color" class="vh" id="lookpick' + k + '" value="' + up + '"><span aria-hidden="true">+</span></label></div></div>';
+    });
+    if(lk.colors.length < 3) out += '<div class="btnrow"><button class="btn wide" data-act="lookAdd">+ Ajouter une couleur</button></div>';
+    out += '</section>';
+  } else {
+    out += '<p class="hint2" style="margin:0 14px">Choisissez un style pour personnaliser les couleurs, ou gardez « Automatique ».</p>';
   }
   return out + '</div>';
 }
@@ -2012,6 +2135,10 @@ function sheetView(){
     var pr = ui.pendingRestore, dd = pr && pr.data || {};
     inner = '<h2>Restaurer cette sauvegarde ?</h2><p class="hint2">Sauvegarde du ' + esc(fmtWhen(pr ? pr.exportedAt : '')) + ' : ' + (dd.clubs || []).length + ' club' + ((dd.clubs || []).length > 1 ? 's' : '') + ', ' + (dd.champs || []).length + ' championnat' + ((dd.champs || []).length > 1 ? 's' : '') + ', ' + (((dd.library || []).length) + ((dd.events || []).length || (dd.sets || []).length ? 1 : 0)) + ' match' + '(s). Toutes les données actuelles de cet appareil seront remplacées. Faites une sauvegarde avant si vous n\'êtes pas sûr.</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="restoreOk">Oui, restaurer</button><button class="btn wide" data-act="restoreNo">Annuler</button></div>';
+  } else if(sh.kind === 'dellogo'){
+    var dlc = curClub();
+    inner = '<h2>Retirer le logo de ' + esc(dlc ? dlc.name : 'ce club') + ' ?</h2><p class="hint2">Les couleurs automatiques tirées du logo seront remplacées par les couleurs par défaut. Un réglage personnalisé des couleurs est conservé.</p>' +
+      '<div class="btnrow"><button class="btn wide danger" data-act="logoRemoveOk">Oui, retirer le logo</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'delmember'){
     var dmc = curClub(), dmm = dmc && dmc.members.filter(function(x){ return x.id === sh.mid; })[0];
     inner = '<h2>Supprimer ' + esc(dmm ? memberName(dmm) : 'ce licencié') + ' ?</h2><p class="hint2">' + (dmm && dmm.licence ? 'Licence ' + esc(dmm.licence) + '. ' : '') + 'Ce licencié sera retiré du club. Les matchs déjà joués ne sont pas modifiés.</p>' +
@@ -2030,7 +2157,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask'];
+  var own = ['setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -2070,6 +2197,11 @@ function addPlayer(t){
   if(!num && !name){ n.focus(); return; }
   placeNew(t, { id:uid(), num:num, name:name, licence:'', mid:'' });
   ui.focus = 'newnum' + t; render();
+}
+/* Réglage personnalisé des couleurs d'un club : on part des couleurs déjà choisies, sinon des couleurs automatiques du logo */
+function startCustom(c, style){
+  var base = (c.look && c.look.colors && c.look.colors.length) ? c.look.colors : (autoColsOf(c) || [DEF_COLORS[0].c1]);
+  c.look = { mode:'custom', style:style || (c.look && c.look.style) || 'fondu', colors:base.slice(0, 3) };
 }
 function createClub(){
   var nc = ui.newClub, name = (nc.name || '').trim();
@@ -2337,6 +2469,37 @@ document.addEventListener('click', function(e){
       render(); window.scrollTo(0,0); break;
     case 'clubEdit': ui.clubSel = d.cid; ui.clubView = 'edit'; ui.msg = ''; render(); window.scrollTo(0,0); break;
     case 'ncLogoDel': ui.newClub.logo = ''; render(); break;
+    case 'clubLogo': ui.clubView = 'logo'; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'logoRemoveAsk': ui.sheet = { kind:'dellogo' }; render(); break;
+    case 'logoRemoveOk': {
+      var rc = curClub();
+      if(rc){ delete rc.logo; delete rc.pal; delete rc.palv; }
+      ui.sheet = null; save(); render(); break;
+    }
+    case 'lookAuto': { var la = curClub(); if(la && la.look){ la.look.mode = 'auto'; save(); } render(); break; }
+    case 'lookStyle': { var ls = curClub(); if(ls){ startCustom(ls, d.s); save(); } render(); break; }
+    case 'lookColor': {
+      var lc = curClub();
+      if(lc){ if(!lookOf(lc)) startCustom(lc); lc.look.colors[parseInt(d.slot, 10)] = d.c.toUpperCase(); save(); }
+      render(); break;
+    }
+    case 'lookAdd': {
+      var ln = curClub();
+      if(ln){
+        if(!lookOf(ln)) startCustom(ln);
+        if(ln.look.colors.length < 3){
+          var pool = ((ln.logo && ln.pal) ? ln.pal : []).concat(BASIC_COLORS.map(function(b){ return b[0]; }));
+          var nc = pool.filter(function(h){ return ln.look.colors.map(function(x){ return x.toUpperCase(); }).indexOf(h.toUpperCase()) < 0; })[0] || '#FFFFFF';
+          ln.look.colors.push(nc.toUpperCase()); save();
+        }
+      }
+      render(); break;
+    }
+    case 'lookDel': {
+      var ld = curClub();
+      if(ld && lookOf(ld) && ld.look.colors.length > 1){ ld.look.colors.splice(parseInt(d.slot, 10), 1); save(); }
+      render(); break;
+    }
     case 'clubCreate': createClub(); break;
     case 'delChampOk': {
       var dch = curChamp();
@@ -2417,6 +2580,10 @@ document.addEventListener('change', function(e){
   if(id === 'csvfile' && f) importFile(f);
   else if(id === 'logofile' && f) importLogo(f);
   else if(id === 'nclogo' && f) readLogo(f, function(url){ ui.newClub.logo = url; render(); });
+  else if(/^lookpick\d$/.test(id)){
+    var pc = curClub(), si = parseInt(id.slice(-1), 10);
+    if(pc){ if(!lookOf(pc)) startCustom(pc); pc.look.colors[si] = String(e.target.value).toUpperCase(); save(); render(); }
+  }
   else if(id === 'memphoto' && f) readPhoto(f, function(url){ if(ui.sheet && ui.sheet.kind === 'editmember') ui.sheet.draft.photo = url; render(); });
   else if(id === 'pphoto' && f && ui.photoTarget){
     var tg = ui.photoTarget;
