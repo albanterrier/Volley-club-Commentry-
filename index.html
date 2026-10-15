@@ -248,6 +248,13 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 :root[data-theme="dark"] .linkbtn{color:#7DB4F0}
 .menufoot{margin:0;padding:22px 12px 10px;text-align:center;color:var(--muted);font-style:italic;font-size:14px}
 
+/* Domicile / extérieur */
+.hacell{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);min-width:0}
+.hacell small{display:block;color:var(--muted);font-weight:600;margin-bottom:4px}
+.prepbtn{flex-direction:column;gap:4px;align-items:center;min-height:72px;padding:8px 6px;text-align:center}
+.prepbtn small{opacity:.8;font-weight:500;font-size:12px}
+.otherin{margin-top:6px}
+
 /* Page « Logo et couleurs » */
 .lookgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .lookcard{border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:8px;display:flex;flex-direction:column;gap:6px;text-align:left;font-weight:600;font-size:14px;min-width:0}
@@ -368,7 +375,7 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], swap:false, midSwap:false, starters:[[],[]], subPairs:[[],[]],
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], swap:false, midSwap:false, starters:[[],[]], subPairs:[[],[]], titleAuto:true,
     prefs:{ schema:true, players:false, sheet:false }
   };
 }
@@ -383,9 +390,10 @@ function migrate(s){
   if(!s.agenda) s.agenda = [];
   if(s.swap === undefined) s.swap = false;
   if(s.midSwap === undefined) s.midSwap = false;
+  if(s.titleAuto === undefined) s.titleAuto = !((s.title || '').trim());
   if(!s.starters) s.starters = [[],[]];
   if(!s.subPairs) s.subPairs = [[],[]];
-  s.library.forEach(function(e){ if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; if(!e.starters) e.starters = [[],[]]; if(!e.subPairs) e.subPairs = [[],[]]; });
+  s.library.forEach(function(e){ if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; if(e.titleAuto === undefined) e.titleAuto = false; if(!e.starters) e.starters = [[],[]]; if(!e.subPairs) e.subPairs = [[],[]]; });
   if(s.homeClub === undefined) s.homeClub = '';
   if(!s.stage) s.stage = s.prepared ? 'play' : 'home';
   s.prefs = Object.assign({}, d.prefs, s.prefs || {});
@@ -441,8 +449,22 @@ function logoHtml(clubId, px){
   if(!c || !c.logo) return '';
   return '<img class="logo" src="' + esc(c.logo) + '" alt="" width="' + px + '" height="' + px + '">';
 }
-var ui = { tab:'menu', clubView:'home', newClub:{ name:'', logo:'' }, createdId:null, calView:'list', ev:null, dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
+var ui = { teamOther:[false,false], prepTeam:null, mm:{ a:'', b:'', homeIs:'', res:'3-0' }, tab:'menu', clubView:'home', newClub:{ name:'', logo:'' }, createdId:null, calView:'list', ev:null, dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
 
+/* Équipe 0 = équipe à domicile, équipe 1 = équipe à l'extérieur. Le nom du match suit « domicile – extérieur » tant qu'on ne l'a pas modifié. */
+var DEFAULT_TEAM_NAMES = ['Notre équipe', 'Adversaire'];
+function syncTitle(){ if(S.titleAuto) S.title = tn(0) + ' – ' + tn(1); }
+function isOtherTeam(t){
+  var nm = (S.teams[t].name || '').trim();
+  return !!ui.teamOther[t] || (!S.teams[t].clubId && nm !== '' && DEFAULT_TEAM_NAMES.indexOf(nm) < 0);
+}
+/* v : '' (aucun), 'other' (équipe saisie à la main) ou identifiant d'un club ; le nom d'équipe prend par défaut le nom du club */
+function chooseTeam(t, v){
+  if(v === 'other'){ ui.teamOther[t] = true; switchClub(t, ''); S.teams[t].name = ''; }
+  else if(!v){ ui.teamOther[t] = false; switchClub(t, ''); S.teams[t].name = DEFAULT_TEAM_NAMES[t]; }
+  else { ui.teamOther[t] = false; switchClub(t, v); var c = clubById(v); if(c) S.teams[t].name = c.name; }
+  syncTitle();
+}
 function tn(i){ return (S.teams[i].name || '').trim() || (i ? 'Équipe B' : 'Équipe A'); }
 function allPlayers(){ return S.teams[0].players.concat(S.teams[1].players); }
 function findPlayer(t,id){ if(!id) return null; return S.teams[t].players.filter(function(p){ return p.id === id; })[0] || null; }
@@ -686,7 +708,7 @@ function endSet(){
   save(); render();
 }
 /* ---------- Bibliothèque de matchs (nouveau / reprendre) ---------- */
-var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap','starters','subPairs'];
+var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap','starters','subPairs','titleAuto'];
 function hasContent(){ return S.events.length > 0 || S.sets.length > 0; }
 function matchSnapshot(){
   var o = {};
@@ -710,6 +732,7 @@ function loadMatch(created){
   MATCH_KEYS.forEach(function(k){ S[k] = JSON.parse(JSON.stringify(e[k])); });
   S.clock = { running:false, since:0, acc:(e.clock && e.clock.acc) || 0 };
   S.tc = null; S.prepared = true; S.stage = 'play';
+  ui.teamOther = [false, false]; ui.prepTeam = null;
   return true;
 }
 function keepShared(){
@@ -720,6 +743,7 @@ function resetForNew(){
   stopClock(); archiveCurrent();
   S = Object.assign(newState(), keepShared());
   S.stage = 'setup';
+  ui.teamOther = [false, false]; ui.prepTeam = null;
 }
 /* Supprime le match courant (sans l'archiver) : on repart d'un match vierge, équipes et joueurs conservés */
 function discardCurrent(){
@@ -1201,7 +1225,8 @@ function applyFixture(cid, fid){
   S.fixtureRef = { cid:cid || '', fid:fid };
   switchClub(0, e.home); switchClub(1, e.away);
   S.teams[0].name = clubName(e.home); S.teams[1].name = clubName(e.away);
-  if(!(S.title || '').trim()) S.title = clubName(e.home) + ' – ' + clubName(e.away);
+  ui.teamOther = [false, false];
+  syncTitle();
   return true;
 }
 function champSheet(cid){
@@ -1573,7 +1598,7 @@ function homeView(){
 /* ---------- Vue : équipes ---------- */
 function findHtml(t){
   var club = clubById(S.teams[t].clubId);
-  if(!club) return '<p class="muted">Choisissez un club ci-dessus pour retrouver ses membres.</p>';
+  if(!club) return '<p class="muted">Cette équipe n\'a pas de club : ajoutez ses joueurs à la main.</p>';
   var qn = norm(ui.find[t]);
   var have = {};
   S.teams[t].players.forEach(function(p){ if(p.mid) have[p.mid] = true; });
@@ -1590,8 +1615,7 @@ function findHtml(t){
 }
 function teamCard(t){
   var team = S.teams[t];
-  var onN = onCourt(t).length, lockClub = !!S.fixtureRef || S.events.length > 0;
-  var clubOpts = '<option value="">— Aucun —</option>' + S.clubs.map(function(c){ return '<option value="' + c.id + '"' + (c.id === team.clubId ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
+  var onN = onCourt(t).length;
   var list = team.players.slice().sort(sortP).map(function(p){
     var pos = S.lineup[t].indexOf(p.id);
     var linked = p.mid && findMember(p.mid);
@@ -1601,11 +1625,9 @@ function teamCard(t){
       '<span class="pos">' + (pos >= 0 ? 'Poste ' + (pos + 1) : 'Banc') + '</span>' +
       '<button class="del" data-act="delP" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Retirer ' + esc(p.name || p.num) + '">' + xIcon(24) + '</button></li>';
   }).join('');
-  return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(tn(t)) + '</h2>' +
+  return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(tn(t)) + '</h2><p class="muted" style="margin:4px 0 0">' + (t ? 'Équipe à l\'extérieur' : 'Équipe à domicile') + (team.clubId ? ' · ' + esc(clubName(team.clubId)) : '') + '</p>' +
     '<label class="f" for="tname' + t + '">Nom de l\'équipe</label>' +
     '<input type="text" id="tname' + t + '" data-bind="tname" data-team="' + t + '" value="' + esc(team.name) + '" autocomplete="off">' +
-    '<label class="f" for="tclub' + t + '">Club</label><select id="tclub' + t + '" data-bind="tclub" data-team="' + t + '"' + (lockClub ? ' disabled' : '') + '>' + clubOpts + '</select>' +
-    (lockClub ? '<p class="muted" style="margin:4px 0 0">' + (S.fixtureRef ? 'Club imposé par le match du calendrier.' : 'Club figé : le match a commencé.') + '</p>' : '') +
     '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
     '<ul class="plist">' + list + '</ul>' +
     '<div class="btnrow"><button class="btn wide" data-act="openLineup" data-team="' + t + '">Composition de départ</button></div>' +
@@ -1617,26 +1639,63 @@ function teamCard(t){
     '<input type="text" id="find' + t + '" data-find="' + t + '" value="' + esc(ui.find[t]) + '" placeholder="Nom, prénom ou licence" autocomplete="off">' +
     '<div class="res" id="res' + t + '">' + findHtml(t) + '</div></section>';
 }
+/* Équipes du match : deux menus côte à côte (domicile à gauche, extérieur à droite), ou affichage seul si le match vient du calendrier */
+function homeAwayHtml(ch){
+  var locked = S.events.length > 0;
+  var fe = S.fixtureRef ? calEntry(S.fixtureRef.cid, S.fixtureRef.fid) : null;
+  if(fe){
+    function cell(t, label){ return '<div class="hacell"><small>' + label + '</small><span class="fxteam">' + logoHtml(S.teams[t].clubId, 28) + '<span class="nm">' + esc(tn(t)) + '</span></span></div>'; }
+    return '<p class="f" style="margin:12px 0 4px">Équipes (match du calendrier)</p><div class="row2">' + cell(0, 'Domicile') + cell(1, 'Extérieur') + '</div>';
+  }
+  function menu(t){
+    var clubs = ch ? ch.clubIds.map(function(id){ return clubById(id); }).filter(Boolean) : S.clubs.slice();
+    var cur = S.teams[t].clubId, other = isOtherTeam(t);
+    if(cur && !clubs.some(function(c){ return c.id === cur; })){ var cc = clubById(cur); if(cc) clubs.push(cc); }
+    var label = t ? 'Extérieur' : 'Domicile';
+    return '<div><label class="f" for="teamsel' + t + '">' + label + '</label><select id="teamsel' + t + '" data-bind="teamsel" data-team="' + t + '"' + (locked ? ' disabled' : '') + '><option value="">— Choisir —</option>' +
+      clubs.map(function(c){ return '<option value="' + c.id + '"' + (!other && c.id === cur ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') +
+      '<option value="other"' + (other ? ' selected' : '') + '>Autre équipe (saisir)</option></select>' +
+      (other ? '<input type="text" class="otherin" id="tother' + t + '" data-bind="tnameother" data-team="' + t + '" value="' + esc(S.teams[t].name) + '" placeholder="Nom de l\'équipe" aria-label="Nom de l\'équipe ' + label.toLowerCase() + '" autocomplete="off"' + (locked ? ' disabled' : '') + '>' : '') + '</div>';
+  }
+  return '<div class="row2" style="margin-top:12px">' + menu(0) + menu(1) + '</div>' + (locked ? '<p class="muted" style="margin:6px 0 0">Équipes figées : le match a commencé.</p>' : '');
+}
+function prepButtons(){
+  return '<section class="card"><h3>Préparation des équipes</h3><div class="row2">' + [0, 1].map(function(t){
+    var n = S.teams[t].players.length;
+    return '<button class="btn wide prepbtn" data-act="prepTeam" data-team="' + t + '"><span class="fxteam">' + logoHtml(S.teams[t].clubId, 24) + '<span class="nm">' + esc(tn(t)) + '</span></span>' +
+      '<small>' + (t ? 'Extérieur' : 'Domicile') + ' · ' + onCourt(t).length + '/6 en jeu' + (n ? ' · ' + n + ' joueur' + (n > 1 ? 's' : '') : '') + '</small></button>';
+  }).join('') + '</div></section>';
+}
+function teamPrepView(t){
+  return '<div class="stack"><button class="btn wide" data-act="prepBack">‹ Préparation du match</button>' + teamCard(t) + '</div>';
+}
 function setupView(){
+  if(ui.prepTeam === 0 || ui.prepTeam === 1) return teamPrepView(ui.prepTeam);
   var c = S.cfg, ch = champById(S.matchChamp), out = '<div class="stack">';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
   out += S.prepared ? '<button class="btn wide primary" data-act="startMatch">Retour au match</button>' : '<button class="btn wide" data-act="goHome">Retour</button>';
+  /* 1. le championnat d'abord */
   out += '<section class="card"><h2>Match</h2>' +
-    '<label class="f" for="mtitle">Nom du match</label>' +
-    '<input type="text" id="mtitle" data-bind="title" value="' + esc(S.title) + '" placeholder="Ex. Journée 4, Lyon – Dijon" autocomplete="off">' +
     '<label class="f" for="mchamp">Championnat</label><select id="mchamp" data-bind="mchamp"' + (S.events.length ? ' disabled' : '') + '><option value="">Match amical ou hors championnat</option>' +
     S.champs.map(function(x){ return '<option value="' + x.id + '"' + (x.id === S.matchChamp ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
   if(!S.champs.length) out += '<p class="muted" style="margin:6px 0 0">Aucun championnat créé. Vous pouvez en créer un dans l\'onglet Championnat.</p>';
+  /* 2. un match déjà prévu au calendrier ? */
   var open = ch ? ch.fixtures.map(function(f){ return calEntry(ch.id, f.id); }) : calEntries().filter(function(e){ return e.kind === 'amical'; });
   open = open.filter(function(e){ return !entryResult(e) || (S.fixtureRef && S.fixtureRef.fid === e.fid); });
   if(ch || open.length){
     out += '<label class="f" for="mfix">' + (ch ? 'Match du calendrier' : 'Match amical du calendrier') + '</label><select id="mfix" data-bind="mfix"' + (S.events.length ? ' disabled' : '') + '><option value="">Match libre (hors calendrier)</option>' +
       open.map(function(e){
-        return '<option value="' + e.fid + '"' + (S.fixtureRef && S.fixtureRef.fid === e.fid ? ' selected' : '') + '>' + esc(fmtDay(e.date) + (e.time ? ' ' + e.time : '') + ' · ' + clubName(e.home) + ' – ' + clubName(e.away)) + '</option>';
+        return '<option value="' + e.fid + '"' + (S.fixtureRef && S.fixtureRef.fid === e.fid ? ' selected' : '') + '>' + esc(fmtDay(e.date) + (e.time ? ' ' + e.time : '') + ' · ' + clubName(e.home) + ' (dom.) – ' + clubName(e.away)) + '</option>';
       }).join('') + '</select>';
     if(!open.length) out += '<p class="muted" style="margin:6px 0 0">Aucun match à jouer au calendrier de ce championnat.</p>';
   }
-  out += '</section>' + teamCard(0) + teamCard(1) +
+  /* 3. les équipes : domicile et extérieur ; 4. le nom du match */
+  out += homeAwayHtml(ch) +
+    '<label class="f" for="mtitle">Nom du match</label>' +
+    '<input type="text" id="mtitle" data-bind="title" value="' + esc(S.title) + '" placeholder="' + esc(tn(0) + ' – ' + tn(1)) + '" autocomplete="off">' +
+    '</section>';
+  /* 5. préparation de chaque équipe : deux boutons côte à côte */
+  out += prepButtons() +
     '<section class="card"><h3>Règles</h3>' +
     '<label class="f" for="msets">Format</label>' +
     '<select id="msets" data-bind="sets"><option value="2"' + (c.setsToWin === 2 ? ' selected' : '') + '>Au meilleur des 3 sets</option><option value="3"' + (c.setsToWin === 3 ? ' selected' : '') + '>Au meilleur des 5 sets</option></select>' +
@@ -1831,6 +1890,15 @@ function calendarView(){
   });
   return out + '</div>';
 }
+/* Deux clubs au choix, puis la question « qui joue à domicile ? » : l'autre joue à l'extérieur */
+function homePicker(list, st, bindName, chipAct){
+  var opts = function(sel){ return '<option value="">— Choisir —</option>' + list.map(function(c){ return '<option value="' + c.id + '"' + (c.id === sel ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join(''); };
+  var both = st.a && st.b && st.a !== st.b;
+  return '<div class="row2"><div><label class="f" for="' + bindName + 'a">Équipe 1</label><select id="' + bindName + 'a" data-bind="' + bindName + '" data-k="a">' + opts(st.a) + '</select></div>' +
+    '<div><label class="f" for="' + bindName + 'b">Équipe 2</label><select id="' + bindName + 'b" data-bind="' + bindName + '" data-k="b">' + opts(st.b) + '</select></div></div>' +
+    (both ? group('Qui joue à domicile ?', chip(chipAct, { s:'a' }, esc(clubName(st.a)), st.homeIs === 'a') + chip(chipAct, { s:'b' }, esc(clubName(st.b)), st.homeIs === 'b')) +
+      '<p class="hint2" style="margin-top:6px">L\'autre équipe joue à l\'extérieur.</p>' : '<p class="hint2">Choisissez deux clubs différents, puis indiquez celui qui joue à domicile.</p>');
+}
 function eventForm(){
   var ev = ui.ev, isMatch = ev.kind === 'match', out = '<div class="stack"><button class="btn wide" data-act="calBack">‹ Calendrier</button>';
   if(ui.msg) out += '<div class="banner" role="alert">' + esc(ui.msg) + '</div>';
@@ -1844,9 +1912,7 @@ function eventForm(){
     if(list.length < 2){
       out += '<p class="hint2">' + (ch ? 'Ce championnat doit contenir au moins deux clubs (espace Championnat).' : 'Il faut au moins deux clubs. Créez-les dans l\'espace Clubs.') + '</p>';
     } else {
-      var opts = function(sel){ return '<option value="">— Choisir —</option>' + list.map(function(c){ return '<option value="' + c.id + '"' + (c.id === sel ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join(''); };
-      out += '<label class="f" for="evhome">Club à domicile</label><select id="evhome" data-bind="evf" data-k="home">' + opts(ev.home) + '</select>' +
-        '<label class="f" for="evaway">Club à l\'extérieur</label><select id="evaway" data-bind="evf" data-k="away">' + opts(ev.away) + '</select>';
+      out += homePicker(list, ev, 'evf', 'evHome');
     }
   } else {
     out += '<label class="f" for="evtitle">Titre</label><input type="text" id="evtitle" data-bind="evf" data-k="title" value="' + esc(ev.title) + '" placeholder="Ex. Entraînement, réunion, tournoi" autocomplete="off">';
@@ -1855,6 +1921,7 @@ function eventForm(){
     '<div class="btnrow"><button class="btn wide primary" data-act="evSave">Créer l\'événement</button></div></section></div>';
   return out;
 }
+
 function champView(){
   var out = '<div class="stack">';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
@@ -1897,11 +1964,11 @@ function champView(){
   }).join('');
   out += ms || '<p class="muted">Aucun match pour l\'instant.</p>';
   if(ch.clubIds.length >= 2){
-    var opts = function(sel){ return ch.clubIds.map(function(id,i){ return '<option value="' + id + '"' + (i === sel ? ' selected' : '') + '>' + esc(clubName(id)) + '</option>'; }).join(''); };
-    out += '<h3 style="margin-top:18px">Ajouter un match à la main</h3>' +
-      '<label class="f" for="mhome">Club à domicile</label><select id="mhome">' + opts(0) + '</select>' +
-      '<label class="f" for="maway">Club à l\'extérieur</label><select id="maway">' + opts(1) + '</select>' +
-      '<label class="f" for="mres">Score final en sets (du point de vue du club à domicile)</label><select id="mres">' + RESULTS.map(function(r){ return '<option value="' + r + '">' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
+    var mm = ui.mm, list = ch.clubIds.map(function(id){ return clubById(id); }).filter(Boolean);
+    if(mm.a && !ch.clubIds.includes(mm.a)) mm.a = '';
+    if(mm.b && !ch.clubIds.includes(mm.b)) mm.b = '';
+    out += '<h3 style="margin-top:18px">Ajouter un match à la main</h3>' + homePicker(list, mm, 'mmf', 'mmHome') +
+      '<label class="f" for="mres">Score final en sets (du point de vue de l\'équipe à domicile)</label><select id="mres" data-bind="mmf" data-k="res">' + RESULTS.map(function(r){ return '<option value="' + r + '"' + (mm.res === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
       '<div class="btnrow"><button class="btn wide primary" data-act="addMatch">Ajouter ce match</button></div>';
   } else if(S.clubs.length){
     out += '<p class="hint2">Sélectionnez au moins deux clubs pour ajouter des matchs.</p>';
@@ -2260,14 +2327,16 @@ function saveEvent(){
     S.agenda.push({ id:uid(), kind:'event', title:title, date:date, time:time, place:place });
     ui.msg = 'Événement « ' + title + ' » créé.';
   } else {
-    if(!ev.home || !ev.away){ ui.msg = 'Choisissez les deux clubs.'; render(); return; }
-    if(ev.home === ev.away){ ui.msg = 'Choisissez deux clubs différents.'; render(); return; }
+    if(!ev.a || !ev.b){ ui.msg = 'Choisissez les deux équipes.'; render(); return; }
+    if(ev.a === ev.b){ ui.msg = 'Choisissez deux clubs différents.'; render(); return; }
+    if(ev.homeIs !== 'a' && ev.homeIs !== 'b'){ ui.msg = 'Indiquez quelle équipe joue à domicile.'; render(); return; }
+    var homeId = ev.homeIs === 'b' ? ev.b : ev.a, awayId = ev.homeIs === 'b' ? ev.a : ev.b;
     var ch = champById(ev.target);
     if(ch){
-      ch.fixtures.push({ id:uid(), date:date, time:time, place:place, home:ev.home, away:ev.away, matchId:null });
+      ch.fixtures.push({ id:uid(), date:date, time:time, place:place, home:homeId, away:awayId, matchId:null });
       ui.msg = 'Match créé dans ' + ch.name + '.';
     } else {
-      S.agenda.push({ id:uid(), kind:'match', date:date, time:time, place:place, home:ev.home, away:ev.away, result:null });
+      S.agenda.push({ id:uid(), kind:'match', date:date, time:time, place:place, home:homeId, away:awayId, result:null });
       ui.msg = 'Match amical créé.';
     }
   }
@@ -2292,10 +2361,13 @@ function addChamp(){
 function addMatch(){
   var ch = curChamp();
   if(!ch) return;
-  var h = document.getElementById('mhome').value, a = document.getElementById('maway').value, r = document.getElementById('mres').value.split('-');
-  if(h === a){ ui.msg = 'Choisissez deux clubs différents.'; render(); return; }
+  var mm = ui.mm, r = (mm.res || '3-0').split('-');
+  if(!mm.a || !mm.b){ ui.msg = 'Choisissez les deux équipes.'; render(); return; }
+  if(mm.a === mm.b){ ui.msg = 'Choisissez deux clubs différents.'; render(); return; }
+  if(mm.homeIs !== 'a' && mm.homeIs !== 'b'){ ui.msg = 'Indiquez quelle équipe joue à domicile.'; render(); return; }
+  var h = mm.homeIs === 'b' ? mm.b : mm.a, a = mm.homeIs === 'b' ? mm.a : mm.b;
   ch.matches.push({ id:uid(), ref:null, home:h, away:a, hs:parseInt(r[0],10), as:parseInt(r[1],10), sets:null, source:'manual', date:stamp() });
-  ui.msg = ''; save(); render();
+  ui.mm = { a:'', b:'', homeIs:'', res:'3-0' }; ui.msg = ''; save(); render();
 }
 
 document.addEventListener('click', function(e){
@@ -2305,7 +2377,7 @@ document.addEventListener('click', function(e){
   if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = null; render(); return; }
   switch(act){
     case 'tab':
-      setTab(d.tab); ui.showSetup = false; ui.sheet = null; ui.msg = '';
+      setTab(d.tab); ui.showSetup = false; ui.prepTeam = null; ui.sheet = null; ui.msg = '';
       if(d.tab === 'clubs') ui.clubView = 'home';
       if(d.tab === 'cal'){ ui.calView = 'list'; ui.ev = null; }
       render(); window.scrollTo(0,0); break;
@@ -2346,8 +2418,8 @@ document.addEventListener('click', function(e){
     }
     case 'restoreOk': if(ui.pendingRestore){ applyBackup(ui.pendingRestore); ui.pendingRestore = null; ui.sheet = null; ui.msg = 'Sauvegarde restaurée.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } break;
     case 'restoreNo': ui.pendingRestore = null; ui.sheet = null; render(); break;
-    case 'openSetup': ui.showSetup = true; ui.msg = ''; render(); window.scrollTo(0,0); break;
-    case 'startMatch': S.prepared = true; S.stage = 'play'; ui.showSetup = false; ui.msg = ''; save(); render(); window.scrollTo(0,0); break;
+    case 'openSetup': ui.prepTeam = null; ui.showSetup = true; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'startMatch': S.prepared = true; S.stage = 'play'; ui.showSetup = false; ui.prepTeam = null; ui.msg = ''; save(); render(); window.scrollTo(0,0); break;
     case 'newPlay': newMatch(); break;
     case 'showResume': ui.resume = true; render(); window.scrollTo(0,0); break;
     case 'hideResume': ui.resume = false; render(); break;
@@ -2496,11 +2568,15 @@ document.addEventListener('click', function(e){
       if(re3) deleteEntry(re3);
       ui.sheet = null; render(); break;
     }
-    case 'calCreate': ui.calView = 'create'; ui.ev = { kind:'match', title:'', date:isoOf(new Date()), time:'', place:'', target:'', home:'', away:'' }; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'calCreate': ui.calView = 'create'; ui.ev = { kind:'match', title:'', date:isoOf(new Date()), time:'', place:'', target:'', a:'', b:'', homeIs:'' }; ui.msg = ''; render(); window.scrollTo(0,0); break;
     case 'calBack': ui.calView = 'list'; ui.ev = null; ui.msg = ''; render(); window.scrollTo(0,0); break;
     case 'evKind': ui.ev.kind = d.k; ui.msg = ''; render(); break;
-    case 'evTarget': ui.ev.target = d.t === 'amical' ? '' : d.t; ui.ev.home = ''; ui.ev.away = ''; ui.msg = ''; render(); break;
+    case 'evTarget': ui.ev.target = d.t === 'amical' ? '' : d.t; ui.ev.a = ''; ui.ev.b = ''; ui.ev.homeIs = ''; ui.msg = ''; render(); break;
     case 'evSave': saveEvent(); break;
+    case 'evHome': ui.ev.homeIs = d.s; ui.msg = ''; render(); break;
+    case 'mmHome': ui.mm.homeIs = d.s; ui.msg = ''; render(); break;
+    case 'prepTeam': ui.prepTeam = t; render(); window.scrollTo(0,0); break;
+    case 'prepBack': ui.prepTeam = null; render(); window.scrollTo(0,0); break;
     case 'clubsGo':
       ui.clubView = d.v; ui.msg = '';
       if(d.v === 'create') ui.newClub = { name:'', logo:'' };
@@ -2565,17 +2641,18 @@ document.addEventListener('input', function(e){
   var bind = ds.bind;
   if(!bind) return;
   var v = e.target.value, t = parseInt(ds.team, 10);
-  if(bind === 'tname') S.teams[t].name = v;
-  else if(bind === 'title') S.title = v;
+  if(bind === 'tname'){ S.teams[t].name = v; syncTitle(); }
+  else if(bind === 'title'){ S.title = v; S.titleAuto = v.trim() === ''; if(S.titleAuto) syncTitle(); }
   else if(bind === 'sets') S.cfg.setsToWin = parseInt(v, 10) === 2 ? 2 : 3;
   else if(bind === 'pts') S.cfg.pts = Math.max(1, parseInt(v, 10) || 25);
   else if(bind === 'ptsLast') S.cfg.ptsLast = Math.max(1, parseInt(v, 10) || 15);
   else if(bind === 'pnum'){ var p = findPlayer(t, ds.pid); if(p) p.num = v.trim(); }
   else if(bind === 'cname'){ var c = curClub(); if(c) c.name = v; }
-  else if(bind === 'champsel'){ ui.champSel = v; render(); return; }
+  else if(bind === 'champsel'){ ui.champSel = v; ui.mm = { a:'', b:'', homeIs:'', res:'3-0' }; render(); return; }
   else if(bind === 'emf'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
   else if(bind === 'ncname'){ ui.newClub.name = v; return; }
-  else if(bind === 'evf'){ if(ui.ev) ui.ev[ds.k] = v; return; }
+  else if(bind === 'evf'){ if(ui.ev){ ui.ev[ds.k] = v; if(ds.k === 'a' || ds.k === 'b') render(); } return; }
+  else if(bind === 'mmf'){ ui.mm[ds.k] = v; if(ds.k === 'a' || ds.k === 'b') render(); return; }
   else if(bind === 'mchamp'){
     S.matchChamp = v;
     if(S.fixtureRef && S.fixtureRef.cid !== v) S.fixtureRef = null;
@@ -2585,13 +2662,10 @@ document.addEventListener('input', function(e){
     if(!v) S.fixtureRef = null; else applyFixture(S.matchChamp, v);
     save(); render(); return;
   }
-  else if(bind === 'tclub'){
-    var prev = clubById(S.teams[t].clubId), prevName = prev ? prev.name : '';
-    switchClub(t, v);
-    var nc = clubById(v), nm = (S.teams[t].name || '').trim();
-    if(nc && (nm === '' || nm === 'Notre équipe' || nm === 'Adversaire' || nm === prevName)) S.teams[t].name = nc.name;
-    ui.find[t] = '';
-    save(); render(); return;
+  else if(bind === 'teamsel'){ chooseTeam(t, v); ui.find[t] = ''; save(); render(); return; }
+  else if(bind === 'tnameother'){
+    S.teams[t].name = v; syncTitle();
+    var ti = document.getElementById('mtitle'); if(ti && S.titleAuto) ti.value = S.title;
   }
   else if(bind === 'slot'){
     var pos = parseInt(ds.pos, 10), L = S.lineup[t];
