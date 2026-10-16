@@ -181,13 +181,25 @@ td.pts{font-weight:800;font-size:16px}
 
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* Bande des sets dans l'en-tête */
-.sets{flex:1 1 236px;max-width:340px;margin-left:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;min-width:0}
-.scell{display:flex;flex-direction:column;align-items:center;line-height:1.1;border-left:1px solid rgba(255,255,255,.2);padding-left:2px}
-.scl{font-size:11px;opacity:.75}
-.scv{font-family:var(--font-d);font-weight:700;font-size:17px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.scv .w{color:var(--gold)}
-.scv .l{opacity:.8}
+/* En-tête de la saisie des points : score en sets, ou tableau des scores */
+header.top.hc,header.top.ho{flex-wrap:nowrap;gap:8px}
+.hscore{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:10px}
+.hscore .hn{flex:0 1 auto;min-width:0;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-d);font-weight:700;font-size:20px}
+.hscore b{font-family:var(--font-d);font-size:30px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hchev{flex:0 0 auto;width:40px;height:40px;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;border-radius:8px;padding:0}
+.hchev svg{transition:transform .15s}
+.hchev.open svg{transform:rotate(180deg)}
+@media (prefers-reduced-motion:reduce){.hchev svg{transition:none}}
+header.top.ho{align-items:flex-start}
+.htab{flex:1;min-width:0;width:auto;border-collapse:collapse;border-spacing:0;font-family:var(--font-d)}
+.htab th,.htab td{border:0;background:transparent;color:inherit;padding:3px 8px;text-align:center;font-size:22px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.htab th:first-child{position:static;box-shadow:none;text-align:left;padding-left:0;max-width:32vw}
+.htab .hn{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.htab td.hw{font-size:28px;font-weight:800}
+.htab td.w{color:var(--gold)}
+.htab td.l{opacity:.8}
+.htab td.cur{background:rgba(255,255,255,.16);border-radius:8px}
+.setlbl{position:absolute;left:50%;top:calc(12px + (min(100vw,720px) - 34px) / 12);transform:translate(-50%,-50%);z-index:1;font-size:13px;font-weight:700;white-space:nowrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px 9px}
 
 /* Photos, boutons d'édition, menu */
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--line);vertical-align:middle}
@@ -460,7 +472,7 @@ function logoHtml(clubId, px){
   if(!c || !c.logo) return '';
   return '<img class="logo" src="' + esc(c.logo) + '" alt="" width="' + px + '" height="' + px + '">';
 }
-var ui = { teamOther:[false,false], prepTeam:null, mm:{ a:'', b:'', homeIs:'', res:'3-0' }, tab:'menu', clubView:'home', newClub:{ name:'', logo:'' }, createdId:null, calView:'list', ev:null, dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
+var ui = { hdrOpen:false, teamOther:[false,false], prepTeam:null, mm:{ a:'', b:'', homeIs:'', res:'3-0' }, tab:'menu', clubView:'home', newClub:{ name:'', logo:'' }, createdId:null, calView:'list', ev:null, dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
 
 /* Équipe 0 = équipe à domicile, équipe 1 = équipe à l'extérieur. Le nom du match suit « domicile – extérieur » tant qu'on ne l'a pas modifié. */
 var DEFAULT_TEAM_NAMES = ['Notre équipe', 'Adversaire'];
@@ -1452,14 +1464,10 @@ function copyText(text){
 function inSetup(){ return ui.tab === 'match' && (S.stage === 'setup' || (ui.showSetup && S.stage === 'play')); }
 function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', data:'Données', backup:'Sauvegarde' }[ui.tab] || ''; }
 function clockLabel(){ return S.clock.running ? 'Pause' : (S.clock.acc > 0 ? 'Reprendre' : 'Démarrer'); }
-/* Résultats des sets déjà joués : « Set 1 » avec le score dessous. Cinq colonnes réservées, rien pour les sets non joués. */
-function setsStrip(){
-  if(!S.sets.length) return '';
-  return '<div class="sets" role="list" aria-label="Résultats des sets">' + S.sets.map(function(s, i){
-    var a = s[0] > s[1];
-    return '<div class="scell" role="listitem"><span class="scl">Set ' + (i + 1) + '</span><span class="scv"><span class="' + (a ? 'w' : 'l') + '">' + s[0] + '</span>–<span class="' + (a ? 'l' : 'w') + '">' + s[1] + '</span></span></div>';
-  }).join('') + '</div>';
-}
+/* Rang du set en cours : « 1er set », « 2e set »… */
+function ordinalSet(n){ return n === 1 ? '1er set' : n + 'e set'; }
+/* En-tête de la saisie des points : replié = « domicile X – X extérieur » (score en sets) ; déplié = tableau des scores sans bordures
+   (1re ligne : équipe à domicile, 2e ligne : équipe à l'extérieur ; colonnes : sets gagnés, puis score de chaque set). */
 function header(){
   function plain(t, sub){ return '<header class="top"><div class="hset"><strong>' + esc(t) + '</strong>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</div></header>'; }
   if(ui.tab === 'menu') return '';
@@ -1467,9 +1475,18 @@ function header(){
   if(inSetup()) return plain('Préparation du match', (S.title || '').trim() || 'Nouveau match');
   /* Le score n'apparaît en haut que dans la saisie des points ; partout ailleurs, on affiche le nom de l'espace. */
   if(ui.tab !== 'match' || S.stage !== 'play') return plain(tabTitle());
-  var w = setsWon();
-  var lab = S.finished ? 'Match terminé' : 'Set ' + setNumber();
-  return '<header class="top"><div class="hset"><strong>' + lab + '</strong><span>Sets gagnés ' + w[0] + ' – ' + w[1] + '</span></div>' + setsStrip() + '</header>';
+  var w = setsWon(), open = !!ui.hdrOpen;
+  var chev = '<button class="hchev' + (open ? ' open' : '') + '" data-act="hdrToggle" aria-expanded="' + open + '" aria-label="' + (open ? 'Réduire' : 'Afficher') + ' le tableau des scores" title="' + (open ? 'Réduire' : 'Afficher') + ' le tableau des scores">' +
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>';
+  if(!open){
+    return '<header class="top hc"><div class="hscore" role="group" aria-label="Score en sets"><span class="hn">' + esc(tn(0)) + '</span><b>' + w[0] + ' – ' + w[1] + '</b><span class="hn">' + esc(tn(1)) + '</span></div>' + chev + '</header>';
+  }
+  function row(t){
+    var cells = S.sets.map(function(x){ return '<td class="' + (x[t] > x[1 - t] ? 'w' : 'l') + '">' + x[t] + '</td>'; }).join('');
+    var cur = S.finished ? '' : '<td class="cur" title="Set en cours">' + S.cur[t] + '</td>';
+    return '<tr><th scope="row"><span class="hn">' + esc(tn(t)) + '</span></th><td class="hw" title="Sets gagnés">' + w[t] + '</td>' + cells + cur + '</tr>';
+  }
+  return '<header class="top ho"><table class="htab" aria-label="Scores"><tbody>' + row(0) + row(1) + '</tbody></table>' + chev + '</header>';
 }
 function menuBtn(){ return '<div class="stack" style="padding-top:4px"><button class="btn wide" data-act="tab" data-tab="menu">‹ Retour au menu</button></div>'; }
 function logHtmlOf(m, n, newestFirst){
@@ -1582,7 +1599,8 @@ function matchView(){
     out += '<div class="tcbar"><span>Temps mort ' + esc(tn(S.tc.team)) + '</span><span id="tcleft">' + Math.ceil((S.tc.endsAt - Date.now())/1000) + ' s</span><button data-act="tcStop">Fermer</button></div>';
   }
   var ord = S.swap ? [1, 0] : [0, 1];
-  out += '<div class="board">' + tile(ord[0]) + tile(ord[1]) + (showSwap() ? '<button class="swapbtn" data-act="swap" aria-label="Inverser la position des équipes" title="Inverser la position des équipes"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/></svg></button>' : '') + '</div>';
+  out += '<div class="board">' + tile(ord[0]) + tile(ord[1]) + (showSwap() ? '<button class="swapbtn" data-act="swap" aria-label="Inverser la position des équipes" title="Inverser la position des équipes"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/></svg></button>' : '') +
+    '<span class="setlbl" aria-label="Set en cours">' + (S.finished ? 'Match terminé' : ordinalSet(setNumber())) + '</span></div>';
   if(S.serving === null && S.cur[0] + S.cur[1] === 0 && !S.finished){
     out += '<p class="last">Touchez « Donner le service » pour l\'équipe qui sert en premier : la rotation automatique en dépend.</p>';
   }
@@ -2474,6 +2492,7 @@ document.addEventListener('click', function(e){
       ui.sheet = null; save(); render(); break;
     case 'clock': toggleClock(); break;
     case 'swap': S.swap = !S.swap; save(); render(); break;
+    case 'hdrToggle': ui.hdrOpen = !ui.hdrOpen; render(); break;
     case 'serve':
       S.serving = (S.serving === t ? null : t);
       if(S.serving !== null && !S.clock.running && !S.finished) startClock();
