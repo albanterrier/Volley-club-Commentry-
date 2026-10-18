@@ -260,6 +260,17 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 :root[data-theme="dark"] .linkbtn{color:#7DB4F0}
 .menufoot{margin:0;padding:22px 12px 10px;text-align:center;color:var(--muted);font-style:italic;font-size:14px}
 
+/* Interrupteurs coulissants de l'en-tête déplié (bleu = actif, gris = inactif) */
+header.top.ho{flex-direction:column;align-items:stretch}
+.hrow{display:flex;gap:8px;align-items:flex-start}
+.hsws{display:flex;flex-wrap:wrap;gap:2px 22px;padding-top:4px;border-top:1px solid rgba(255,255,255,.18)}
+.hsw{display:flex;align-items:center;gap:10px;background:none;border:0;color:inherit;font-size:14px;font-weight:600;padding:4px 0;min-height:44px;text-align:left}
+.hsw .track{position:relative;flex:0 0 auto;width:46px;height:26px;border-radius:13px;background:#7B8794;transition:background .15s}
+.hsw .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .15s}
+.hsw[aria-checked="true"] .track{background:#2F7DE1}
+.hsw[aria-checked="true"] .knob{transform:translateX(20px)}
+@media (prefers-reduced-motion:reduce){.hsw .track,.hsw .knob{transition:none}}
+
 /* Domicile / extérieur */
 .hacell{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);min-width:0}
 .hacell small{display:block;color:var(--muted);font-weight:600;margin-bottom:4px}
@@ -1486,9 +1497,20 @@ function header(){
     var cur = S.finished ? '' : '<td class="cur" title="Set en cours">' + S.cur[t] + '</td>';
     return '<tr><th scope="row"><span class="hn">' + esc(tn(t)) + '</span></th><td class="hw" title="Sets gagnés">' + w[t] + '</td>' + cells + cur + '</tr>';
   }
-  return '<header class="top ho"><table class="htab" aria-label="Scores"><tbody>' + row(0) + row(1) + '</tbody></table>' + chev + '</header>';
+  function sw(k, label){
+    var on = !!S.prefs[k];
+    return '<button class="hsw" role="switch" aria-checked="' + on + '" data-act="pref" data-k="' + k + '"><span>' + label + '</span><span class="track" aria-hidden="true"><span class="knob"></span></span></button>';
+  }
+  return '<header class="top ho"><div class="hrow"><table class="htab" aria-label="Scores"><tbody>' + row(0) + row(1) + '</tbody></table>' + chev + '</div>' +
+    '<div class="hsws" role="group" aria-label="Informations à afficher sous le terrain">' + sw('players', 'Résultats par joueur') + sw('sheet', 'Feuille de match') + '</div></header>';
 }
-function menuBtn(){ return '<div class="stack" style="padding-top:4px"><button class="btn wide" data-act="tab" data-tab="menu">‹ Retour au menu</button></div>'; }
+/* Pied de page : « Retour au menu » ; pendant la saisie des points, « Changer de match » juste à côté
+   (les deux libellés seront remplacés plus tard par des icônes). */
+function menuBtn(){
+  var back = '<button class="btn wide" data-act="tab" data-tab="menu">‹ Retour au menu</button>';
+  if(ui.tab === 'match' && S.stage === 'play' && !inSetup()) return '<div class="stack" style="padding-top:4px"><div class="row2">' + back + '<button class="btn wide" data-act="goHome">Changer de match</button></div></div>';
+  return '<div class="stack" style="padding-top:4px">' + back + '</div>';
+}
 function logHtmlOf(m, n, newestFirst){
   var ev = m.events.slice();
   if(newestFirst) ev.reverse();
@@ -1582,13 +1604,6 @@ function pillHtml(m, t, text){
   var tc = teamColors(m)[t];
   return tc.def ? esc(text) : '<span class="tpill" style="background:' + tc.bg + ';color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + '">' + esc(text) + '</span>';
 }
-function prefRow(){
-  var items = [['schema','Schéma'],['players','Résultats par joueur'],['sheet','Feuille de match']];
-  return '<div class="prefs" role="group" aria-label="Informations à afficher">' + items.map(function(i){
-    var on = S.prefs[i[0]];
-    return '<button class="chip tg ' + (on ? 'sel' : '') + '" data-act="pref" data-k="' + i[0] + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + i[1] + '</button>';
-  }).join('') + '</div>';
-}
 function matchView(){
   var w = setsWon(), out = '';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
@@ -1605,9 +1620,7 @@ function matchView(){
     out += '<p class="last">Touchez « Donner le service » pour l\'équipe qui sert en premier : la rotation automatique en dépend.</p>';
   }
   out += ctlRow(ord);
-  out += '<div class="actions"><button class="btn wide" data-act="openSetup">Modifier la préparation</button><button class="btn wide" data-act="goHome">Changer de match</button></div>';
-  out += prefRow();
-  if(S.prefs.schema) out += courtBoard();
+  out += courtBoard();
   if(S.prefs.players){
     out += '<div class="stack" style="padding-bottom:0"><section class="card a"' + cardStyle(S, 0) + '><h3>' + pillHtml(S, 0, tn(0)) + '</h3>' + statTable(0) + '</section>' +
       '<section class="card b"' + cardStyle(S, 1) + '><h3>' + pillHtml(S, 1, tn(1)) + '</h3>' + statTable(1) + '</section></div>';
@@ -1640,6 +1653,7 @@ function homeView(){
       return '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="nm">' + esc(sm.title) + '</span><small>' + esc(sub) + '</small></span>' +
         '<span class="rsc" aria-label="Sets gagnés">' + sm.w[0] + ' – ' + sm.w[1] + '</span></div>' +
         '<button class="delwrap" data-act="resumeMatch" data-mid="' + esc(m.created) + '" aria-label="Reprendre ' + esc(sm.title) + '"><span class="playc" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" focusable="false"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span></button>' +
+        '<button class="delwrap" data-act="resumeSetup" data-mid="' + esc(m.created) + '" aria-label="Infos et paramètres de ' + esc(sm.title) + '"><span class="editc">' + GEAR + '</span></button>' +
         '<button class="delwrap" data-act="delLibAsk" data-mid="' + esc(m.created) + '" aria-label="Supprimer ' + esc(sm.title) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
     }).join('') : '<p class="muted">Aucun match enregistré pour l\'instant.</p>') + '</div><div class="btnrow"><button class="btn wide" data-act="hideResume">Retour</button></div></section>';
   }
@@ -2483,6 +2497,11 @@ document.addEventListener('click', function(e){
       if(d.mid === S.created && hasContent()){ S.stage = 'play'; S.prepared = true; }
       else if(!loadMatch(d.mid)) break;
       ui.resume = false; ui.showSetup = false; ui.sheet = null; ui.msg = '';
+      save(); render(); window.scrollTo(0,0); break;
+    case 'resumeSetup':
+      if(d.mid === S.created && hasContent()){ S.stage = 'play'; S.prepared = true; }
+      else if(!loadMatch(d.mid)) break;
+      ui.resume = false; ui.showSetup = true; ui.prepTeam = null; ui.sheet = null; ui.msg = '';
       save(); render(); window.scrollTo(0,0); break;
     case 'delLibAsk': ui.sheet = { kind:'dellib', mid:d.mid }; render(); break;
     case 'delLibOk':
