@@ -170,11 +170,19 @@ label.f.tmlab,span.f.tmlab{margin:0;font-size:15px;font-weight:700;color:var(--i
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .plist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
 .plist li{display:flex;align-items:center;gap:8px;min-height:52px;border-bottom:1px solid var(--line)}
+.shirt{position:relative;display:inline-block;width:50px;height:50px;flex:0 0 auto;color:var(--ink)}
+.shirt::before{content:'';position:absolute;inset:0;background-color:currentColor;-webkit-mask:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAEWklEQVR42u2dS2xVVRSGP16Wh7lACoRahiRGogMGBhNGDDApt8jIiQ+IMwQThjpggJiogUFhQEhgIAPeZYYJJKgDE9FUZOAjGCBotUaKIUJKBCE8Bl0k5bDvee5ze/a5/5fsQW971l5r/Xvvs/Y+996CEEIIIYQQQgghJpfpSkF7mAIsBV4HPgFOA6PAA+CoZyGmA8fM9lXgFPCx9b3UfOkIlgGbgEHgGvAwpm3w2O+GhL6umU+bgBfqlPBpwCpgNzCckIRo+wXo8uBDF3AhY9/D5vMqiyFI3rEl5WGBtsfDMre3oA+jFkswzAWOZAjwInAI2AJ85Pj93pwzYSawz2Fvu/V1CLiUwc8jFluleQW4EhPEfeA8MACsA7odI/ZLx3U/Amsy+NEEfnLYOeO44XabLwPm2/0Y/69YjJVjKvABcNfh9C3gMPAWsDCFre6YNfsCsA14FegFZlnrtdc+BH6NuafMT9H/QuBt8/mWw85di3VqVZK/yMo6V9A/Ay/msLkA+Lrg2j2xfQsszuHH8zYrXDa/MuEnlWaLcvKBTekiVcxMYAdwr0Di7wGfmq0iVdSAxeQqX5uTkfguYFebnFoGHAD+z5D4O8Bnnmv6uMG2y1PJXHhafgH0lNTvPOBNYD8wZDva29au2mv7gDdKrFZ6LEZX7OctN6WyHhhrMdW3VenGVPIRypYWM/I/+513GsDBFsr/DqzswLOsl2P2ESdSVlzV6ihASh2YkzLVAiVpac58nlRGbV93vO0ZVgN/tyi3drez3AqQGTbiXccZ/wD97azt19l1o8BrASZzDTBira/sPUMZtf1fE2yMBCjAb5FDuNL2DP0lHTpF7YWGD/+TDimbAH/iPnZdUYEAQhfgMStwH9P/4RJg2NNWXgI8yVyefiw7DLDZ0Vm/BPDuf7/D5ubH69RZhzLPSgBv/s92LEFDEzdoLzluFDskgDf/dzp2yMtz/ZEEyEzqwZ04TSRArjI00/Le1+pGIQFy8Z7DztqkiwYjF9wk38PnThdgMfBvxMbxNBc+B9yIXDiYsfNGDQVoZLw+OpBvWG7Lmzq2tr0PXK+hADcZf4fFvBTXFl7Ks9484hJfFwHSCuGtmElTPqVJfN0ESBLCaznfyliWxNdVAJcQ3je0cxh/uDzR4OWExF8HttZQgK0p4r7M0w/m5xR1pC/HSKhrGZp15q/15cxgjrWwzvuANEIc9+mMa1ORVA10wkaslRB5N6+xNK0UHbH1sOEhgLrshBuWkxFb91N/mGRKyQG0q69g/e+EN9NWGgkgASSAkAASQEgACSAkgAQQEkACCAkgAYQEkABCAkgAIQEkgJAAEkBIAAkgJIAEEBJAAggJIAGEBJAASYxFfu4NKC9LEmIJgu948hMmJwMRYQnwecT3syEK4PoqtFDbxhAFeAb4oQbJH2L8G3GDpAc4F3Dyv6e8f0jRNmYA7wLf4P6G8aq1MfN1Y8gjXwghhBBCCFFdHgHdAhYuHCd9SwAAAABJRU5ErkJggg==) center/contain no-repeat;mask:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAEWklEQVR42u2dS2xVVRSGP16Wh7lACoRahiRGogMGBhNGDDApt8jIiQ+IMwQThjpggJiogUFhQEhgIAPeZYYJJKgDE9FUZOAjGCBotUaKIUJKBCE8Bl0k5bDvee5ze/a5/5fsQW971l5r/Xvvs/Y+996CEEIIIYQQQgghJpfpSkF7mAIsBV4HPgFOA6PAA+CoZyGmA8fM9lXgFPCx9b3UfOkIlgGbgEHgGvAwpm3w2O+GhL6umU+bgBfqlPBpwCpgNzCckIRo+wXo8uBDF3AhY9/D5vMqiyFI3rEl5WGBtsfDMre3oA+jFkswzAWOZAjwInAI2AJ85Pj93pwzYSawz2Fvu/V1CLiUwc8jFluleQW4EhPEfeA8MACsA7odI/ZLx3U/Amsy+NEEfnLYOeO44XabLwPm2/0Y/69YjJVjKvABcNfh9C3gMPAWsDCFre6YNfsCsA14FegFZlnrtdc+BH6NuafMT9H/QuBt8/mWw85di3VqVZK/yMo6V9A/Ay/msLkA+Lrg2j2xfQsszuHH8zYrXDa/MuEnlWaLcvKBTekiVcxMYAdwr0Di7wGfmq0iVdSAxeQqX5uTkfguYFebnFoGHAD+z5D4O8Bnnmv6uMG2y1PJXHhafgH0lNTvPOBNYD8wZDva29au2mv7gDdKrFZ6LEZX7OctN6WyHhhrMdW3VenGVPIRypYWM/I/+513GsDBFsr/DqzswLOsl2P2ESdSVlzV6ihASh2YkzLVAiVpac58nlRGbV93vO0ZVgN/tyi3drez3AqQGTbiXccZ/wD97azt19l1o8BrASZzDTBira/sPUMZtf1fE2yMBCjAb5FDuNL2DP0lHTpF7YWGD/+TDimbAH/iPnZdUYEAQhfgMStwH9P/4RJg2NNWXgI8yVyefiw7DLDZ0Vm/BPDuf7/D5ubH69RZhzLPSgBv/s92LEFDEzdoLzluFDskgDf/dzp2yMtz/ZEEyEzqwZ04TSRArjI00/Le1+pGIQFy8Z7DztqkiwYjF9wk38PnThdgMfBvxMbxNBc+B9yIXDiYsfNGDQVoZLw+OpBvWG7Lmzq2tr0PXK+hADcZf4fFvBTXFl7Ks9484hJfFwHSCuGtmElTPqVJfN0ESBLCaznfyliWxNdVAJcQ3je0cxh/uDzR4OWExF8HttZQgK0p4r7M0w/m5xR1pC/HSKhrGZp15q/15cxgjrWwzvuANEIc9+mMa1ORVA10wkaslRB5N6+xNK0UHbH1sOEhgLrshBuWkxFb91N/mGRKyQG0q69g/e+EN9NWGgkgASSAkAASQEgACSAkgAQQEkACCAkgAYQEkABCAkgAIQEkgJAAEkBIAAkgJIAEEBJAAggJIAGEBJAASYxFfu4NKC9LEmIJgu948hMmJwMRYQnwecT3syEK4PoqtFDbxhAFeAb4oQbJH2L8G3GDpAc4F3Dyv6e8f0jRNmYA7wLf4P6G8aq1MfN1Y8gjXwghhBBCCFFdHgHdAhYuHCd9SwAAAABJRU5ErkJggg==) center/contain no-repeat}
+.shirt input.snum,.shirt .snum-t{position:absolute;left:25%;top:34%;width:50%;height:50%;min-height:0;margin:0;padding:0;border:0;background:transparent;box-shadow:none;text-align:center;font-family:var(--font-d);font-weight:800;color:inherit;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1}
+.shirt input.snum{display:block;line-height:26px;border-radius:4px}
+.shirt input.snum:focus{outline:2px solid #F2B705;outline-offset:1px;background:rgba(255,255,255,.7)}
+.shirt input.snum.l2,.shirt .snum-t.l2{font-size:14px}.shirt input.snum.l3,.shirt .snum-t.l3{font-size:10px}.shirt input.snum.l4,.shirt .snum-t.l4{font-size:8px}
+.shirt input.snum::placeholder{font-size:11px;font-weight:600;color:var(--muted)}
+.shirt.shirt-s{width:44px;height:44px;vertical-align:middle;margin-right:6px}
 .plist input.pnum{width:58px;min-height:44px;text-align:center;font-family:var(--font-d);font-weight:700;font-size:22px;padding:2px}
 .plist .nm{flex:1;overflow-wrap:anywhere}
 .plist .pos{font-size:13px;color:var(--muted);white-space:nowrap}
 .del{border:0;background:transparent;padding:0;min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
-.addrow{display:grid;grid-template-columns:70px 1fr auto;gap:8px;margin-top:6px;align-items:center}
+.addrow{display:grid;grid-template-columns:50px 1fr auto;gap:8px;margin-top:6px;align-items:center}
 .addrow2{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
 .res{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .res .btn{min-height:48px}
@@ -560,6 +568,8 @@ function pinfo(p){ return p ? { pid:p.id, num:p.num, name:p.name, lic:p.licence 
 var CAPMARK = '\uE000';
 function isCapOf(m, t, pid){ return !!pid && !!m.teams[t] && m.teams[t].captain === pid; }
 function capBadge(){ return '<span class="cap" role="img" aria-label="Capitaine" title="Capitaine"></span>'; }
+function numCls(n){ var l = String(n || '').length; return l >= 4 ? 'l4' : (l === 3 ? 'l3' : (l === 2 ? 'l2' : '')); }
+function shirtHtml(n, small){ return '<span class="shirt' + (small ? ' shirt-s' : '') + '" aria-label="Numéro ' + esc(n || '') + '"><b class="snum-t ' + numCls(n) + '">' + esc(n || '–') + '</b></span>'; }
 function plabel(num,name){ return ((num ? '#' + num + ' ' : '') + (name || '')).trim(); }
 function onCourt(t){ return S.lineup[t].map(function(id){ return findPlayer(t,id); }).filter(Boolean); }
 function benchOf(t){ var ids = S.lineup[t]; return S.teams[t].players.filter(function(p){ return ids.indexOf(p.id) < 0; }); }
@@ -1911,7 +1921,7 @@ function teamCard(t){
     var pos = S.lineup[t].indexOf(p.id);
     var linked = p.mid && findMember(p.mid);
     var avb = '<button class="avbtn" data-act="' + (linked ? 'editMember' : 'pickPhoto') + '" data-team="' + t + '" data-pid="' + p.id + '"' + (linked ? ' data-mid="' + p.mid + '"' : '') + ' aria-label="' + (linked ? 'Modifier la fiche et la photo de ' : 'Ajouter une photo à ') + esc(p.name || 'ce joueur') + '">' + avatar(photoOfPlayer(p), 40, p.name) + '</button>';
-    return '<li>' + avb + '<input class="pnum" type="text" inputmode="numeric" maxlength="3" value="' + esc(p.num) + '" data-bind="pnum" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Numéro de maillot de ' + esc(p.name || 'ce joueur') + '">' +
+    return '<li>' + avb + '<span class="shirt">' + '<input class="snum ' + numCls(p.num) + '" type="text" inputmode="numeric" maxlength="3" value="' + esc(p.num) + '" data-bind="pnum" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Numéro de maillot de ' + esc(p.name || 'ce joueur') + '"></span>' +
       '<span class="nm">' + esc(p.name) + (p.licence ? ' <small>' + esc(p.licence) + '</small>' : '') + (isCapOf(S, t, p.id) ? capBadge() : '') + '</span>' +
       '<span class="pos">' + (pos >= 0 ? 'Poste ' + (pos + 1) : 'Banc') + '</span>' +
       '<button class="del" data-act="delP" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Retirer ' + esc(p.name || p.num) + '">' + xIcon(24) + '</button></li>';
@@ -1924,7 +1934,7 @@ function teamCard(t){
     '<ul class="plist">' + list + '</ul>' +
     '<div class="btnrow"><button class="btn wide" data-act="openLineup" data-team="' + t + '">Composition de départ</button></div>' +
     '<label class="f" for="newnum' + t + '">Ajouter un joueur</label>' +
-    '<div class="addrow"><input type="text" inputmode="numeric" id="newnum' + t + '" placeholder="N°" maxlength="3" aria-label="Numéro de maillot" data-enter="p' + t + '">' +
+    '<div class="addrow"><span class="shirt"><input class="snum" type="text" inputmode="numeric" id="newnum' + t + '" placeholder="N°" maxlength="3" aria-label="Numéro de maillot" data-enter="p' + t + '"></span>' +
     '<input type="text" id="newname' + t + '" placeholder="Nom du joueur" aria-label="Nom du joueur" autocomplete="off" data-enter="p' + t + '">' +
     '<button class="btn wide primary" data-act="addP" data-team="' + t + '">Ajouter</button></div>' +
     '<label class="f" for="pickm' + t + '">Ou ajouter un membre du club (le numéro saisi ci-dessus est repris)</label>' + memberSelectHtml(t) + '</section>';
@@ -2600,7 +2610,7 @@ function sheetView(){
       var st = playerStat(p.id), pos = S.lineup[sh.team].indexOf(p.id);
       var lk = p.mid && findMember(p.mid);
       inner = '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:8px">' + avatar(photoOfPlayer(p), 104, p.name) + '<button class="mini" data-act="' + (lk ? 'editMember' : 'pickPhoto') + '" data-team="' + sh.team + '" data-pid="' + p.id + '"' + (lk ? ' data-mid="' + p.mid + '"' : '') + '>' + (photoOfPlayer(p) ? 'Changer la photo' : 'Ajouter une photo') + '</button></div>' +
-        '<h2>' + esc(plabel(p.num, p.name)) + (isCapOf(S, sh.team, p.id) ? capBadge() : '') + '</h2><p class="hint2" style="margin-top:4px">' + esc(tn(sh.team)) + (isCapOf(S, sh.team, p.id) ? ' · Capitaine' : '') + (p.licence ? ' · Licence ' + esc(p.licence) : '') + (pos >= 0 ? ' · Poste ' + (pos + 1) : ' · Banc') + '</p>' +
+        '<h2>' + shirtHtml(p.num, true) + esc(p.name || '') + (isCapOf(S, sh.team, p.id) ? capBadge() : '') + '</h2><p class="hint2" style="margin-top:4px">' + esc(tn(sh.team)) + (isCapOf(S, sh.team, p.id) ? ' · Capitaine' : '') + (p.licence ? ' · Licence ' + esc(p.licence) : '') + (pos >= 0 ? ' · Poste ' + (pos + 1) : ' · Banc') + '</p>' +
         '<div class="bigstat"><b>' + st.pts + '</b>point' + (st.pts > 1 ? 's' : '') + ' marqué' + (st.pts > 1 ? 's' : '') + '</div>' +
         '<div class="kv"><span>Attaques</span><b>' + st.attack + '</b><span>Blocs</span><b>' + st.block + '</b><span>Services gagnants</span><b>' + st.ace + '</b><span>Relances</span><b>' + st.relance + '</b><span>Fautes</span><b>' + st.faults + '</b></div>';
     }
@@ -3171,6 +3181,7 @@ document.addEventListener('input', function(e){
     if(pl) pl.innerHTML = playerListHtml(playerIndex());
     return;
   }
+  if(e.target.classList && e.target.classList.contains('snum')){ e.target.className = 'snum ' + numCls(e.target.value); }
   var bind = ds.bind;
   if(!bind) return;
   var v = e.target.value, t = parseInt(ds.team, 10);
