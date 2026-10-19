@@ -2062,11 +2062,19 @@ function clubsTeam(){
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
   out += '<div class="clubhead"><h2>' + esc(t.name) + '</h2></div><p class="muted" style="margin:0">' + esc(c.name) + '</p>' +
     '<section class="card"><label class="f" for="tmname">Nom de l\'équipe</label><input type="text" id="tmname" data-bind="tmname" value="' + esc(t.name) + '" autocomplete="off"></section>';
-  var members = sortMembers(c.members);
-  out += '<section class="card"><h3>Membres de l\'équipe (' + t.memberIds.length + ')</h3>' +
-    (members.length ? '<p class="muted" style="margin:0 0 8px">Touchez un membre pour l\'ajouter ou le retirer.</p><div class="chips">' + members.map(function(m){
-      return chip('toggleTeamMember', { mid:m.id }, esc(memberName(m)), t.memberIds.indexOf(m.id) >= 0);
-    }).join('') + '</div>' : '<p class="muted">Aucun membre existant dans ce club. Ajoutez-en avec le bouton + de l\'onglet Membres.</p>') + '</section>';
+  var inTeam = sortMembers(c.members.filter(function(m){ return t.memberIds.indexOf(m.id) >= 0; }));
+  var others = sortMembers(c.members.filter(function(m){ return t.memberIds.indexOf(m.id) < 0; }));
+  out += '<section class="card"><h3>Membres de l\'équipe (' + inTeam.length + ')</h3>';
+  if(!c.members.length) out += '<p class="muted">Aucun membre existant dans ce club. Ajoutez-en avec le bouton + de l\'onglet Membres.</p>';
+  else {
+    out += '<label class="f" for="tmadd">Ajouter un membre</label><select id="tmadd" data-bind="tmadd"><option value="">' + (others.length ? '— Choisir un membre —' : 'Tous les membres sont dans l\'équipe') + '</option>' +
+      others.map(function(m){ return '<option value="' + m.id + '">' + esc(memberName(m)) + (m.licence ? ' · ' + esc(m.licence) : '') + '</option>'; }).join('') + '</select>';
+    out += inTeam.length ? '<div style="margin-top:10px">' + inTeam.map(function(m){
+      return '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="fxteam">' + avatar(m.photo, 32, memberName(m)) + '<span class="nm">' + esc(memberName(m)) + '</span></span><small>' + esc([m.licence, m.age !== '' && m.age != null ? m.age + ' ans' : ''].filter(Boolean).join(' · ')) + '</small></span></div>' +
+        '<button class="delwrap" data-act="toggleTeamMember" data-mid="' + m.id + '" aria-label="Retirer ' + esc(memberName(m)) + ' de l\'équipe"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
+    }).join('') + '</div>' : '<p class="muted" style="margin:10px 0 0">Aucun membre dans cette équipe.</p>';
+  }
+  out += '</section>';
   if(!isDef) out += '<div class="btnrow"><button class="btn wide danger" data-act="delTeamAsk">Supprimer cette équipe</button></div>';
   return out + '</div>';
 }
@@ -3061,6 +3069,7 @@ document.addEventListener('input', function(e){
   else if(bind === 'pts') S.cfg.pts = Math.max(1, parseInt(v, 10) || 25);
   else if(bind === 'ptsLast') S.cfg.ptsLast = Math.max(1, parseInt(v, 10) || 15);
   else if(bind === 'pnum'){ var p = findPlayer(t, ds.pid); if(p) p.num = v.trim(); }
+  else if(bind === 'tmadd'){ var tfa = findTeam(ui.teamSel); if(tfa && v && tfa.t.memberIds.indexOf(v) < 0){ tfa.t.memberIds.push(v); save(); } render(); return; }
   else if(bind === 'tmname'){ var tff = findTeam(ui.teamSel); if(tff) tff.t.name = v; save(); return; }
   else if(bind === 'cname'){ var c = curClub(); if(c){ var dt = defaultTeam(c); if(dt && dt.name === c.name) dt.name = v; c.name = v; } }
   else if(bind === 'champsel'){ ui.champSel = v; ui.mm = { a:'', b:'', homeIs:'', res:'3-0' }; render(); return; }
