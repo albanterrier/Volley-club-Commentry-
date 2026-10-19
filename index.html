@@ -2036,7 +2036,7 @@ function clubsEdit(){
   ensureTeams(c);
   var tab = ui.clubTab, out = '<div class="stack">';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
-  out += '<div class="clubhead"><h2>' + esc(c.name) + '</h2>' + (tab ? addBtn(tab === 'members' ? 'Ajouter des membres' : 'Ajouter des équipes') : '') + '</div>';
+  out += '<div class="clubhead"><h2>' + esc(c.name) + '</h2>' + '</div>';
   out += '<section class="card"><h3>Logo</h3><div class="logoedit">' + (c.logo ? logoHtml(c.id, 64) : '<span class="logo none" style="width:64px;height:64px">Pas de logo</span>') +
     '<span class="actcell"><button class="delwrap" data-act="clubLogo" aria-label="Logo, nom et couleurs de ' + esc(c.name) + '"><span class="editc">' + GEAR + '</span></button>' +
     (c.logo ? '<button class="delwrap" data-act="logoRemoveAsk" aria-label="Retirer le logo de ' + esc(c.name) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</span></div></section>';
@@ -2044,9 +2044,9 @@ function clubsEdit(){
     '<button class="btn wide ' + (tab === 'teams' ? 'primary' : '') + '" data-act="clubTab" data-k="teams" aria-pressed="' + (tab === 'teams') + '">Équipe</button></div>';
   if(tab === 'members'){
     var members = sortMembers(c.members);
-    out += '<section class="card"><h3>Membres (' + members.length + ')</h3>' + (members.length ? memberRows(members, true) : '<p class="muted">Aucun membre existant</p>') + '</section>';
+    out += '<div class="clubhead"><h2>Membres (' + members.length + ')</h2>' + addBtn('Ajouter des membres') + '</div><section class="card">' + (members.length ? memberRows(members, true) : '<p class="muted">Aucun membre existant</p>') + '</section>';
   } else if(tab === 'teams'){
-    out += '<section class="card"><h3>Équipes (' + c.teams.length + ')</h3>' + c.teams.map(function(t){
+    out += '<div class="clubhead"><h2>Équipes (' + c.teams.length + ')</h2>' + addBtn('Ajouter des équipes') + '</div><section class="card">' + c.teams.map(function(t){
       var n = t.memberIds.length;
       return '<div class="ritem"><button class="fx" data-act="teamOpen" data-tid="' + t.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 32) + '<span class="nm">' + esc(t.name) + '</span></span><small>' + n + ' membre' + (n > 1 ? 's' : '') + '</small></span><span class="rsc" aria-hidden="true">›</span></button></div>';
     }).join('') + '</section>';
