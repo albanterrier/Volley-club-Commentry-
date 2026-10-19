@@ -2636,6 +2636,31 @@ function render(){
   document.getElementById('app').innerHTML = header() + '<main>' + warn + main + (ui.tab === 'menu' ? '' : menuBtn()) + '</main>';
   document.getElementById('sheet').innerHTML = ui.sheet ? sheetView() : '';
   if(ui.focus){ var el = document.getElementById(ui.focus); if(el) el.focus(); ui.focus = null; }
+  navSave();
+}
+/* Page courante conservée en cas d'actualisation (sessionStorage : propre à l'onglet / à la session) */
+var NAV_KEYS = ['tab','clubView','clubSel','teamSel','clubTab','champSel','champTab','calView','dataView','dataTeam','dataMatch','dataFrom','dataPlayer','resume','addRes','showSetup','prepTeam','calHideDone'];
+function navSave(){
+  try{
+    var o = {}; NAV_KEYS.forEach(function(k){ if(ui[k] !== undefined) o[k] = ui[k]; });
+    o.y = window.pageYOffset || 0;
+    sessionStorage.setItem('volley-nav-v1', JSON.stringify(o));
+  }catch(e){}
+}
+function navRestore(){
+  try{
+    var o = JSON.parse(sessionStorage.getItem('volley-nav-v1') || 'null');
+    if(!o || !o.tab || o.tab === 'menu') return 0;
+    if(['match','clubs','champ','cal','backup','data'].indexOf(o.tab) < 0) return 0;
+    if(o.calView === 'create') o.calView = 'list';
+    NAV_KEYS.forEach(function(k){ if(o[k] !== undefined) ui[k] = o[k]; });
+    if(ui.tab === 'match' && S.stage === 'play') ui.showSetup = !!o.showSetup;
+    try{
+      if(!(history.state && history.state.v === 'tab')) history.pushState({ v:'tab' }, '');
+      histDepth = 1;
+    }catch(e){}
+    return o.y || 0;
+  }catch(e){ return 0; }
 }
 
 /* ---------- Interactions ---------- */
@@ -3167,7 +3192,10 @@ if(window.addEventListener) window.addEventListener('popstate', onPop);
 /* Demande au navigateur de ne pas effacer les données de l'application (utile hors ligne) */
 try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 
+var navY = navRestore();
 render();
+if(navY){ window.scrollTo(0, navY); }
+window.addEventListener('scroll', function(){ if(ui.tab !== 'menu') navSave(); }, { passive:true });
 if(FRESH && location.protocol !== 'file:'){ fetchDemo(function(ok){ if(ok){ render(); } }); }
 ensurePalettes();   /* palettes de couleurs des logos déjà enregistrés */
 })();
