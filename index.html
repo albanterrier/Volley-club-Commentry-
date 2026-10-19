@@ -524,7 +524,7 @@ function logoHtml(clubId, px){
   if(!c || !c.logo) return '';
   return '<img class="logo" src="' + esc(c.logo) + '" alt="" width="' + px + '" height="' + px + '">';
 }
-var ui = { hdrOpen:false, teamOther:[false,false], prepTeam:null, mm:{ a:'', b:'', homeIs:'', res:'3-0' }, tab:'menu', clubView:'home', newClub:{ name:'', logo:'' }, createdId:null, calView:'list', ev:null, dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
+var ui = { hdrOpen:false, teamOther:[false,false], prepTeam:null, mm:{ a:'', b:'', homeIs:'', res:'3-0' }, tab:'menu', clubView:'home', newClub:{ name:'', logo:'' }, createdId:null, calView:'list', ev:null, dataView:'home', dataTeam:null, dataMatch:null, dataFrom:'teams', dataPlayer:null, pfilter:'', photoTarget:null, pendingRestore:null, warn:'', showSetup:false, resume:false, sheet:null, focus:null, clubSel:null, champSel:null, champView:'table', champTab:'results', addRes:false, calHideDone:false, sort:{ k:'pts', dir:-1 }, find:['',''], msg:'' };
 
 /* Équipe 0 = équipe à domicile, équipe 1 = équipe à l'extérieur. Le nom du match suit « domicile – extérieur » tant qu'on ne l'a pas modifié. */
 var DEFAULT_TEAM_NAMES = ['Notre équipe', 'Adversaire'];
@@ -1650,7 +1650,7 @@ function header(){
 function prevAct(){
   var t = ui.tab;
   if(t === 'match'){
-    if(S.stage === 'home') return ui.resume ? { act:'hideResume' } : null;
+    if(S.stage === 'home') return ui.addRes ? { act:'hideAddRes' } : (ui.resume ? { act:'hideResume' } : null);
     if(inSetup()){
       if(ui.prepTeam === 0 || ui.prepTeam === 1) return { act:'prepBack' };
       return S.prepared ? { act:'setupAsk' } : { act:'goHome' };
@@ -1826,12 +1826,14 @@ function fmtWhen(iso){
   return isNaN(d.getTime()) ? '' : d.toLocaleString('fr-FR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
 }
 function homeView(){
+  if(ui.addRes) return addResultView();
   var list = savedMatches(), out = '<div class="stack">';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
   if(!ui.resume){
     out += '<section class="card"><h2>Match</h2><p class="muted" style="margin:6px 0 16px">Que voulez-vous faire ?</p>' +
       '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="newPlay">Jouer un nouveau match</button>' +
-      '<button class="bigbtn" data-act="showResume"' + (list.length ? '' : ' disabled') + '>Match existant' + (list.length ? ' <small>' + list.length + '</small>' : '') + '</button></div>' +
+      '<button class="bigbtn" data-act="showResume"' + (list.length ? '' : ' disabled') + '>Match existant' + (list.length ? ' <small>' + list.length + '</small>' : '') + '</button>' +
+      '<button class="bigbtn" data-act="showAddRes">Ajouter le résultat d\'un match</button></div>' +
       (list.length ? '' : '<p class="hint2">Aucun match enregistré pour l\'instant.</p>') + '</section>';
   } else {
     out += '<section class="card"><h2>Match existant</h2><div style="margin-top:8px">' + (list.length ? list.map(function(it){
@@ -2012,9 +2014,9 @@ function clubsList(){
   out += '<section class="card"><h2>Modifier un club</h2>';
   if(!S.clubs.length) out += '<p class="muted">Aucun club pour l\'instant.</p>';
   else out += '<p class="muted" style="margin:6px 0 4px">Touchez un club pour le modifier.</p>' + S.clubs.slice().sort(function(a,b){ return a.name.localeCompare(b.name, 'fr'); }).map(function(c){
-    var n = c.members.length;
+    var n = c.members.length, nt = (c.teams && c.teams.length) || 1;
     return '<div class="ritem"><button class="fx" data-act="clubEdit" data-cid="' + c.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 36) + '<span class="nm">' + esc(c.name) + '</span></span>' +
-      '<small>' + n + ' licencié' + (n > 1 ? 's' : '') + '</small></span><span class="rsc" aria-hidden="true">›</span></button></div>';
+      '<small>' + n + ' licencié' + (n > 1 ? 's' : '') + ' · ' + nt + ' équipe' + (nt > 1 ? 's' : '') + '</small></span><span class="rsc" aria-hidden="true">›</span></button></div>';
   }).join('');
   return out + '</section></div>';
 }
@@ -2232,48 +2234,76 @@ function champView(){
   out += '<label class="f" for="newchamp">Nouveau championnat</label><div class="addrow2"><input type="text" id="newchamp" placeholder="Ex. Départementale 2026-2027" data-enter="champ" autocomplete="off"><button class="btn wide primary" data-act="addChamp">Créer</button></div></section>';
   var ch = curChamp();
   if(!ch) return out + '</div>';
+  var tab = ui.champTab || 'results';
+  out += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + [['teams','Équipes'],['agenda','Agenda'],['results','Résultats']].map(function(x){
+    return '<button class="btn' + (tab === x[0] ? ' primary' : '') + '" data-act="champTab" data-v="' + x[0] + '" aria-pressed="' + (tab === x[0] ? 'true' : 'false') + '">' + x[1] + '</button>';
+  }).join('') + '</div>';
 
-  out += '<section class="card"><h3>Clubs du championnat</h3>';
-  if(!S.clubs.length) out += '<p class="muted">Saisissez d\'abord des clubs dans l\'onglet Clubs.</p>';
-  else out += '<div class="chips">' + allEntrants().map(function(c){ return chip('toggleChampClub', { cid:c.id }, logoHtml(c.id, 24) + esc(entrantLabel(c)), ch.clubIds.indexOf(c.id) >= 0); }).join('') + '</div><p class="hint2">Touchez un club pour l\'ajouter ou le retirer.</p>';
-  out += '</section>';
-
-  var rows = standings(ch);
-  function th(k, label, title){
-    var on = ui.sort.k === k;
-    return '<th aria-sort="' + (on ? (ui.sort.dir > 0 ? 'ascending' : 'descending') : 'none') + '"><button class="sortb ' + (on ? 'on' : '') + '" data-act="sort" data-k="' + k + '" title="' + title + '">' + label + (on ? (ui.sort.dir > 0 ? ' ▴' : ' ▾') : '') + '</button></th>';
+  if(tab === 'teams'){
+    out += '<div class="clubhead"><h2>Équipes</h2>' + addBtn('Ajouter une équipe').replace('data-act="clubAddOpen"', 'data-act="champTeamOpen"') + '</div><section class="card">';
+    var ents = entrantsOf(ch.clubIds).slice().sort(function(a,b){ return entrantLabel(a).localeCompare(entrantLabel(b), 'fr'); });
+    if(!ents.length) out += '<p class="muted" style="margin:0">Aucune équipe dans ce championnat. Touchez le bouton vert pour en ajouter.</p>';
+    else out += ents.map(function(c){
+      return '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 28) + '<span class="nm">' + esc(entrantLabel(c)) + '</span></span></span></div>' +
+        '<button class="delwrap" data-act="toggleChampClub" data-cid="' + c.id + '" aria-label="Retirer ' + esc(entrantLabel(c)) + ' du championnat"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
+    }).join('');
+    out += '</section>';
+  } else if(tab === 'agenda'){
+    var today = isoOf(new Date()), all = calEntries().filter(function(e){ return e.ch && e.ch.id === ch.id; });
+    var weeks = {}, order = [], thisWeek = weekStart(today);
+    all.forEach(function(e){ var w = weekStart(e.date); if(!weeks[w]){ weeks[w] = []; order.push(w); } weeks[w].push(e); });
+    if(!order.length) out += '<section class="card"><p class="muted" style="margin:0">Aucun match planifié dans ce championnat. Créez-en dans Calendrier › Créer un événement.</p></section>';
+    order.forEach(function(w){
+      out += '<section class="card"><h3>' + weekLabel(w) + (w === thisWeek ? ' <span class="tag">cette semaine</span>' : '') + '</h3>' + weeks[w].map(function(e){ return calRow(e, today); }).join('') + '</section>';
+    });
+  } else {
+    var rows = standings(ch);
+    function th(k, label, title){
+      var on = ui.sort.k === k;
+      return '<th aria-sort="' + (on ? (ui.sort.dir > 0 ? 'ascending' : 'descending') : 'none') + '"><button class="sortb ' + (on ? 'on' : '') + '" data-act="sort" data-k="' + k + '" title="' + title + '">' + label + (on ? (ui.sort.dir > 0 ? ' ▴' : ' ▾') : '') + '</button></th>';
+    }
+    out += '<section class="card"><h3>Classement</h3>';
+    if(!rows.length) out += '<p class="muted">Ajoutez des équipes au championnat pour voir le classement.</p>';
+    else out += '<div class="tablewrap"><table><thead><tr>' + th('club','Équipe','Trier par équipe') + th('j','J','Matchs joués') + th('g','G','Matchs gagnés') + th('p','P','Matchs perdus') +
+      th('sp','S+','Sets gagnés') + th('sc','S−','Sets perdus') + th('pts','Pts','Points du championnat') + '</tr></thead><tbody>' +
+      rows.map(function(r){
+        return '<tr><td><span class="fxteam"><span class="rank">' + r.rank + '</span>' + logoHtml(r.id, 24) + '<span class="nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span></span></td><td>' + r.j + '</td><td>' + r.g + '</td><td>' + r.p + '</td><td>' + r.sp + '</td><td>' + r.sc + '</td><td class="pts">' + r.pts + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="hint2">J joués · G gagnés · P perdus · S+ sets gagnés · S− sets perdus · Pts points. Touchez un en-tête pour trier. Barème : 3-0 → 5, 3-1 → 4, 3-2 → 3, 2-3 → 2, 1-3 → 1, 0-3 → 0.</p>';
+    out += '</section><section class="card"><h3>Matchs</h3>';
+    var ms = ch.matches.slice().reverse().map(function(m){
+      var warn = known(m.hs, m.as) ? '' : ' <span class="tag" title="Le barème ne prévoit que les matchs en 3 sets gagnants">barème non défini</span>';
+      return '<div class="mrow"><span style="flex:1">' + logoHtml(m.home, 20) + ' ' + esc(clubName(m.home)) + ' <b>' + m.hs + ' – ' + m.as + '</b> ' + logoHtml(m.away, 20) + ' ' + esc(clubName(m.away)) +
+        (m.sets && m.sets.length ? '<br><small>' + m.sets.map(function(s){ return s[0] + '-' + s[1]; }).join(', ') + '</small>' : '') + warn + '</span>' +
+        '<span class="tag">' + (m.source === 'live' ? 'joué' : 'saisi') + '</span>' +
+        '<button class="del" data-act="delMatch" data-mid="' + m.id + '" aria-label="Supprimer ce match">' + xIcon(24) + '</button></div>';
+    }).join('');
+    out += (ms || '<p class="muted">Aucun match pour l\'instant.</p>') + '</section>';
   }
-  out += '<section class="card"><h3>Classement</h3>';
-  if(!rows.length) out += '<p class="muted">Ajoutez des clubs au championnat pour voir le classement.</p>';
-  else out += '<div class="tablewrap"><table><thead><tr>' + th('club','Club','Trier par club') + th('j','J','Matchs joués') + th('g','G','Matchs gagnés') + th('p','P','Matchs perdus') +
-    th('sp','S+','Sets gagnés') + th('sc','S−','Sets perdus') + th('pts','Pts','Points du championnat') + '</tr></thead><tbody>' +
-    rows.map(function(r){
-      return '<tr><td><span class="fxteam"><span class="rank">' + r.rank + '</span>' + logoHtml(r.id, 24) + '<span class="nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span></span></td><td>' + r.j + '</td><td>' + r.g + '</td><td>' + r.p + '</td><td>' + r.sp + '</td><td>' + r.sc + '</td><td class="pts">' + r.pts + '</td></tr>';
-    }).join('') + '</tbody></table></div>' +
-    '<p class="hint2">J joués · G gagnés · P perdus · S+ sets gagnés · S− sets perdus · Pts points. Touchez un en-tête pour trier. Barème : 3-0 → 5, 3-1 → 4, 3-2 → 3, 2-3 → 2, 1-3 → 1, 0-3 → 0.</p>';
-  out += '</section>';
+  out += '<section class="card"><div class="btnrow" style="margin:0"><button class="btn wide danger" data-act="delChampAsk">Supprimer ce championnat</button></div></section>';
+  return out + '</div>';
+}
 
-  out += '<section class="card"><h3>Résultats</h3>';
-  var ms = ch.matches.slice().reverse().map(function(m){
-    var warn = known(m.hs, m.as) ? '' : ' <span class="tag" title="Le barème ne prévoit que les matchs en 3 sets gagnants">barème non défini</span>';
-    return '<div class="mrow"><span style="flex:1">' + logoHtml(m.home, 20) + ' ' + esc(clubName(m.home)) + ' <b>' + m.hs + ' – ' + m.as + '</b> ' + logoHtml(m.away, 20) + ' ' + esc(clubName(m.away)) +
-      (m.sets && m.sets.length ? '<br><small>' + m.sets.map(function(s){ return s[0] + '-' + s[1]; }).join(', ') + '</small>' : '') + warn + '</span>' +
-      '<span class="tag">' + (m.source === 'live' ? 'joué' : 'saisi') + '</span>' +
-      '<button class="del" data-act="delMatch" data-mid="' + m.id + '" aria-label="Supprimer ce match">' + xIcon(24) + '</button></div>';
-  }).join('');
-  out += ms || '<p class="muted">Aucun match pour l\'instant.</p>';
+/* Ajouter le résultat d'un match (depuis l'espace Match) */
+function addResultView(){
+  var out = '<div class="stack">';
+  if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
+  out += '<section class="card"><h2>Ajouter le résultat d\'un match</h2>';
+  var ch = curChamp();
+  if(!ch){ return out + '<p class="muted">Créez d\'abord un championnat dans l\'espace Championnat.</p></section></div>'; }
+  out += '<label class="f" for="champsel">Championnat</label><select id="champsel" data-bind="champsel">' +
+    S.champs.map(function(c){ return '<option value="' + c.id + '"' + (c.id === ui.champSel ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>';
   if(ch.clubIds.length >= 2){
     var mm = ui.mm, list = entrantsOf(ch.clubIds);
     if(mm.a && !ch.clubIds.includes(mm.a)) mm.a = '';
     if(mm.b && !ch.clubIds.includes(mm.b)) mm.b = '';
-    out += '<h3 style="margin-top:18px">Ajouter un match à la main</h3>' + homePicker(list, mm, 'mmf', 'mmHome') +
+    out += homePicker(list, mm, 'mmf', 'mmHome') +
       '<label class="f" for="mres">Score final en sets (du point de vue de l\'équipe à domicile)</label><select id="mres" data-bind="mmf" data-k="res">' + RESULTS.map(function(r){ return '<option value="' + r + '"' + (mm.res === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
       '<div class="btnrow"><button class="btn wide primary" data-act="addMatch">Ajouter ce match</button></div>';
-  } else if(S.clubs.length){
-    out += '<p class="hint2">Sélectionnez au moins deux équipes pour ajouter des matchs.</p>';
+  } else {
+    out += '<p class="hint2">Ce championnat doit contenir au moins deux équipes (espace Championnat › Équipes).</p>';
   }
-  out += '</section><section class="card"><div class="btnrow" style="margin:0"><button class="btn wide danger" data-act="delChampAsk">Supprimer ce championnat</button></div></section>';
-  return out + '</div>';
+  return out + '</section></div>';
 }
 
 /* ---------- Menu principal ---------- */
@@ -2441,6 +2471,12 @@ function sheetView(){
       '<div class="cols' + (onCourt(sh.team).length ? '' : ' one') + '">' + group('Type de faute', kinds) + (onCourt(sh.team).length ? group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')) : '') + '</div>';
   } else if(sh.kind === 'clubadd'){
     inner = clubAddSheet(sh);
+  } else if(sh.kind === 'champteam'){
+    var cht = curChamp(), avail = allEntrants().filter(function(c){ return !cht || cht.clubIds.indexOf(c.id) < 0; }).sort(function(a,b){ return entrantLabel(a).localeCompare(entrantLabel(b), 'fr'); });
+    inner = '<h2>Ajouter une équipe</h2>' + (avail.length ? '<p class="hint2">Touchez une équipe pour l\'ajouter au championnat.</p><div style="max-height:50vh;overflow:auto">' + avail.map(function(c){
+      return '<button class="fx" data-act="champTeamAdd" data-cid="' + c.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 28) + '<span class="nm">' + esc(entrantLabel(c)) + '</span></span></span><span class="rsc" aria-hidden="true">+</span></button>';
+    }).join('') + '</div>' : '<p class="hint2">Toutes les équipes existantes sont déjà dans ce championnat. Créez-en dans Clubs › Équipe.</p>') +
+      '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Fermer</button></div>';
   } else if(sh.kind === 'delteam'){
     var dtf = findTeam(ui.teamSel);
     inner = '<h2>Supprimer cette équipe ?</h2><p class="hint2" style="font-size:16px;margin-top:8px"><b>' + esc(dtf ? dtf.t.name : '') + '</b> sera retirée du club et des championnats. Les membres restent dans le club.</p>' +
@@ -2687,7 +2723,7 @@ function addMatch(){
   if(mm.homeIs !== 'a' && mm.homeIs !== 'b'){ ui.msg = 'Indiquez quelle équipe joue à domicile.'; render(); return; }
   var h = mm.homeIs === 'b' ? mm.b : mm.a, a = mm.homeIs === 'b' ? mm.a : mm.b;
   ch.matches.push({ id:uid(), ref:null, home:h, away:a, hs:parseInt(r[0],10), as:parseInt(r[1],10), sets:null, source:'manual', date:stamp() });
-  ui.mm = { a:'', b:'', homeIs:'', res:'3-0' }; ui.msg = ''; save(); render();
+  ui.mm = { a:'', b:'', homeIs:'', res:'3-0' }; ui.msg = 'Résultat ajouté au championnat ' + ch.name + '.'; save(); render();
 }
 
 document.addEventListener('click', function(e){
@@ -2744,6 +2780,11 @@ document.addEventListener('click', function(e){
     case 'startMatch': registerTypedTeams(); S.prepared = true; S.stage = 'play'; ui.showSetup = false; ui.prepTeam = null; ui.msg = ''; save(); render(); window.scrollTo(0,0); break;
     case 'newPlay': newMatch(); break;
     case 'showResume': ui.resume = true; render(); window.scrollTo(0,0); break;
+    case 'showAddRes': ui.addRes = true; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'hideAddRes': ui.addRes = false; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'champTab': ui.champTab = d.v; ui.msg = ''; render(); break;
+    case 'champTeamOpen': ui.sheet = { kind:'champteam' }; render(); break;
+    case 'champTeamAdd': { var chA = curChamp(); if(chA && chA.clubIds.indexOf(d.cid) < 0) chA.clubIds.push(d.cid); save(); render(); break; }
     case 'hideResume': ui.resume = false; render(); break;
     case 'goHome': stopClock(); S.stage = 'home'; ui.resume = false; ui.showSetup = false; ui.sheet = null; save(); render(); window.scrollTo(0,0); break;
     case 'resumeMatch':
