@@ -976,8 +976,9 @@ function profSet(v){ try{ localStorage.setItem(PROFKEY, v); sessionStorage.setIt
 function profAsked(){ try{ return sessionStorage.getItem('volley-profile-ok') === '1'; }catch(e){ return true; } }
 function profLabel(v){ return PROFS.filter(function(p){ return p[0] === v; })[0][1]; }
 function profBtnHtml(){
-  if(!profOn()) return '';
-  return '<button class="ibtn" data-act="profOpen" aria-label="Profil : ' + esc(profLabel(profGet())) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" fill="none"/></svg></button>';
+  var a = adminInfo(), photo = (a && profGet() === 'admin' && a.m.photo) ? a.m.photo : '';
+  return '<button class="ibtn" data-act="profOpen" aria-label="Profil' + (a ? ' : ' + esc(profLabel(profGet())) : '') + '">' + (photo ? '<img class="av" src="' + esc(photo) + '" alt="" width="30" height="30">' :
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>') + '</button>';
 }
 function profPickerHtml(){
   var a = adminInfo(), cur = profGet();
@@ -989,6 +990,7 @@ function profPickerHtml(){
   return out + '</div></div>';
 }
 function profSheetHtml(){
+  if(!profOn()) return '<h2>Mon profil</h2><div class="profid">' + avatar('', 64, 'Profil') + '<div><b>Profil par défaut</b><br><span class="muted">Aucun administrateur principal défini</span></div></div><p class="hint2" style="margin-top:14px">Dans ces données, aucun administrateur principal n\'est désigné : toutes les fonctions sont disponibles et aucun choix de profil n\'est demandé.</p>';
   var a = adminInfo(), cur = profGet(), isAdm = cur === 'admin' && a;
   var out = '<h2>Mon profil</h2><div class="profid">' + avatar(isAdm ? a.m.photo : '', 64, isAdm ? memberName(a.m) : profLabel(cur)) + '<div><b>' + esc(isAdm ? memberName(a.m) : profLabel(cur)) + '</b><br><span class="muted">' +
     esc(isAdm ? profLabel(cur) + ' · ' + a.club.name : (cur === 'licencie' ? 'Accès licencié' : 'Consultation')) + '</span></div></div>' +
