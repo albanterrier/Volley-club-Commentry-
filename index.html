@@ -904,9 +904,77 @@ function prevGet(){
 }
 function leaveText(tid, chid, to){
   var ch = champById(chid), ld = ch ? teamLoad(ch, tid) : { played:0, planned:0 }, parts = [];
+  if(ld.planned) parts.push(ld.planned + ' rencontre' + (ld.planned > 1 ? 's' : '') + ' au calendrier');
   if(ld.played) parts.push(ld.played + ' résultat' + (ld.played > 1 ? 's' : ''));
-  if(ld.planned) parts.push(ld.planned + ' match' + (ld.planned > 1 ? 's' : '') + ' au calendrier');
-  return '<p class="hint2">' + esc(clubName(tid)) + ' a ' + parts.join(' et ') + ' dans ' + esc(ch ? ch.name : 'ce championnat') + '. Ils ne sont pas supprimés, mais ne comptent plus au classement tant que l\'équipe n\'est pas réinscrite dans ce championnat.</p>';
+  return '<p class="hint2">' + esc(clubName(tid)) + ' a ' + parts.join(' et ') + ' dans ' + esc(ch ? ch.name : 'ce championnat') + '.</p>' +
+    '<p class="hint2"><b>Garder</b> : ils sont archivés, masqués partout (calendrier, agenda, résultats, classement) et reviennent si l\'équipe est réinscrite. <b>Supprimer</b> : ils sont effacés définitivement.</p>';
+}
+/* ---------- Cohérence des données (retour 11) ----------
+   Règle : une rencontre ou un résultat n'est « actif » que si ses DEUX équipes sont inscrites dans le championnat.
+   Sinon il est archivé : masqué partout (calendrier, agenda, résultats, classement), sans rien effacer ;
+   il revient tout seul si l'équipe est réinscrite. */
+function chHas(ch, id){ return ch.clubIds.indexOf(id) >= 0; }
+function pairActive(ch, h, a){ return chHas(ch, h) && chHas(ch, a); }
+/* ce que supprimer ces équipes (ou ce club) effacerait, toutes saisons confondues */
+function erasePack(ids){
+  var r = { res:0, fix:0, ev:0 };
+  function inIds(x){ return ids.indexOf(x.home) >= 0 || ids.indexOf(x.away) >= 0; }
+  S.champs.forEach(function(ch){ r.res += ch.matches.filter(inIds).length; r.fix += ch.fixtures.filter(inIds).length; });
+  r.ev = S.agenda.filter(function(a){ return a.kind !== 'event' && inIds(a); }).length;
+  return r;
+}
+function eraseText(r){
+  var p = [];
+  if(r.fix) p.push(r.fix + ' rencontre' + (r.fix > 1 ? 's' : '') + ' au calendrier');
+  if(r.res) p.push(r.res + ' résultat' + (r.res > 1 ? 's' : ''));
+  if(r.ev) p.push(r.ev + ' rencontre' + (r.ev > 1 ? 's' : '') + ' amicale' + (r.ev > 1 ? 's' : ''));
+  return p.length ? ' Seront aussi supprimés : ' + p.join(', ') + '.' : '';
+}
+function coherence(){
+  var teamIds = {}, memIds = {};
+  S.clubs.forEach(function(c){ teamIds[c.id] = 1; (c.teams || []).forEach(function(t){ teamIds[t.id] = 1; }); c.members.forEach(function(m){ memIds[m.id] = 1; }); });
+  var r = { badRes:0, badFix:0, badEv:0, badIds:0, badMem:0, badLinks:0, archRes:0, archFix:0 };
+  S.champs.forEach(function(ch){
+    ch.clubIds.forEach(function(id){ if(!teamIds[id]) r.badIds++; });
+    ch.matches.forEach(function(m){
+      if(!teamIds[m.home] || !teamIds[m.away]) r.badRes++; else if(!pairActive(ch, m.home, m.away)) r.archRes++;
+      if(m.fid && !fixtureOf(ch, m.fid)) r.badLinks++;
+    });
+    ch.fixtures.forEach(function(f){
+      if(!teamIds[f.home] || !teamIds[f.away]) r.badFix++; else if(!pairActive(ch, f.home, f.away)) r.archFix++;
+      if(f.matchId && !matchOf(ch, f.matchId)) r.badLinks++;
+    });
+  });
+  S.agenda.forEach(function(a){ if(a.kind !== 'event' && (!teamIds[a.home] || !teamIds[a.away])) r.badEv++; });
+  S.clubs.forEach(function(c){ (c.teams || []).forEach(function(t){ (t.memberIds || []).forEach(function(id){ if(!memIds[id]) r.badMem++; }); }); });
+  r.broken = r.badRes + r.badFix + r.badEv + r.badIds + r.badMem + r.badLinks;
+  r.arch = r.archRes + r.archFix;
+  return r;
+}
+/* répare : retire les références à des équipes ou membres qui n'existent plus, et les liens cassés */
+function cohFix(){
+  var teamIds = {}, memIds = {}, n = 0;
+  S.clubs.forEach(function(c){ teamIds[c.id] = 1; (c.teams || []).forEach(function(t){ teamIds[t.id] = 1; }); c.members.forEach(function(m){ memIds[m.id] = 1; }); });
+  S.champs.forEach(function(ch){
+    var a = ch.clubIds.length; ch.clubIds = ch.clubIds.filter(function(id){ return teamIds[id]; }); n += a - ch.clubIds.length;
+    a = ch.matches.length; ch.matches = ch.matches.filter(function(m){ return teamIds[m.home] && teamIds[m.away]; }); n += a - ch.matches.length;
+    a = ch.fixtures.length; ch.fixtures = ch.fixtures.filter(function(f){ return teamIds[f.home] && teamIds[f.away]; }); n += a - ch.fixtures.length;
+    ch.matches.forEach(function(m){ if(m.fid && !fixtureOf(ch, m.fid)){ delete m.fid; n++; } });
+    ch.fixtures.forEach(function(f){ if(f.matchId && !matchOf(ch, f.matchId)){ f.matchId = null; n++; } });
+  });
+  var b = S.agenda.length; S.agenda = S.agenda.filter(function(x){ return x.kind === 'event' || (teamIds[x.home] && teamIds[x.away]); }); n += b - S.agenda.length;
+  S.clubs.forEach(function(c){ (c.teams || []).forEach(function(t){ var k = (t.memberIds || []).length; t.memberIds = (t.memberIds || []).filter(function(id){ return memIds[id]; }); n += k - t.memberIds.length; }); });
+  save(); return n;
+}
+/* supprime définitivement les rencontres et résultats archivés */
+function cohPurge(){
+  var n = 0;
+  S.champs.forEach(function(ch){
+    var a = ch.matches.length; ch.matches = ch.matches.filter(function(m){ return pairActive(ch, m.home, m.away); }); n += a - ch.matches.length;
+    a = ch.fixtures.length; ch.fixtures = ch.fixtures.filter(function(f){ return pairActive(ch, f.home, f.away); }); n += a - ch.fixtures.length;
+    ch.fixtures.forEach(function(f){ if(f.matchId && !matchOf(ch, f.matchId)) f.matchId = null; });
+  });
+  save(); return n;
 }
 function champById(id){ return S.champs.filter(function(c){ return c.id === id; })[0] || null; }
 function curChamp(){ var l = champs(), c = champById(ui.champSel); if(c && c.seasonId !== S.season) c = null; if(!c && l.length){ c = l[0]; ui.champSel = c.id; } return c; }
@@ -1644,7 +1712,7 @@ function calEntry(cid, fid){
 }
 function calEntries(){
   var out = [];
-  champs().forEach(function(ch){ ch.fixtures.forEach(function(f){ out.push(calEntry(ch.id, f.id)); }); });
+  champs().forEach(function(ch){ ch.fixtures.forEach(function(f){ if(pairActive(ch, f.home, f.away)) out.push(calEntry(ch.id, f.id)); }); });
   S.agenda.forEach(function(a){ if(inSeason(a.date)) out.push(calEntry('', a.id)); });
   return out.sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
 }
@@ -1899,7 +1967,7 @@ function copyText(text){
 
 /* ---------- Vues : commun ---------- */
 function inSetup(){ return ui.tab === 'match' && (S.stage === 'setup' || (ui.showSetup && S.stage === 'play')); }
-function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', data:'Données', backup:'Sauvegarde' }[ui.tab] || ''; }
+function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', data:'Statistiques', backup:'Sauvegarde' }[ui.tab] || ''; }
 function clockLabel(){ return S.clock.running ? 'Pause' : (S.clock.acc > 0 ? 'Reprendre' : 'Démarrer'); }
 /* Rang du set en cours : « 1er set », « 2e set »… */
 function ordinalSet(n){ return n === 1 ? '1er set' : n + 'e set'; }
@@ -2121,7 +2189,7 @@ function homeView(){
       '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="newPlay">Jouer un nouveau match</button>' +
       '<button class="bigbtn" data-act="showResume"' + (list.length ? '' : ' disabled') + '>Match existant' + (list.length ? ' <small>' + list.length + '</small>' : '') + '</button>' +
       '<button class="bigbtn" data-act="showAddRes">Ajouter le résultat d\'un match</button></div>' +
-      (list.length ? '' : '<p class="hint2">Aucun match enregistré pour l\'instant.</p>') + '</section>';
+      (list.length ? '' : '<p class="hint2">Aucun match suivi en direct pour l\'instant.</p>') + '</section>';
   } else {
     out += '<section class="card"><h2>Match existant</h2><div style="margin-top:8px">' + (list.length ? list.map(function(it){
       var m = it.m, sm = matchSummary(m);
@@ -2131,7 +2199,7 @@ function homeView(){
         '<button class="delwrap" data-act="resumeMatch" data-mid="' + esc(m.created) + '" aria-label="Reprendre ' + esc(sm.title) + '"><span class="playc" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" focusable="false"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span></button>' +
         '<button class="delwrap" data-act="resumeSetup" data-mid="' + esc(m.created) + '" aria-label="Infos et paramètres de ' + esc(sm.title) + '"><span class="editc">' + GEAR + '</span></button>' +
         '<button class="delwrap" data-act="delLibAsk" data-mid="' + esc(m.created) + '" aria-label="Supprimer ' + esc(sm.title) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
-    }).join('') : '<p class="muted">Aucun match enregistré pour l\'instant.</p>') + '</div></section>';
+    }).join('') : '<p class="muted">Aucun match suivi en direct pour l\'instant.</p>') + '</div></section>';
   }
   return out + '</div>';
 }
@@ -2248,7 +2316,7 @@ function homeAwayHtml(ch){
   var fe = S.fixtureRef ? calEntry(S.fixtureRef.cid, S.fixtureRef.fid) : null;
   if(fe){
     function cell(t, label){ return '<div class="hacell"><small>' + label + '</small><span class="fxteam">' + logoHtml(S.teams[t].clubId, 28) + '<span class="nm">' + esc(tn(t)) + '</span></span></div>'; }
-    return '<p class="f" style="margin:12px 0 4px">Équipes (match du calendrier)</p><div class="row2">' + cell(0, 'Domicile') + cell(1, 'Extérieur') + '</div>';
+    return '<p class="f" style="margin:12px 0 4px">Équipes (rencontre du calendrier)</p><div class="row2">' + cell(0, 'Domicile') + cell(1, 'Extérieur') + '</div>';
   }
   function menu(t){
     var clubs = ch ? entrantsOf(ch.clubIds) : allEntrants();
@@ -2283,14 +2351,14 @@ function setupView(){
     (function(){ var l = champs(), mc = champById(S.matchChamp); if(mc && l.indexOf(mc) < 0) l = l.concat([mc]); return l; })().map(function(x){ return '<option value="' + x.id + '"' + (x.id === S.matchChamp ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
   if(!champs().length) out += '<p class="muted" style="margin:6px 0 0">Aucun championnat créé. Vous pouvez en créer un dans l\'onglet Championnat.</p>';
   /* 2. un match déjà prévu au calendrier ? */
-  var open = ch ? ch.fixtures.map(function(f){ return calEntry(ch.id, f.id); }) : calEntries().filter(function(e){ return e.kind === 'amical'; });
+  var open = ch ? ch.fixtures.filter(function(f){ return pairActive(ch, f.home, f.away); }).map(function(f){ return calEntry(ch.id, f.id); }) : calEntries().filter(function(e){ return e.kind === 'amical'; });
   open = open.filter(function(e){ return !entryResult(e) || (S.fixtureRef && S.fixtureRef.fid === e.fid); });
   if(ch || open.length){
-    out += '<label class="f" for="mfix">' + (ch ? 'Match du calendrier' : 'Match amical du calendrier') + '</label><select id="mfix" data-bind="mfix"' + (S.events.length ? ' disabled' : '') + '><option value="">Match libre (hors calendrier)</option>' +
+    out += '<label class="f" for="mfix">' + (ch ? 'Rencontre du calendrier' : 'Rencontre amicale du calendrier') + '</label><select id="mfix" data-bind="mfix"' + (S.events.length ? ' disabled' : '') + '><option value="">Suivi libre (hors calendrier)</option>' +
       open.map(function(e){
         return '<option value="' + e.fid + '"' + (S.fixtureRef && S.fixtureRef.fid === e.fid ? ' selected' : '') + '>' + esc(fmtDay(e.date) + (e.time ? ' ' + e.time : '') + ' · ' + clubName(e.home) + ' (dom.) – ' + clubName(e.away)) + '</option>';
       }).join('') + '</select>';
-    if(!open.length) out += '<p class="muted" style="margin:6px 0 0">Aucun match à jouer au calendrier de ce championnat.</p>';
+    if(!open.length) out += '<p class="muted" style="margin:6px 0 0">Aucune rencontre à suivre au calendrier de ce championnat.</p>';
   }
   /* 3. les équipes : domicile et extérieur ; 4. le nom du match */
   out += homeAwayHtml(ch) +
@@ -2567,7 +2635,7 @@ function clubLine(id, px){ return logoHtml(id, px) + '<span class="nm">' + esc(c
 function entryLine(id, px){ return id ? logoHtml(id, px) + '<span class="nm">' + esc(clubName(id)) + '</span>' : ''; }
 function calRow(e, today){
   var res = entryResult(e), late = !res && e.date < today;
-  var ctx = e.kind === 'fixture' ? e.ch.name : (e.kind === 'amical' ? 'Match amical' : '');
+  var ctx = e.kind === 'fixture' ? e.ch.name : (e.kind === 'amical' ? 'Rencontre amicale' : '');
   if(e.kind === 'event'){
     return '<button class="fx" data-act="openFixture" data-cid="" data-fid="' + e.fid + '"><span class="fxd">' + esc(fmtDay(e.date)) + (e.time ? '<small>' + esc(e.time) + '</small>' : '') + '</span>' +
       '<span class="fxt"><span class="nm" style="font-weight:600">' + esc(e.title) + '</span>' + (e.place ? '<small style="color:var(--muted)">' + esc(e.place) + '</small>' : '') + '</span><span class="tag">événement</span></button>';
@@ -2588,7 +2656,7 @@ function calListHtml(){
   if(!champs().length && !all.length) out += emptySeasonHtml();
   else if(calAnyFilter()) out += '<p class="muted" style="margin:0 2px">' + shown.length + ' résultat' + (shown.length > 1 ? 's' : '') + ' sur ' + all.length + '</p>';
   if(!order.length && (champs().length || all.length)){
-    out += '<section class="card"><p class="muted" style="margin:0">' + (!all.length ? 'Aucun match ni événement pour la saison ' + esc(curSeason().label) + '. Créez-en avec « Créer un événement ».' : (filtered.length ? 'Tout est terminé.' : 'Aucun match ne correspond à votre recherche.')) + '</p>' +
+    out += '<section class="card"><p class="muted" style="margin:0">' + (!all.length ? 'Aucune rencontre ni événement pour la saison ' + esc(curSeason().label) + '. Créez-en avec « Créer un événement ».' : (filtered.length ? 'Tout est terminé.' : 'Aucune rencontre ne correspond à votre recherche.')) + '</p>' +
       (filtered.length === 0 && all.length && calAnyFilter() ? '<div class="btnrow"><button class="btn wide" data-act="calReset">Tout effacer</button></div>' : '') + '</section>';
   }
   /* semaines passées repliées tant qu'il reste des semaines à venir ; repère « Aujourd'hui » entre les deux */
@@ -2610,7 +2678,7 @@ function calendarView(){
   if(ui.calView === 'create') return eventForm();
   var out = '<div class="stack">';
   if(ui.msg) out += '<div class="banner" role="status">' + esc(ui.msg) + '</div>';
-  out += '<section class="card"><h2>Calendrier</h2><p class="muted" style="margin:6px 0 14px">Matchs et événements du club.</p>' +
+  out += '<section class="card"><h2>Calendrier</h2><p class="muted" style="margin:6px 0 14px">Rencontres et événements du club.</p>' +
     '<button class="bigbtn primary" data-act="calCreate" style="min-height:68px;font-size:24px">Créer un événement</button></section>';
   out += calFiltersHtml();
   var allN = calEntries().length;
@@ -2632,12 +2700,12 @@ function eventForm(){
   var ev = ui.ev, isMatch = ev.kind === 'match', out = '<div class="stack">';
   if(ui.msg) out += '<div class="banner" role="alert">' + esc(ui.msg) + '</div>';
   out += '<section class="card"><h2>Créer un événement</h2>' +
-    group('Type', chip('evKind', { k:'match' }, 'Match', isMatch) + chip('evKind', { k:'event' }, 'Autre événement', !isMatch)) +
+    group('Type', chip('evKind', { k:'match' }, 'Rencontre', isMatch) + chip('evKind', { k:'event' }, 'Autre événement', !isMatch)) +
     '<div class="row2"><div><label class="f" for="evdate">Date</label><input type="date" id="evdate" data-bind="evf" data-k="date" value="' + esc(ev.date) + '"></div>' +
     '<div><label class="f" for="evtime">Heure (facultatif)</label><input type="time" id="evtime" data-bind="evf" data-k="time" value="' + esc(ev.time) + '"></div></div>';
   if(isMatch){
     var ch = champById(ev.target), list = ch ? entrantsOf(ch.clubIds) : allEntrants();
-    out += group('Rattacher à', chip('evTarget', { t:'amical' }, 'Match amical', !ev.target) + champs().map(function(c){ return chip('evTarget', { t:c.id }, esc(c.name), ev.target === c.id); }).join(''));
+    out += group('Rattacher à', chip('evTarget', { t:'amical' }, 'Rencontre amicale', !ev.target) + champs().map(function(c){ return chip('evTarget', { t:c.id }, esc(c.name), ev.target === c.id); }).join(''));
     if(list.length < 2){
       out += '<p class="hint2">' + (ch ? 'Ce championnat doit contenir au moins deux équipes (espace Championnat).' : 'Il faut au moins deux équipes. Créez-les dans l\'espace Clubs.') + '</p>';
     } else {
@@ -2681,7 +2749,7 @@ function champView(){
     var today = isoOf(new Date()), all = calEntries().filter(function(e){ return e.ch && e.ch.id === ch.id; });
     var weeks = {}, order = [], thisWeek = weekStart(today);
     all.forEach(function(e){ var w = weekStart(e.date); if(!weeks[w]){ weeks[w] = []; order.push(w); } weeks[w].push(e); });
-    if(!order.length) out += '<section class="card"><p class="muted" style="margin:0">Aucun match planifié dans ce championnat. Créez-en dans Calendrier › Créer un événement.</p></section>';
+    if(!order.length) out += '<section class="card"><p class="muted" style="margin:0">Aucune rencontre planifiée dans ce championnat. Créez-en dans Calendrier › Créer un événement.</p></section>';
     order.forEach(function(w){
       out += '<section class="card"><h3>' + weekLabel(w) + (w === thisWeek ? ' <span class="tag">cette semaine</span>' : '') + '</h3>' + weeks[w].map(function(e){ return calRow(e, today); }).join('') + '</section>';
     });
@@ -2699,15 +2767,15 @@ function champView(){
         return '<tr><td><span class="fxteam"><span class="rank">' + r.rank + '</span>' + logoHtml(r.id, 24) + '<span class="nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span></span></td><td>' + r.j + '</td><td>' + r.g + '</td><td>' + r.p + '</td><td>' + r.sp + '</td><td>' + r.sc + '</td><td class="pts">' + r.pts + '</td></tr>';
       }).join('') + '</tbody></table></div>' +
       '<p class="hint2">J joués · G gagnés · P perdus · S+ sets gagnés · S− sets perdus · Pts points. Touchez un en-tête pour trier. Barème : 3-0 → 5, 3-1 → 4, 3-2 → 3, 2-3 → 2, 1-3 → 1, 0-3 → 0.</p>';
-    out += '</section><section class="card"><h3>Matchs</h3>';
-    var ms = ch.matches.slice().reverse().map(function(m){
+    out += '</section><section class="card"><h3>Résultats</h3>';
+    var ms = ch.matches.filter(function(m){ return pairActive(ch, m.home, m.away); }).reverse().map(function(m){
       var warn = known(m.hs, m.as) ? '' : ' <span class="tag" title="Le barème ne prévoit que les matchs en 3 sets gagnants">barème non défini</span>';
       return '<div class="mrow"><span style="flex:1">' + logoHtml(m.home, 20) + ' ' + esc(clubName(m.home)) + ' <b>' + m.hs + ' – ' + m.as + '</b> ' + logoHtml(m.away, 20) + ' ' + esc(clubName(m.away)) +
         (m.sets && m.sets.length ? '<br><small>' + m.sets.map(function(s){ return s[0] + '-' + s[1]; }).join(', ') + '</small>' : '') + warn + '</span>' +
         '<span class="tag">' + (m.source === 'live' ? 'joué' : 'saisi') + '</span>' +
         '<button class="del" data-act="delMatchAsk" data-mid="' + m.id + '" aria-label="Supprimer ce résultat">' + xIcon(24) + '</button></div>';
     }).join('');
-    out += (ms || '<p class="muted">Aucun match pour l\'instant.</p>') + '</section>';
+    out += (ms || '<p class="muted">Aucun résultat pour l\'instant.</p>') + '</section>';
   }
   out += '<section class="card"><div class="btnrow" style="margin:0"><button class="btn wide danger" data-act="delChampAsk">Supprimer ce championnat</button></div></section>';
   return out + '</div>';
@@ -2728,7 +2796,7 @@ function addResultView(){
     if(mm.b && !ch.clubIds.includes(mm.b)) mm.b = '';
     out += homePicker(list, mm, 'mmf', 'mmHome') +
       '<label class="f" for="mres">Score final en sets (du point de vue de l\'équipe à domicile)</label><select id="mres" data-bind="mmf" data-k="res">' + RESULTS.map(function(r){ return '<option value="' + r + '"' + (mm.res === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
-      '<div class="btnrow"><button class="btn wide primary" data-act="addMatch">Ajouter ce match</button></div>';
+      '<div class="btnrow"><button class="btn wide primary" data-act="addMatch">Ajouter ce résultat</button></div>';
   } else {
     out += '<p class="hint2">Ce championnat doit contenir au moins deux équipes (espace Championnat › Équipes).</p>';
   }
@@ -2744,7 +2812,7 @@ function menuView(){
     '<button class="mbtn m-clubs" data-act="tab" data-tab="clubs">Clubs</button>' +
     '<button class="mbtn m-champ" data-act="tab" data-tab="champ">Championnat</button>' +
     '<button class="mbtn m-cal" data-act="tab" data-tab="cal">Calendrier</button>' +
-    '<button class="mbtn m-data" data-act="tab" data-tab="data">Données</button></div>';
+    '<button class="mbtn m-data" data-act="tab" data-tab="data">Statistiques</button></div>';
   out += '<div class="seasonrow">' + seasonBtn(true) + '</div>';
   var bk = bkStatus();
   out += '<div class="backupbox' + (bk.warn ? ' warn' : '') + '"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>';
@@ -2760,7 +2828,7 @@ function backupView(){
     '<p class="hint2"><b>Confidentialité :</b> le fichier contient les noms, licences et âges des licenciés. Gardez-le pour vous (téléphone, stockage privé) et ne le déposez jamais sur un dépôt public comme GitHub : l\'historique y conserve tout.</p>' +
     '<div class="btnrow"><button class="btn wide primary" data-act="backup">Sauvegarder toutes les données</button>' +
     '<input type="file" id="restorefile" class="vh" accept=".json,application/json"><label for="restorefile" class="btn wide">Restaurer une sauvegarde</label>' +
-    '<button class="btn wide" data-act="demoAsk">Charger les données de démonstration</button></div></section>' +
+    '<button class="btn wide" data-act="demoAsk">Charger les données de démonstration</button><button class="btn wide" data-act="cohOpen">Vérifier la cohérence des données</button></div></section>' +
     (prevGet() ? '<section class="card"><h3>Copie automatique</h3><p class="muted" style="margin:6px 0 0">Vos données d\'avant la dernière ' + esc(prevGet().reason) + ' (' + esc(fmtWhen(prevGet().savedAt)) + ') sont gardées sur cet appareil.</p><div class="btnrow"><button class="btn wide" data-act="prevRestoreAsk">Revenir à l\'état d\'avant</button></div></section>' : '') + '</div>';
   return out;
 }
@@ -2773,9 +2841,9 @@ function shortDate(m){
 function backBtn(label){ return ''; }
 function dataHomeView(){
   var n = allMatches().length;
-  var out = '<div class="stack"><section class="card"><h2>Données</h2><p class="muted" style="margin:6px 0 16px">Que voulez-vous consulter ?</p>' +
-    '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="dataTeams">Données équipes</button><button class="bigbtn" data-act="dataPlayers">Données joueur</button></div>' +
-    '<p class="hint2">' + (n ? n + ' match' + (n > 1 ? 's' : '') + ' enregistré' + (n > 1 ? 's' : '') + '.' : 'Aucun match enregistré pour l\'instant.') + '</p></section>';
+  var out = '<div class="stack"><section class="card"><h2>Statistiques des matchs suivis</h2><p class="muted" style="margin:6px 0 16px">Que voulez-vous consulter ?</p>' +
+    '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="dataTeams">Statistiques équipes</button><button class="bigbtn" data-act="dataPlayers">Statistiques joueurs</button></div>' +
+    '<p class="hint2">' + (n ? n + ' match' + (n > 1 ? 's' : '') + ' suivi' + (n > 1 ? 's' : '') + ' en direct.' : 'Aucun match suivi en direct pour l\'instant.') + ' Les résultats saisis à la main ou importés du calendrier n\'ont pas de statistiques détaillées : ils ne figurent pas ici.</p></section>';
   if(hasContent()){
     var sm = matchSummary(S);
     out += '<section class="card"><h3>' + (S.finished ? 'Dernier match terminé' : 'Match en cours') + '</h3><div class="ritem"><button class="fx" data-act="dataMatchOpen" data-mid="' + esc(S.created) + '" data-from="home"><span class="fxt"><span class="nm">' + esc(sm.title) + '</span><small>' + esc(fmtWhen(sm.date)) + '</small></span><span class="rsc">' + sm.w[0] + ' – ' + sm.w[1] + '</span></button></div></section>';
@@ -2806,8 +2874,8 @@ function dataTeamsView(){
       }).join('') + '</div></section>';
     return out + '</div>';
   }
-  out += backBtn('Données') + '<section class="card"><h2>Données équipes</h2>';
-  if(!teams.length) out += '<p class="muted">Aucun match enregistré pour l\'instant.</p>';
+  out += backBtn('Statistiques') + '<section class="card"><h2>Statistiques équipes</h2>';
+  if(!teams.length) out += '<p class="muted">Aucun match suivi en direct pour l\'instant.</p>';
   else out += '<p class="muted" style="margin:6px 0 4px">Choisissez une équipe pour voir ses matchs.</p>' + teams.map(function(k){
     return '<div class="ritem"><button class="fx" data-act="dataTeamSel" data-key="' + esc(k.key) + '"><span class="fxt"><span class="fxteam">' + logoHtml(k.logo, 28) + '<span class="nm">' + esc(k.label) + '</span></span><small>' + k.items.length + ' match' + (k.items.length > 1 ? 's' : '') + '</small></span><span class="rsc">' + recordOf(k.items) + '</span></button></div>';
   }).join('');
@@ -2840,7 +2908,7 @@ function dataMatchView(){
   return out + '</div>';
 }
 function playerListHtml(idx){
-  if(!idx.length) return '<p class="muted">Aucun joueur n\'a encore joué de match enregistré.</p>';
+  if(!idx.length) return '<p class="muted">Aucun joueur n\'a encore joué de match suivi en direct.</p>';
   var q2 = norm(ui.pfilter), list = idx.filter(function(p){ return !q2 || norm(p.name + p.team + p.num).indexOf(q2) >= 0; });
   if(!list.length) return '<p class="muted">Aucun joueur trouvé.</p>';
   var out = '', last = null;
@@ -2870,7 +2938,7 @@ function dataPlayersView(){
       }).join('') + '</tbody><tfoot><tr class="tot"><td>Total</td><td></td><td>' + tot.pts + '</td><td>' + tot.attack + '</td><td>' + tot.block + '</td><td>' + tot.ace + '</td><td>' + tot.relance + '</td><td>' + tot.faults + '</td></tr></tfoot></table></div></section>';
     return out + '</div>';
   }
-  out += backBtn('Données') + '<section class="card"><h2>Données joueur</h2>' +
+  out += backBtn('Statistiques') + '<section class="card"><h2>Statistiques joueurs</h2>' +
     '<label class="f" for="pfind">Rechercher un joueur</label><input type="text" id="pfind" data-pfind="1" value="' + esc(ui.pfilter) + '" placeholder="Nom, équipe ou numéro" autocomplete="off">' +
     '<div id="plist">' + playerListHtml(idx) + '</div></section>';
   return out + '</div>';
@@ -2914,7 +2982,7 @@ function sheetView(){
       '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Fermer</button></div>';
   } else if(sh.kind === 'delteam'){
     var dtf = findTeam(ui.teamSel);
-    inner = '<h2>Supprimer cette équipe ?</h2><p class="hint2" style="font-size:16px;margin-top:8px"><b>' + esc(dtf ? dtf.t.name : '') + '</b> sera retirée du club et des championnats. Les membres restent dans le club.</p>' +
+    inner = '<h2>Supprimer cette équipe ?</h2><p class="hint2" style="font-size:16px;margin-top:8px"><b>' + esc(dtf ? dtf.t.name : '') + '</b> sera retirée du club et des championnats.' + eraseText(erasePack([ui.teamSel])) + ' Les membres restent dans le club.</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="delTeamOk">Supprimer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'setupask'){
     inner = '<h2>Valider les modifications ?</h2><p class="hint2" style="font-size:16px;margin-top:8px">Oui : les modifications sont enregistrées. Non : elles sont annulées. Dans les deux cas, vous revenez à la liste « Match existant ».</p>' +
@@ -2971,12 +3039,12 @@ function sheetView(){
   } else if(sh.kind === 'delres'){
     var drc = curChamp(), drm = drc && matchOf(drc, sh.mid);
     inner = '<h2>Supprimer ce résultat ?</h2>' + (drm ? '<p class="hint2" style="font-size:18px">' + esc(clubName(drm.home)) + ' <b>' + drm.hs + ' – ' + drm.as + '</b> ' + esc(clubName(drm.away)) + '</p>' : '') +
-      '<p class="hint2">Le résultat sera retiré de ' + esc(drc ? drc.name : 'ce championnat') + ' et le classement sera recalculé. S\'il vient du calendrier, le match y reste, à renseigner.</p>' +
+      '<p class="hint2">Le résultat sera retiré de ' + esc(drc ? drc.name : 'ce championnat') + ' et le classement sera recalculé. S\'il vient du calendrier, la rencontre y reste, à renseigner.</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="delMatch" data-mid="' + esc(sh.mid) + '">Supprimer le résultat</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'clrres'){
     var cre = calEntry(sh.cid, sh.fid), crr = cre && entryResult(cre);
     inner = '<h2>Effacer le résultat ?</h2>' + (cre && crr ? '<p class="hint2" style="font-size:18px">' + esc(clubName(cre.home)) + ' <b>' + crr.hs + ' – ' + crr.as + '</b> ' + esc(clubName(cre.away)) + '</p>' : '') +
-      '<p class="hint2">Le match reste au calendrier, à renseigner' + (cre && cre.kind === 'fixture' ? ', et le classement du championnat est recalculé' : '') + '.</p>' +
+      '<p class="hint2">La rencontre reste au calendrier, à renseigner' + (cre && cre.kind === 'fixture' ? ', et le classement du championnat est recalculé' : '') + '.</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="fixClear">Effacer le résultat</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'delfix'){
     var dfe = calEntry(sh.cid, sh.fid), dfr = dfe && entryResult(dfe);
@@ -2985,14 +3053,34 @@ function sheetView(){
       inner = '<h2>Supprimer l\'événement « ' + esc(dfe.title) + ' » ?</h2><p class="hint2">' + esc(fmtDay(dfe.date)) + (dfe.time ? ' à ' + esc(dfe.time) : '') + '. Il disparaîtra du calendrier.</p>' +
         '<div class="btnrow"><button class="btn wide danger" data-act="fixDel">Supprimer l\'événement</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
     } else {
-      inner = '<h2>Supprimer ce match du calendrier ?</h2><p class="hint2" style="font-size:18px">' + esc(clubName(dfe.home)) + ' – ' + esc(clubName(dfe.away)) + '</p><p class="hint2" style="margin-top:0">' + esc(fmtDay(dfe.date)) + (dfe.time ? ' à ' + esc(dfe.time) : '') + '</p>' +
+      inner = '<h2>Supprimer cette rencontre du calendrier ?</h2><p class="hint2" style="font-size:18px">' + esc(clubName(dfe.home)) + ' – ' + esc(clubName(dfe.away)) + '</p><p class="hint2" style="margin-top:0">' + esc(fmtDay(dfe.date)) + (dfe.time ? ' à ' + esc(dfe.time) : '') + '</p>' +
         (dfr ? '<p class="hint2">' + (dfe.kind === 'fixture' ? 'Son résultat (' + dfr.hs + ' – ' + dfr.as + ') reste dans le classement du championnat ; il se supprime depuis l\'onglet Résultats.' : 'Son résultat (' + dfr.hs + ' – ' + dfr.as + ') sera supprimé aussi.') + '</p>' : '') +
         '<div class="btnrow"><button class="btn wide danger" data-act="fixDel">Supprimer du calendrier</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
     }
   } else if(sh.kind === 'leavech'){
     var lvn = sh.to ? champById(sh.to) : null;
     inner = '<h2>' + (lvn ? 'Changer ' + esc(clubName(sh.tid)) + ' de championnat ?' : 'Retirer ' + esc(clubName(sh.tid)) + ' du championnat ?') + '</h2>' + leaveText(sh.tid, sh.chid, sh.to) +
-      '<div class="btnrow"><button class="btn wide danger" data-act="leaveChOk">' + (lvn ? 'Oui, changer' : 'Oui, retirer') + '</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+      '<div class="btnrow"><button class="btn wide primary" data-act="leaveChOk">' + (lvn ? 'Changer et garder ses rencontres' : 'Retirer et garder ses rencontres') + '</button><button class="btn wide danger" data-act="leaveChDel">' + (lvn ? 'Changer et supprimer ses rencontres' : 'Retirer et supprimer ses rencontres') + '</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'coherence'){
+    var cr = coherence();
+    inner = '<h2>Vérifier la cohérence</h2>';
+    if(!cr.broken && !cr.arch) inner += '<p class="hint2">Aucun problème trouvé : rencontres, résultats, équipes et membres sont cohérents.</p>';
+    if(cr.broken){
+      var bp = [];
+      if(cr.badRes) bp.push(cr.badRes + ' résultat' + (cr.badRes > 1 ? 's' : ''));
+      if(cr.badFix) bp.push(cr.badFix + ' rencontre' + (cr.badFix > 1 ? 's' : '') + ' au calendrier');
+      if(cr.badEv) bp.push(cr.badEv + ' rencontre' + (cr.badEv > 1 ? 's' : '') + ' amicale' + (cr.badEv > 1 ? 's' : ''));
+      if(cr.badIds) bp.push(cr.badIds + ' inscription' + (cr.badIds > 1 ? 's' : '') + ' de championnat');
+      if(cr.badMem) bp.push(cr.badMem + ' membre' + (cr.badMem > 1 ? 's' : '') + ' d\'équipe');
+      if(cr.badLinks) bp.push(cr.badLinks + ' lien' + (cr.badLinks > 1 ? 's' : '') + ' rencontre/résultat');
+      inner += '<h3 style="margin-top:12px">Références cassées</h3><p class="hint2">Éléments qui renvoient à une équipe ou un membre qui n\'existe plus : ' + bp.join(', ') + '.</p>' +
+        '<div class="btnrow"><button class="btn wide primary" data-act="cohFix">Réparer</button></div>';
+    }
+    if(cr.arch){
+      inner += '<h3 style="margin-top:12px">Archivés</h3><p class="hint2">' + cr.archFix + ' rencontre' + (cr.archFix > 1 ? 's' : '') + ' et ' + cr.archRes + ' résultat' + (cr.archRes > 1 ? 's' : '') + ' d\'équipes qui ne sont plus inscrites dans leur championnat. Ils sont masqués et reviennent si l\'équipe est réinscrite.</p>' +
+        '<div class="btnrow"><button class="btn wide danger" data-act="cohPurge">Supprimer définitivement les archivés</button></div>';
+    }
+    if(sh.note) inner += '<p class="hint2" role="status"><b>' + esc(sh.note) + '</b></p>';
   } else if(sh.kind === 'prevrestore'){
     var pvo = prevGet();
     inner = '<h2>Revenir à l\'état d\'avant ?</h2><p class="hint2">État du ' + esc(fmtWhen(pvo ? pvo.savedAt : '')) + (pvo ? ' (avant ' + esc(pvo.reason) + ')' : '') + '. Les données actuelles seront remplacées ; elles sont gardées à leur tour comme copie automatique, vous pourrez donc revenir en arrière.</p>' +
@@ -3025,7 +3113,7 @@ function sheetView(){
     if(!champs().length){
       inner = '<h2>Aucun championnat</h2><p class="hint2">Créez un championnat dans l\'onglet Championnat, puis revenez ajouter ce match.</p>';
     } else if(!sh.cid){
-      inner = '<h2>Ajouter ce match à un championnat ?</h2>' + group('Championnat', champs().map(function(c){ return chip('pickChamp', { cid:c.id }, esc(c.name), false); }).join('')) +
+      inner = '<h2>Ajouter ce résultat à un championnat ?</h2>' + group('Championnat', champs().map(function(c){ return chip('pickChamp', { cid:c.id }, esc(c.name), false); }).join('')) +
         '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Ne pas l\'ajouter</button></div>';
     } else {
       var ch = champById(sh.cid);
@@ -3035,7 +3123,7 @@ function sheetView(){
         (ch.clubIds.length < 2 ? '<p class="hint2">Ce championnat doit contenir au moins deux équipes (onglet Championnat).</p>' :
         '<label class="f" for="cc0">Club de ' + esc(tn(0)) + '</label><select id="cc0" data-bind="champclub" data-team="0">' + copts(sh.c0) + '</select>' +
         '<label class="f" for="cc1">Club de ' + esc(tn(1)) + '</label><select id="cc1" data-bind="champclub" data-team="1">' + copts(sh.c1) + '</select>' +
-        '<div class="btnrow"><button class="btn wide primary" data-act="champOk"' + ((!sh.c0 || !sh.c1 || sh.c0 === sh.c1) ? ' disabled' : '') + '>Ajouter le match</button></div>') +
+        '<div class="btnrow"><button class="btn wide primary" data-act="champOk"' + ((!sh.c0 || !sh.c1 || sh.c0 === sh.c1) ? ' disabled' : '') + '>Ajouter le résultat</button></div>') +
         '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
     }
   } else if(sh.kind === 'fixture'){
@@ -3045,13 +3133,13 @@ function sheetView(){
       inner = '<h2>' + esc(fe.title) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' +
         '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>';
     } else {
-      var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Match amical';
+      var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Rencontre amicale';
       inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>';
       if(fm){
         inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
       } else {
         inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
-          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Jouer ce match</button></div>';
+          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button></div>';
       }
       inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
         RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
@@ -3095,7 +3183,7 @@ function sheetView(){
       '<div class="btnrow"><button class="btn wide danger" data-act="delMemberOk">Oui, supprimer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'delclub'){
     var dc = curClub();
-    inner = '<h2>Supprimer ' + esc(dc ? dc.name : 'ce club') + ' ?</h2><p class="hint2">Ses membres seront supprimés, ainsi que ses matchs dans les championnats.</p>' +
+    inner = '<h2>Supprimer ' + esc(dc ? dc.name : 'ce club') + ' ?</h2><p class="hint2">Ses membres seront supprimés, ainsi que ses équipes.' + (dc ? eraseText(erasePack((dc.teams || []).map(function(x){ return x.id; }).concat([dc.id]))) : '') + '</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="delClubOk">Supprimer le club</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'delchamp'){
     var dch = curChamp();
@@ -3212,10 +3300,10 @@ function saveEvent(){
     var ch = champById(ev.target);
     if(ch){
       ch.fixtures.push({ id:uid(), date:date, time:time, place:place, home:homeId, away:awayId, matchId:null });
-      ui.msg = 'Match créé dans ' + ch.name + '.';
+      ui.msg = 'Rencontre créée dans ' + ch.name + '.';
     } else {
       S.agenda.push({ id:uid(), kind:'match', date:date, time:time, place:place, home:homeId, away:awayId, result:null });
-      ui.msg = 'Match amical créé.';
+      ui.msg = 'Rencontre amicale créée.';
     }
   }
   if(!ch || ev.kind === 'event'){ var ses = seasonOfDate(date); if(ses && ses.id !== S.season){ S.season = ses.id; ui.champSel = null; ui.msg += ' (saison ' + ses.label + ')'; } }
@@ -3296,9 +3384,12 @@ document.addEventListener('click', function(e){
       if(pin && pin.click) pin.click();
       break;
     }
-    case 'restoreOk': if(ui.pendingRestore){ keepBefore('restauration'); applyBackup(ui.pendingRestore); bkMark(ui.pendingRestore.exportedAt); ui.pendingRestore = null; ui.sheet = null; ui.msg = 'Sauvegarde restaurée. Vos anciennes données sont gardées : Sauvegarde › Revenir à l\'état d\'avant.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } break;
+    case 'restoreOk': if(ui.pendingRestore){ keepBefore('restauration'); applyBackup(ui.pendingRestore); bkMark(ui.pendingRestore.exportedAt); ui.pendingRestore = null; ui.sheet = null; ui.msg = 'Sauvegarde restaurée. Vos anciennes données sont gardées : Sauvegarde › Revenir à l\'état d\'avant.'; var rcz = coherence(); if(rcz.broken) ui.msg += ' ' + rcz.broken + ' référence' + (rcz.broken > 1 ? 's' : '') + ' cassée' + (rcz.broken > 1 ? 's' : '') + ' : Sauvegarde › Vérifier la cohérence des données.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } break;
     case 'demoAsk': ui.sheet = { kind:'demo' }; render(); break;
     case 'demoOk': fetchDemo(function(ok){ if(ok){ ui.sheet = null; ui.msg = 'Données de démonstration chargées. Vos anciennes données sont gardées : Sauvegarde › Revenir à l\'état d\'avant.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } else { ui.sheet = { kind:'demo', err:'Fichier demo.json introuvable à côté de l\'application.' }; render(); } }, 'démonstration'); break;
+    case 'cohOpen': ui.sheet = { kind:'coherence' }; render(); break;
+    case 'cohFix': { var cn = cohFix(); ui.sheet = { kind:'coherence', note:cn + ' élément' + (cn > 1 ? 's' : '') + ' réparé' + (cn > 1 ? 's' : '') + '.' }; render(); break; }
+    case 'cohPurge': { var cp = cohPurge(); ui.sheet = { kind:'coherence', note:cp + ' élément' + (cp > 1 ? 's' : '') + ' supprimé' + (cp > 1 ? 's' : '') + '.' }; render(); break; }
     case 'prevRestoreAsk': ui.sheet = { kind:'prevrestore' }; render(); break;
     case 'prevRestoreOk': { var pvk = prevGet(); if(pvk){ keepBefore('retour arrière'); applyBackup({ data:pvk.state }); ui.sheet = null; ui.msg = 'Données d\'avant restaurées.'; ui.dataView = 'home'; render(); window.scrollTo(0, 0); } else { ui.sheet = null; render(); } break; }
     case 'restoreNo': ui.pendingRestore = null; ui.sheet = null; render(); break;
@@ -3308,6 +3399,20 @@ document.addEventListener('click', function(e){
     case 'showResume': ui.resume = true; render(); window.scrollTo(0,0); break;
     case 'showAddRes': ui.addRes = true; ui.msg = ''; render(); window.scrollTo(0,0); break;
     case 'hideAddRes': ui.addRes = false; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'leaveChDel': {
+      var lcd = champById(sh.chid);
+      if(lcd){
+        lcd.matches = lcd.matches.filter(function(m){ return m.home !== sh.tid && m.away !== sh.tid; });
+        lcd.fixtures = lcd.fixtures.filter(function(f){ return f.home !== sh.tid && f.away !== sh.tid; });
+        lcd.fixtures.forEach(function(f){ if(f.matchId && !matchOf(lcd, f.matchId)) f.matchId = null; });
+      }
+      ui.sheet = { kind:'leavech', tid:sh.tid, chid:sh.chid, to:sh.to, _go:1 };
+      /* puis même retrait que « garder » */
+      var lcn = sh.to ? champById(sh.to) : null;
+      if(lcd) lcd.clubIds = lcd.clubIds.filter(function(x){ return x !== sh.tid; });
+      if(lcn && lcn.clubIds.indexOf(sh.tid) < 0) lcn.clubIds.push(sh.tid);
+      ui.sheet = null; ui.champEdit = false; save(); render(); break;
+    }
     case 'leaveChOk': {
       var lch = champById(sh.chid);
       if(lch){ lch.clubIds = lch.clubIds.filter(function(x){ return x !== sh.tid; }); }
