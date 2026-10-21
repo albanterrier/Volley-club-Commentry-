@@ -648,6 +648,8 @@ header.top.ho .htab td.hw{font-size:22px}
 .rotbtn.xbtn:disabled{opacity:.35}
 .rotcell{display:flex;flex-direction:column;align-items:center;min-width:0;width:100%}
 .benchgrid{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:6px;margin-top:8px}
+.rotcell .xbtn{margin-top:8px}
+.rotcell .benchgrid{margin-top:0}
 .xshade{position:fixed;inset:0;z-index:34;background:rgba(5,12,20,.62)}
 :root[data-theme="light"] .xshade{background:rgba(240,243,247,.72)}
 .xz{position:relative;z-index:36}
@@ -656,7 +658,8 @@ header.top.ho .htab td.hw{font-size:22px}
 .plrow.xsel,.cmprow.xsel{background:rgba(255,193,7,.3);border-radius:4px}
 .tlist.xz{background:var(--bg);border-radius:6px}
 .cmpgrid.xz{background:var(--surface);border-radius:8px}
-.memhead .xbtn{width:40px;height:40px}
+.xrow{display:flex;justify-content:center;margin-top:10px}
+.xrow .xbtn{width:40px;height:40px}
 </style>
 </head>
 <body>
@@ -2536,7 +2539,7 @@ function teamList(t){
 }
 /* ---------- Échange de joueurs sur le terrain (début de set, préparation du match) ---------- */
 function xActive(t, ctx){ return !!(ui.xchg && ui.xchg.t === t && ui.xchg.ctx === ctx); }
-function xAllowed(t){ return S.stage === 'play' && !S.finished && S.cur[0] + S.cur[1] === 0 && !S.subs[t]; }
+function xAllowed(t){ return S.stage === 'play' && !inSetup() && !S.finished && S.cur[0] + S.cur[1] === 0 && !S.subs[t]; }
 function xBtnHtml(t, ctx){
   var on = xActive(t, ctx), dis = (ctx === 'play' && !xAllowed(t)) && !on;
   return '<button class="rotbtn xbtn ' + (t ? 'b' : 'a') + (on ? ' xz' : '') + '" data-act="xToggle" data-team="' + t + '"' + (dis ? ' disabled' : '') + teamStyle(t, 'border-color:transparent') +
@@ -2587,7 +2590,7 @@ function half(t, side, cmp){
 function courtBoard(){
   var ord = S.swap ? [1, 0] : [0, 1];
   return '<div class="courtbox">' + teamList(ord[0]) + '<div class="cmid"><div class="court" role="group" aria-label="Terrain, vue de dessus">' + half(ord[0], 'l') + '<div class="netbar" aria-hidden="true"></div>' + half(ord[1], 'r') + '</div>' +
-    '<div class="rotrow">' + [ord[0], ord[1]].map(function(t){ return '<div class="rotcell">' + xBtnHtml(t, 'play') + xBenchHtml(t, 'play') + '</div>'; }).join('') + '</div></div>' + teamList(ord[1]) + '</div>';
+    '<div class="rotrow">' + [ord[0], ord[1]].map(function(t){ return '<div class="rotcell">' + (xActive(t, 'play') ? xBenchHtml(t, 'play') + xBtnHtml(t, 'play') : xBtnHtml(t, 'play')) + '</div>'; }).join('') + '</div></div>' + teamList(ord[1]) + '</div>';
 }
 /* Cartes de statistiques : liseré et nom aux couleurs du club (d'un match quelconque) */
 function cardStyle(m, t){
@@ -2726,8 +2729,8 @@ function compositionHtml(t){
   if(rest.length) rows += '<li class="cmpsep"><b>' + (L.every(Boolean) ? 'Banc' : 'Non placé') + '</b></li>';
   rest.forEach(function(p){ rows += cmpRow('', p, t); });
   var xm = xActive(t, 'prep');
-  return '<div class="memhead" style="margin-top:18px"><h3>Composition de départ</h3>' + xBtnHtml(t, 'prep') + '</div><div class="cmpgrid' + (xm ? ' xz' : '') + '"><ul class="cmplist">' + rows + '</ul>' +
-    '<div class="cmpcourt">' + vcourt(t) + xBenchHtml(t, 'prep') + '</div></div>';
+  return '<h3 style="margin-top:18px">Composition de départ</h3><div class="cmpgrid' + (xm ? ' xz' : '') + '"><ul class="cmplist">' + rows + '</ul>' +
+    '<div class="cmpcourt">' + vcourt(t) + xBenchHtml(t, 'prep') + '<div class="xrow">' + xBtnHtml(t, 'prep') + '</div></div></div>';
 }
 function addPlayerSheet(t){
   return '<h2>Ajouter un joueur</h2><p class="hint2" style="margin-top:4px">' + esc(tn(t)) + '</p>' +
@@ -4139,7 +4142,7 @@ document.addEventListener('click', function(e){
     case 'pref': S.prefs[d.k] = !S.prefs[d.k]; save(); render(); break;
     case 'xToggle':
       if(ui.xchg && ui.xchg.t === t) ui.xchg = null;
-      else if(S.stage === 'play' ? xAllowed(t) : true) ui.xchg = { t:t, ctx:S.stage === 'play' ? 'play' : 'prep', sel:null };
+      else if(inSetup() ? ui.prepTeam === t : xAllowed(t)) ui.xchg = { t:t, ctx:inSetup() ? 'prep' : 'play', sel:null };
       render(); break;
     case 'xCancel': ui.xchg = null; render(); break;
     case 'xPick': xPick(t, d.kind, d.v); break;
