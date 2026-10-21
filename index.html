@@ -676,12 +676,32 @@ header.top.ho .htab td.hw{font-size:22px}
 .cardtx{display:flex;flex-direction:column;gap:3px;min-width:0}
 .cardtx b{font-size:17px}
 .cardtx small{font-size:14px;color:var(--muted);line-height:1.3}
-.cardrect{display:inline-block;width:1.15em;height:.85em;border-radius:2px;background:linear-gradient(135deg,#F0B429 50%,#E5484D 50%);vertical-align:middle}
+.cardrect{display:inline-block;width:.62em;height:.9em;border-radius:2px;background:linear-gradient(135deg,#F0B429 50%,#E5484D 50%);vertical-align:middle;transform:rotate(14deg);box-shadow:0 0 0 1px rgba(255,255,255,.35)}
 .pn.pnx{display:inline-flex;align-items:center;justify-content:flex-end}
 .pn .sxic.ic{width:1.1em;height:1.1em}
 .plrow.sx-inj .pt,.plrow.sx-dis .pt{color:#E5484D}
 .plrow.sx-exp{opacity:.5}
 .bigcd{font-size:56px;font-weight:700;text-align:center;margin:12px 0;font-variant-numeric:tabular-nums}
+header.top.hc{position:sticky}
+.hshade{position:fixed;inset:0;z-index:-1;background:transparent}
+.hmenu{position:absolute;right:8px;top:100%;margin-top:4px;z-index:3;display:flex;flex-direction:column;gap:0;padding:6px 14px;border-radius:12px;background:var(--head-bg);color:var(--head-ink);box-shadow:0 6px 18px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);width:max-content;max-width:calc(100vw - 16px)}
+.hmenu .hsw{justify-content:space-between;gap:14px;font-size:14px;width:100%}
+.stab{width:100%;min-width:0;border:1px solid var(--line);border-collapse:collapse;font-variant-numeric:tabular-nums}
+.stab th,.stab td{border:1px solid var(--line);text-align:center;padding:8px 6px;font-size:19px;font-weight:700;background:var(--surface);color:var(--ink)}
+.stab thead th{font-size:14px;font-weight:700;color:var(--ink);padding:4px 6px}
+.stab thead th.tn{border-top-style:hidden;border-left-style:hidden;background:transparent}
+.stab th.tn{text-align:left;max-width:34vw;font-size:16px}
+.stab tbody th.tn{color:var(--ink)}
+.stab tbody th.tn.dim,.stab tbody td.hw.dim{color:var(--muted);font-weight:600}
+.stab .stn{display:flex;align-items:center;gap:6px;min-width:0}
+.stlogo{flex:0 0 auto;width:22px;height:22px;object-fit:contain;border-radius:4px;background:#fff;padding:1px}
+.stab .hn{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stab td.hw{font-size:22px;font-weight:800}
+.stab .won,.stab th.won,.stab td.won{background:#fff;color:#101827}
+:root[data-theme="light"] .stab .won,:root[data-theme="light"] .stab th.won,:root[data-theme="light"] .stab td.won{background:var(--acc);color:var(--acc-ink)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .stab .won{background:var(--acc);color:var(--acc-ink)}}
+.stab td.live{border-style:dashed}
+.sr{position:absolute;left:-9999px}
 </style>
 </head>
 <body>
@@ -748,7 +768,7 @@ function newState(){
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
     clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
-    prefs:{ schema:true, players:false, sheet:false }
+    prefs:{ schema:true, table:false, players:false, sheet:false }
   };
 }
 function migrate(s){
@@ -1053,7 +1073,7 @@ function profSheetHtml(){
   return out + '</div>';
 }
 function dotsBtnHtml(){
-  return '<button class="ibtn" data-act="tab" data-tab="settings" aria-label="Paramètres"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.8" fill="currentColor" stroke="none"/></svg></button>';
+  return '<button class="ibtn" data-act="dots" aria-label="Paramètres" title="Paramètres"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.8" fill="currentColor" stroke="none"/></svg></button>';
 }
 function tabSub(){
   if(ui.tab === 'clubs'){ var c = (ui.clubView === 'edit' || ui.clubView === 'team' || ui.clubView === 'logo' || ui.clubView === 'created') ? clubById(ui.clubSel) : null; return c ? c.name : ''; }
@@ -2464,22 +2484,34 @@ function header(){
   /* Le score n'apparaît en haut que dans la saisie des points ; partout ailleurs, on affiche le nom de l'espace. */
   if(ui.tab !== 'match' || S.stage !== 'play') return plain(tabTitle(), tabSub(), (ui.tab === 'clubs' || ui.tab === 'champ' || ui.tab === 'cal') ? seasonBtn() : '');
   var w = setsWon(), open = !!ui.hdrOpen;
-  var chev = '<button class="hchev' + (open ? ' open' : '') + '" data-act="hdrToggle" aria-expanded="' + open + '" aria-label="' + (open ? 'Réduire' : 'Afficher') + ' le tableau des scores" title="' + (open ? 'Réduire' : 'Afficher') + ' le tableau des scores">' +
+  var chev = '<button class="hchev' + (open ? ' open' : '') + '" data-act="hdrToggle" aria-expanded="' + open + '" aria-label="' + (open ? 'Fermer' : 'Ouvrir') + ' les options d\'affichage" title="' + (open ? 'Fermer' : 'Ouvrir') + ' les options d\'affichage">' +
     '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>';
   var pvp = prevAct(), leftp = pvp ? prevBtnHtml(pvp) : '<button class="ibtn" data-act="tab" data-tab="menu" aria-label="Accueil"><img src="' + LOGO_V2C + '" alt=""></button>';
   var topRow = '<div class="hmain">' + leftp + '<div class="hscore" role="group" aria-label="Score en sets"><span class="hn">' + esc(tn(0)) + '</span><b>' + w[0] + ' – ' + w[1] + '</b><span class="hn">' + esc(tn(1)) + '</span></div>' + chev + profBtnHtml() + dotsBtnHtml() + '</div>';
   if(!open) return '<header class="top hc">' + topRow + '</header>';
-  function row(t){
-    var cells = S.sets.map(function(x){ return '<td class="' + (x[t] > x[1 - t] ? 'w' : 'l') + '">' + x[t] + '</td>'; }).join('');
-    var cur = S.finished ? '' : '<td class="cur" title="Set en cours">' + S.cur[t] + '</td>';
-    return '<tr><th scope="row"><span class="hn">' + esc(tn(t)) + '</span></th><td class="hw" title="Sets gagnés">' + w[t] + '</td>' + cells + cur + '</tr>';
-  }
   function sw(k, label){
     var on = !!S.prefs[k];
     return '<button class="hsw" role="switch" aria-checked="' + on + '" data-act="pref" data-k="' + k + '"><span>' + label + '</span><span class="track" aria-hidden="true"><span class="knob"></span></span></button>';
   }
-  return '<header class="top ho">' + topRow + '<div class="hrow"><table class="htab" aria-label="Scores"><tbody>' + row(0) + row(1) + '</tbody></table></div>' +
-    '<div class="hsws" role="group" aria-label="Informations à afficher sous le terrain">' + sw('players', 'Résultats par joueur') + sw('sheet', 'Feuille de match') + '</div></header>';
+  return '<header class="top hc">' + topRow + '<div class="hshade" data-act="hdrToggle" aria-hidden="true"></div>' +
+    '<div class="hmenu" role="group" aria-label="Informations à afficher sous le terrain">' + sw('table', 'Tableau') + sw('players', 'Résultats par joueur') + sw('sheet', 'Feuille de match') + '</div></header>';
+}
+/* Tableau des sets, sous le schéma : équipe à domicile en haut, une colonne par set joué (+ le set en cours) */
+function stLogo(t){
+  var c = clubById(S.teams[t].clubId);
+  return (c && c.logo) ? '<img class="stlogo" src="' + esc(c.logo) + '" alt="">' : '';
+}
+function setsTableHtml(){
+  var w = setsWon(), trail = w[0] === w[1] ? -1 : (w[0] > w[1] ? 1 : 0);
+  var head = '<tr><th scope="col" class="tn"><span class="sr">Équipe</span></th><th scope="col" title="Sets gagnés">Sets</th>' +
+    S.sets.map(function(x, i){ return '<th scope="col">' + (i + 1) + '</th>'; }).join('') + (S.finished ? '' : '<th scope="col" class="cur" title="Set en cours">' + setNumber() + '</th>') + '</tr>';
+  function row(t){
+    var cells = S.sets.map(function(x){ return '<td class="' + (x[t] > x[1 - t] ? 'won' : '') + '">' + x[t] + '</td>'; }).join('');
+    var cur = S.finished ? '' : '<td class="live" title="Set en cours">' + S.cur[t] + '</td>';
+    var L = trail === t ? ' dim' : '';
+    return '<tr><th scope="row" class="tn' + L + '"><span class="stn">' + stLogo(t) + '<span class="hn">' + esc(tn(t)) + '</span></span></th><td class="hw' + L + '" title="Sets gagnés">' + w[t] + '</td>' + cells + cur + '</tr>';
+  }
+  return '<div class="stack" style="padding-bottom:0"><section class="card"><div class="tablewrap"><table class="stab" aria-label="Score par set"><thead>' + head + '</thead><tbody>' + row(0) + row(1) + '</tbody></table></div></section></div>';
 }
 /* Pied de page : « Retour au menu » ; pendant la saisie des points, « Changer de match » juste à côté
    (les deux libellés seront remplacés plus tard par des icônes). */
@@ -2706,6 +2738,7 @@ function matchView(){
   }
   out += ctlRow(ord);
   out += courtBoard();
+  if(S.prefs.table) out += setsTableHtml();
   if(S.prefs.players){
     out += '<div class="stack" style="padding-bottom:0"><section class="card a"' + cardStyle(S, 0) + '><h3>' + pillHtml(S, 0, tn(0)) + '</h3>' + statTable(0) + '</section>' +
       '<section class="card b"' + cardStyle(S, 1) + '><h3>' + pillHtml(S, 1, tn(1)) + '</h3>' + statTable(1) + '</section></div>';
@@ -3955,6 +3988,15 @@ function xValid(){
   if(x.ctx === 'play') return S.stage === 'play' && !inSetup() && xAllowed(x.t);
   return inSetup() && ui.prepTeam === x.t;
 }
+/* Noms d'équipe du tableau des sets : la police diminue (jusqu'à 10 px) si le nom est trop long */
+function fitNames(){
+  var els = document.querySelectorAll('.stab .hn');
+  for(var i = 0; i < els.length; i++){
+    var el = els[i], px = 16;
+    el.style.fontSize = '';
+    while(el.scrollWidth > el.clientWidth + 1 && px > 10){ px--; el.style.fontSize = px + 'px'; }
+  }
+}
 function render(){
   if(ui.xchg && !xValid()) ui.xchg = null;
   if(profOn() && !profAsked()){
@@ -3969,6 +4011,7 @@ function render(){
   document.body.classList.toggle('hasnav', navOn());
   document.body.classList.toggle('hasfab', !ui.sheet && ((ui.tab === 'cal' && ui.calView !== 'create') || (ui.tab === 'clubs' && (ui.clubView === 'home' || ui.clubView === 'list')) || (ui.tab === 'champ') || (ui.tab === 'match' && S.stage === 'home' && !ui.addRes)));
   document.getElementById('sheet').innerHTML = ui.sheet ? sheetView() : '';
+  fitNames();
   if(ui.focus){ var el = document.getElementById(ui.focus); if(el) el.focus(); ui.focus = null; }
   if(ui.calGo){
     var cg = ui.calGo; ui.calGo = null;
@@ -4133,8 +4176,20 @@ document.addEventListener('click', function(e){
   var act = b.dataset.act, d = b.dataset, t = parseInt(d.team, 10), sh = ui.sheet;
   if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = null; render(); return; }
   switch(act){
+    case 'dots': {
+      ui.edit = false; ui.sheet = null; ui.msg = '';
+      if(ui.tab === 'settings'){
+        var sb = ui.setBack; ui.setBack = null;
+        if(sb){ setTab(sb.tab); if(sb.tab === 'match' && sb.stage === 'play' && S.stage === 'home') S.stage = 'play'; ui.showSetup = sb.showSetup; ui.prepTeam = sb.prepTeam; render(); window.scrollTo(0, sb.y || 0); }
+        else { setTab('menu'); render(); window.scrollTo(0, 0); }
+      } else {
+        ui.setBack = { tab:ui.tab, stage:S.stage, showSetup:ui.showSetup, prepTeam:ui.prepTeam, y:window.scrollY };
+        ui.hdrOpen = false; setTab('settings'); ui.showSetup = false; ui.prepTeam = null; render(); window.scrollTo(0, 0);
+      }
+      break;
+    }
     case 'tab':
-      ui.edit = false;
+      ui.edit = false; ui.setBack = null;
       setTab(d.tab); ui.showSetup = false; ui.prepTeam = null; ui.sheet = null; ui.msg = '';
       if(d.tab === 'clubs') ui.clubView = 'home';
       if(d.tab === 'cal'){ ui.calView = 'list'; ui.ev = null; }
