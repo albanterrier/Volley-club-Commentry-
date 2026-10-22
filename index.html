@@ -520,6 +520,11 @@ header.top{border-bottom:1px solid rgba(255,255,255,.08)}
 .wkblock{display:flex;flex-direction:column;gap:10px}
 .wkh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:6px 2px 0}
 .wkh h3{margin:0;font-size:22px}
+.mc-foot s{opacity:.7}
+.rep{color:var(--danger);font-weight:700;margin-left:6px}
+.exempt{margin:6px 2px 0;font-size:14px;color:var(--muted)}
+.exempt b{color:var(--ink)}
+.exempt i{font-style:normal;color:var(--danger);font-weight:700}
 .mcs{display:flex;flex-direction:column;gap:10px}
 .mc{display:flex;flex-direction:column;gap:10px;width:100%;text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
 .mc.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
@@ -769,6 +774,74 @@ header.top.hc{position:sticky}
 .slview.bnc-l{animation:bncl .35s ease-out}
 .slview.bnc-r{animation:bncr .35s ease-out}
 @media (prefers-reduced-motion:reduce){.slview.bnc-l,.slview.bnc-r{animation:none}}
+
+@keyframes livecol{0%,100%{background:#22C55E;box-shadow:0 0 0 0 rgba(34,197,94,.6)}50%{background:#3B82F6;box-shadow:0 0 0 5px rgba(59,130,246,0)}}
+.livedot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#22C55E;vertical-align:middle;margin-right:6px;animation:livecol 1.6s ease-in-out infinite;flex:0 0 auto}
+.livedot.corner{position:absolute;top:0;right:11px;margin:0;width:10px;height:10px;border:2px solid var(--surface);box-sizing:content-box}
+.nav button .pill{position:relative}
+.tag.live .livedot{width:8px;height:8px;margin-right:5px;border:1px solid rgba(255,255,255,.8)}
+@media (prefers-reduced-motion:reduce){.livedot{animation:none}}
+
+.modecard{padding:12px}
+.modecard.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
+.modesel,.modeopt{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:var(--ink);text-align:left;padding:4px 0;min-height:52px}
+.modesel .mt{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+.modesel .mt b{font-size:20px;font-weight:800}
+.modesel .mt small,.modeopt small{color:var(--muted);font-size:14px}
+.modeopt{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:8px}
+.modeopt.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
+.modeopt span:last-child{display:flex;flex-direction:column}
+.modeopt b{font-size:17px}
+.radio{flex:0 0 22px;width:22px;height:22px;border-radius:50%;border:2px solid var(--muted);display:inline-block;position:relative}
+[aria-checked="true"]>.radio{border-color:var(--acc)}
+[aria-checked="true"]>.radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--acc)}
+.modelist{margin:8px 0 0;padding:0 0 0 18px;font-size:14px;color:var(--ink);display:flex;flex-direction:column;gap:3px}
+.modelist li::marker{color:var(--acc)}
+.pv{width:210px;margin:10px auto 0;border:2px solid var(--line);border-radius:18px;padding:8px;background:var(--bg);display:flex;flex-direction:column;gap:6px}
+.pv-top{height:8px;border-radius:4px;background:var(--surface2)}
+.pv-tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pv-tiles i{display:flex;align-items:center;justify-content:center;height:54px;border-radius:8px}
+.pv-tiles i.a{background:var(--a)}.pv-tiles i.b{background:var(--b)}
+.pv-tiles b{color:#fff;font-size:22px;font-style:normal}
+.pv-clock{display:flex;align-items:center;justify-content:center;gap:4px}
+.pv-clock em{font-style:normal;font-weight:700;font-size:13px;padding:0 4px}
+.pv-clock .sq{width:20px;height:20px;border-radius:5px;border:2px solid var(--muted);display:inline-block}
+.pv-court{display:flex;align-items:center;gap:4px;height:48px}
+.pv-court .pl{flex:1;height:34px;border-radius:4px;background:var(--surface2)}
+.pv-court .court{flex:2;height:48px;border:2px solid var(--muted);border-radius:4px;display:flex}
+.pv-court .court i{flex:1}.pv-court .court i:first-child{border-right:2px solid var(--muted)}
+.pv-card{border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--surface);display:flex;flex-direction:column;gap:5px}
+.pv-line{height:6px;border-radius:3px;background:var(--surface2)}.pv-line.s{width:60%}
+.hmodebtn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:none;border:0;border-bottom:1px solid rgba(255,255,255,.18);color:inherit;font-size:14px;padding:10px 0;min-height:44px;text-align:left}
+.modebelow .hmodebtn{color:var(--ink);border-bottom:1px solid var(--line)}
+.modebelow .hsw{width:100%;justify-content:space-between;color:var(--ink);font-size:15px}
+.ctlrow.simple{display:flex;justify-content:center}
+.rohint{text-align:center}
+.msc-list{display:flex;flex-direction:column;gap:12px}
+.msc{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:12px}
+.msc-main{display:block;width:100%;background:none;border:0;color:var(--ink);text-align:left;padding:0}
+.msc-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:32px}
+.msc-tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--surface2);border:1px solid var(--line)}
+.msc-date{font-size:13px;font-weight:600;color:var(--muted);flex:1}
+.msc-live{display:inline-flex;align-items:center;font-size:12px;font-weight:800;letter-spacing:.04em;padding:6px 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface2)}
+.msc-live .livedot{margin-right:6px}
+.msc-row{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;line-height:1.5}
+.msc-row .dot{flex:0 0 10px;width:10px;height:10px;border-radius:50%;background:var(--muted)}
+.msc-row .dot.mine{background:var(--acc)}
+.msc-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.msc-row.lead .nm,.msc-row .dot.mine+.nm{color:var(--ink)}
+.msc-row b{font-family:var(--font-d);font-size:30px;font-weight:800;color:var(--acc-text)}
+.msc-row.lead b{font-size:34px}
+.msc-box{display:block;margin-top:10px;padding:10px;border-radius:12px;background:var(--surface2)}
+.msc-head{display:flex;justify-content:space-between;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+.msc-time{color:var(--acc-text)}
+.msc-sets{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.msc-set{flex:1 0 62px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.msc-set small{font-size:11px;font-weight:700;color:var(--muted)}
+.msc-set b{font-size:16px;font-weight:800;white-space:nowrap}
+.msc-set.cur{border-color:var(--acc)}
+.msc-set.cur small{color:var(--acc-text)}
+.msc-edit{position:absolute;top:8px;right:8px;display:flex;gap:6px}
 </style>
 </head>
 <body>
@@ -827,7 +900,7 @@ function stamp(){ return new Date().toISOString().slice(0,10); }
 function emptyLineup(){ return [[null,null,null,null,null,null],[null,null,null,null,null,null]]; }
 function newState(){
   return {
-    v:2, created:new Date().toISOString(), title:'', seasons:[mkSeason(seasonYear(isoOf(new Date())))], season:'s' + seasonYear(isoOf(new Date())),
+    v:2, created:new Date().toISOString(), title:'', mode:'complet', modeSet:false, seasons:[mkSeason(seasonYear(isoOf(new Date())))], season:'s' + seasonYear(isoOf(new Date())),
     teams:[{name:'Notre équipe',clubId:'',players:[]},{name:'Adversaire',clubId:'',players:[]}],
     lineup:emptyLineup(),
     cfg:{setsToWin:3, pts:25, ptsLast:15},
@@ -857,10 +930,12 @@ function migrate(s){
   if(!s.starters) s.starters = [[],[]];
   if(!s.subPairs) s.subPairs = [[],[]];
   if(!s.sanc) s.sanc = [{},{}];
-  s.library.forEach(function(e){ if(!e.sanc) e.sanc = [{},{}]; if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; if(e.titleAuto === undefined) e.titleAuto = false; if(!e.starters) e.starters = [[],[]]; if(!e.subPairs) e.subPairs = [[],[]]; });
+  s.library.forEach(function(e){ if(e.mode === undefined){ e.mode = 'complet'; e.modeSet = true; } if(!e.sanc) e.sanc = [{},{}]; if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; if(e.titleAuto === undefined) e.titleAuto = false; if(!e.starters) e.starters = [[],[]]; if(!e.subPairs) e.subPairs = [[],[]]; });
   if(s.homeClub === undefined) s.homeClub = '';
   if(s.adminId === undefined) s.adminId = '';
   if(!s.fav) s.fav = {};
+  if(s.mode === undefined){ s.mode = 'complet'; s.modeSet = true; }
+  if(s.modeSet === undefined) s.modeSet = true;
   if(!s.stage) s.stage = s.prepared ? 'play' : 'home';
   s.prefs = Object.assign({}, d.prefs, s.prefs || {});
   s.teams.forEach(function(t){ if(t.clubId == null) t.clubId = ''; });
@@ -1097,11 +1172,13 @@ var NAVICONS = {
   data:'<path d="M5 21V10M12 21V4M19 21v-7"/>'
 };
 function navOn(){ return true; }
+/* Petit voyant « en direct » : alterne du vert au bleu (fixe, vert, si l'animation est réduite) */
+function liveDot(corner){ return '<span class="livedot' + (corner ? ' corner' : '') + '" role="img" aria-label="Match en direct"></span>'; }
 function navHtml(){
   var items = [['match','Match'],['clubs','Clubs'],['champ','Championnat'],['cal','Calendrier'],['data','Statistiques']];
   return '<nav class="nav" aria-label="Navigation principale">' + items.map(function(it){
     var on = ui.tab === it[0];
-    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
+    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length ? liveDot(true) : '') : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
   }).join('') + '</nav>';
 }
 function prevBtnHtml(pv){
@@ -1781,7 +1858,7 @@ function endSet(){
   save(); render();
 }
 /* ---------- Bibliothèque de matchs (nouveau / reprendre) ---------- */
-var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap','firstSrv','starters','subPairs','sanc','titleAuto'];
+var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap','firstSrv','starters','subPairs','sanc','titleAuto','mode','modeSet'];
 function hasContent(){ return S.events.length > 0 || S.sets.length > 0; }
 function matchSnapshot(){
   var o = {};
@@ -1872,9 +1949,10 @@ function playerStat(pid){ return playerStatOf(S, pid); }
 function evTextOf(m, e){
   var who = plabel(e.num, e.name) + (e.pid && e.team != null && isCapOf(m, e.team, e.pid) ? CAPMARK : '');
   switch(e.type){
-    case 'point': return 'Point ' + tnOf(m, e.team) + (who ? ' · ' + who : '') + ' · ' + (HOW[e.how] || e.how);
+    case 'point': return 'Point ' + tnOf(m, e.team) + (who ? ' · ' + who : '') + (e.how ? ' · ' + (HOW[e.how] || e.how) : '');
     case 'fault': return 'Faute ' + tnOf(m, e.team) + ' · ' + e.how + (who ? ' · ' + who : '');
-    case 'sub': return (e.exc ? 'Remplacement exceptionnel ' : 'Remplacement ') + tnOf(m, e.team) + ' · sort ' + (who || '?') + ' · ' + e.how;
+    case 'sub': if(e.count) return 'Remplacement ' + tnOf(m, e.team) + ' (' + e.count + '/6)';
+      return (e.exc ? 'Remplacement exceptionnel ' : 'Remplacement ') + tnOf(m, e.team) + ' · sort ' + (who || '?') + ' · ' + e.how;
     case 'timeout': return 'Temps mort ' + tnOf(m, e.team);
     case 'injury': return 'Blessure ' + tnOf(m, e.team) + (who ? ' · ' + who : '') + (e.res ? ' · ' + e.res : '');
     case 'forfeit': return e.how + ' · set gagné par ' + tnOf(m, 1 - e.team) + ' (' + e.pts + ' point' + (e.pts > 1 ? 's' : '') + ' attribué' + (e.pts > 1 ? 's' : '') + ')';
@@ -2253,15 +2331,35 @@ function weekLabel(ws){
 }
 function fixtureOf(ch, fid){ return ch.fixtures.filter(function(f){ return f.id === fid; })[0] || null; }
 function matchOf(ch, mid){ return mid ? (ch.matches.filter(function(m){ return m.id === mid; })[0] || null) : null; }
+/* Jour N d'un championnat : chaque semaine avec au moins une rencontre non reportée ; une semaine sans match ne change pas le numéro */
+function champWeeks(ch){
+  var ws = {}, m = {};
+  ch.fixtures.forEach(function(f){ if(!f.postponed && pairActive(ch, f.home, f.away)) ws[weekStart(f.date)] = 1; });
+  Object.keys(ws).sort().forEach(function(w, i){ m[w] = i + 1; });
+  return m;
+}
+function jourOf(ch, w){ return champWeeks(ch)[w] || 0; }
+/* Équipes exemptes : dans le championnat, sans rencontre (même reportée) cette semaine-là */
+function exemptOf(ch, w){
+  if(!jourOf(ch, w)) return [];
+  var busy = {};
+  ch.fixtures.forEach(function(f){ if(weekStart(f.date) === w){ busy[f.home] = 1; busy[f.away] = 1; } });
+  return entrantsOf(ch.clubIds).map(function(c){ return c.id; }).filter(function(id){ return !busy[id]; });
+}
+function exemptHtml(items, withName){
+  return items.filter(function(it){ return it.ids.length; }).map(function(it){
+    return '<p class="exempt"><i>Exempt</i>' + (withName ? ' · ' + esc(it.ch.name) : '') + ' : <b>' + it.ids.map(function(id){ return esc(clubName(id)); }).join(', ') + '</b></p>';
+  }).join('');
+}
 /* Une « entrée » du calendrier : match de championnat (dans ch.fixtures), match amical ou autre événement (dans S.agenda) */
 function calEntry(cid, fid){
   if(cid){
     var ch = champById(cid), f = ch && fixtureOf(ch, fid);
-    return f ? { kind:'fixture', ch:ch, f:f, cid:cid, fid:fid, date:f.date, time:f.time || '', home:f.home, away:f.away, place:f.place || '', title:'' } : null;
+    return f ? { kind:'fixture', ch:ch, f:f, cid:cid, fid:fid, date:f.date, time:f.time || '', home:f.home, away:f.away, place:f.place || '', title:'', postponed:!!f.postponed } : null;
   }
   var a = S.agenda.filter(function(x){ return x.id === fid; })[0];
   if(!a) return null;
-  return { kind:a.kind === 'event' ? 'event' : 'amical', ch:null, f:a, cid:'', fid:fid, date:a.date, time:a.time || '', home:a.home, away:a.away, place:a.place || '', title:a.title || '' };
+  return { kind:a.kind === 'event' ? 'event' : 'amical', ch:null, f:a, cid:'', fid:fid, date:a.date, time:a.time || '', home:a.home, away:a.away, place:a.place || '', title:a.title || '', postponed:!!a.postponed };
 }
 function calEntries(){
   var out = [];
@@ -2515,7 +2613,7 @@ function icsDate(d){ return d.replace(/-/g, ''); }
 function icsText(list){
   var now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
   var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Volley-Club Commentry//FR', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:Volley-Club Commentry'];
-  list.forEach(function(e){
+  list.filter(function(e){ return !e.postponed; }).forEach(function(e){
     var sum = e.kind === 'event' ? e.title : clubName(e.home) + ' – ' + clubName(e.away);
     var desc = e.kind === 'fixture' ? e.ch.name : (e.kind === 'amical' ? 'Rencontre amicale' : 'Événement');
     L.push('BEGIN:VEVENT', 'UID:' + e.fid + '@volley-commentry', 'DTSTAMP:' + now);
@@ -2535,7 +2633,7 @@ function icsText(list){
 }
 function doIcs(){
   var today = isoOf(new Date());
-  var list = calEntries().filter(function(e){ return e.date >= today && !entryResult(e) && calKeep(e); });
+  var list = calEntries().filter(function(e){ return e.date >= today && !entryResult(e) && !e.postponed && calKeep(e); });
   if(!list.length){ ui.msg = 'Aucune rencontre à venir avec ces filtres.'; render(); return; }
   deliverFile('volley-calendrier-' + stamp() + '.ics', icsText(list), 'ics');
 }
@@ -2588,20 +2686,23 @@ function header(){
   if(ui.tab === 'menu') return plain('Accueil', '');
   if(ui.tab === 'match' && S.stage === 'home') return plain('Match', ui.addRes ? 'Ajouter un résultat' : '', seasonBtn());
   if(inSetup()) return plain('Préparation du match', (S.title || '').trim() || 'Nouveau match');
+  if(needsModePick()) return plain('Mode de saisie', (S.title || '').trim() || 'Nouveau match');
   /* Le score n'apparaît en haut que dans la saisie des points ; partout ailleurs, on affiche le nom de l'espace. */
   if(ui.tab !== 'match' || S.stage !== 'play') return plain(tabTitle(), tabSub(), (ui.tab === 'clubs' || ui.tab === 'champ' || ui.tab === 'cal') ? seasonBtn() : '');
   var w = setsWon(), open = !!ui.hdrOpen;
   var chev = '<button class="hchev' + (open ? ' open' : '') + '" data-act="hdrToggle" aria-expanded="' + open + '" aria-label="' + (open ? 'Fermer' : 'Ouvrir') + ' les options d\'affichage" title="' + (open ? 'Fermer' : 'Ouvrir') + ' les options d\'affichage">' +
     '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>';
+  var showMenu = canScore();
+  if(!showMenu) chev = '';
   var pvp = prevAct(), leftp = pvp ? prevBtnHtml(pvp) : '<button class="ibtn" data-act="tab" data-tab="menu" aria-label="Accueil"><img src="' + LOGO_V2C + '" alt=""></button>';
   var topRow = '<div class="hmain">' + leftp + '<div class="hscore" role="group" aria-label="Score en sets"><span class="hn">' + esc(tn(0)) + '</span><b>' + w[0] + ' – ' + w[1] + '</b><span class="hn">' + esc(tn(1)) + '</span></div>' + chev + profBtnHtml() + dotsBtnHtml() + '</div>';
-  if(!open) return '<header class="top hc">' + topRow + '</header>';
+  if(!open || !showMenu) return '<header class="top hc">' + topRow + '</header>';
   function sw(k, label){
     var on = !!S.prefs[k];
     return '<button class="hsw" role="switch" aria-checked="' + on + '" data-act="pref" data-k="' + k + '"><span>' + label + '</span><span class="track" aria-hidden="true"><span class="knob"></span></span></button>';
   }
   return '<header class="top hc">' + topRow + '<div class="hshade" data-act="hdrToggle" aria-hidden="true"></div>' +
-    '<div class="hmenu" role="group" aria-label="Informations à afficher sous le terrain">' + sw('table', 'Tableau') + sw('players', 'Résultats par joueur') + sw('sheet', 'Feuille de match') + '</div></header>';
+    '<div class="hmenu" role="group" aria-label="Mode de saisie et informations à afficher">' + modeBtnHtml() + sw('table', 'Tableau') + (modeOf() === 'complet' ? sw('players', 'Résultats par joueur') : '') + sw('sheet', 'Feuille de match') + '</div></header>';
 }
 /* Tableau des sets, sous le schéma : équipe à domicile en haut, une colonne par set joué (+ le set en cours) */
 function stLogo(t){
@@ -2631,6 +2732,7 @@ function prevAct(){
       if(ui.prepTeam === 0 || ui.prepTeam === 1) return { act:'prepBack' };
       return S.prepared ? { act:'setupAsk' } : { act:'goHome' };
     }
+    if(needsModePick()) return { act:'modeBack' };
     return { act:'goHome' };   /* saisie des points : la page précédente est le choix du match */
   }
   if(t === 'clubs'){
@@ -2686,22 +2788,39 @@ function tileLogo(clubId){
   return (c && c.logo) ? '<img class="tlogo" src="' + esc(c.logo) + '" alt="">' : '';
 }
 function tile(t, side){
-  var dis = S.finished;
+  var dis = S.finished || ro();
   return '<div class="tilebox">' + tileLogo(S.teams[t].clubId) + '<div class="tile ' + (t ? 'b' : 'a') + '"' + teamStyle(t) + '>' +
     '<button class="tilemain" data-act="openPoint" data-team="' + t + '"' + (dis ? ' disabled' : '') + ' aria-label="Marquer un point pour ' + esc(tn(t)) + ', score actuel ' + S.cur[t] + '">' +
     '<span class="tname"><span>' + esc(tn(t)) + '</span></span><span class="score">' + S.cur[t] + '</span></button>' + (S.serving === t && !S.finished ? '<span class="svico ' + (side === 'r' ? 'r' : 'l') + '" role="img" aria-label="Au service"></span>' : '') +
     (showServe() ? '<button class="srv ' + (S.serving === t ? 'on' : '') + '" data-act="serve" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>' + (S.serving === t ? 'Au service' : 'Donner le service') + '</button>' : '<div class="srv ph" aria-hidden="true"></div>') + '</div></div>';
 }
 /* Boutons Remplacement / Temps mort : images + décompte dessous ; couleurs de l'équipe */
+/* ---------- Modes de saisie : Simple / Normal / Complet ---------- */
+var MODES = {
+  simple:{ name:'Simple', tag:'Idéal pour ne se concentrer que sur les points', feats:[
+    'Saisie des points d\'une touche, sur le score de l\'équipe', 'Service et alternance des côtés', 'Chronomètre et ses boutons', 'Logos des équipes',
+    'Feuille de match simplifiée (points et sets)', 'Tableau des sets, en option'] },
+  normal:{ name:'Normal', tag:'Pour suivre les points, les remplacements et les temps morts', feats:[
+    'Tout le mode Simple', 'Remplacements et temps morts (décompte seulement, sans les joueurs)', 'Façon dont chaque point est marqué (sans préciser par qui)',
+    'Feuille de match avec la façon de marquer'] },
+  complet:{ name:'Complet', tag:'Idéal pour un suivi approfondi du match et de la performance des joueurs', feats:[
+    'Tout le mode Normal', 'Terrain, rotation et liste des joueurs', 'Qui marque, qui est remplacé, échanges de joueurs',
+    'Blessures et cartons', 'Statistiques par joueur et feuille de match détaillée'] }
+};
+function modeOf(){ return MODES[S.mode] ? S.mode : 'complet'; }
+/* Qui peut saisir : pour l'instant l'administrateur principal (ou sans profil défini). Les autres rôles seront précisés avec la gestion des rôles. */
+function canScore(){ return !profOn() || profGet() === 'admin'; }
+function ro(){ return !canScore(); }
+function needsModePick(){ return ui.tab === 'match' && S.stage === 'play' && !S.finished && !S.modeSet && !hasContent() && canScore(); }
 function ibtn(t, kind){
-  var dis = S.finished, sub = kind === 'sub', n = sub ? S.subs[t] : S.timeouts[t], max = sub ? 6 : 2;
+  var dis = S.finished || ro(), sub = kind === 'sub', n = sub ? S.subs[t] : S.timeouts[t], max = sub ? 6 : 2;
   var label = (sub ? 'Remplacement' : 'Temps mort') + ' de ' + tn(t) + ', ' + n + ' sur ' + max;
-  return '<button class="tbtn ' + (t ? 'b' : 'a') + '" data-act="' + (sub ? 'openSub' : 'timeout') + '" data-team="' + t + '"' +
-    ((dis || (!sub && n >= 2)) ? ' disabled' : '') + teamStyle(t, 'border-color:transparent') + ' aria-label="' + esc(label) + '" title="' + esc(label) + '">' +
+  return '<button class="tbtn ' + (t ? 'b' : 'a') + '" data-act="' + (sub ? (modeOf() === 'normal' ? 'subCount' : 'openSub') : 'timeout') + '" data-team="' + t + '"' +
+    ((dis || (!sub && n >= 2) || (sub && modeOf() === 'normal' && n >= 6)) ? ' disabled' : '') + teamStyle(t, 'border-color:transparent') + ' aria-label="' + esc(label) + '" title="' + esc(label) + '">' +
     '<span class="ico ' + (sub ? 'ico-sub' : 'ico-to') + '" aria-hidden="true"></span><span class="cnt">' + n + '/' + max + '</span></button>';
 }
 function cbtn(act, icon, label, extra, dis){
-  return '<button class="cbtn' + (extra ? ' ' + extra : '') + '" data-act="' + act + '"' + (dis ? ' disabled' : '') + ' aria-label="' + esc(label) + '" title="' + esc(label) + '"><span class="ico ico-' + icon + '" aria-hidden="true"></span></button>';
+  return '<button class="cbtn' + (extra ? ' ' + extra : '') + '" data-act="' + act + '"' + ((dis || ro()) ? ' disabled' : '') + ' aria-label="' + esc(label) + '" title="' + esc(label) + '"><span class="ico ico-' + icon + '" aria-hidden="true"></span></button>';
 }
 /* Chrono, puis dessous : annuler le dernier · lecture / pause (un seul bouton qui alterne) · stop (terminer le set) */
 function clockBox(){
@@ -2715,10 +2834,12 @@ function clockBox(){
 /* Boutons carrés sous Remplacement / Temps mort : blessure (croix rouge) et carton */
 function sqbtn(t, kind){
   var inj = kind === 'inj', label = (inj ? 'Joueur blessé de ' : 'Carton pour ') + tn(t);
-  return '<button class="tbtn sq ' + (t ? 'b' : 'a') + '" data-act="' + (inj ? 'injOpen' : 'cardOpen') + '" data-team="' + t + '"' + (S.finished ? ' disabled' : '') + teamStyle(t, 'border-color:transparent') +
+  return '<button class="tbtn sq ' + (t ? 'b' : 'a') + '" data-act="' + (inj ? 'injOpen' : 'cardOpen') + '" data-team="' + t + '"' + ((S.finished || ro()) ? ' disabled' : '') + teamStyle(t, 'border-color:transparent') +
     ' aria-label="' + esc(label) + '" title="' + esc(label) + '">' + (inj ? '<span class="ic ic-croix" aria-hidden="true"></span>' : '<span class="ico ico-card" aria-hidden="true"></span>') + '</button>';
 }
 function ctlRow(ord){
+  if(modeOf() === 'simple') return '<div class="ctlrow simple">' + clockBox() + '</div>';
+  if(modeOf() === 'normal') return '<div class="ctlrow"><div class="ig left">' + ibtn(ord[0], 'sub') + ibtn(ord[0], 'to') + '</div>' + clockBox() + '<div class="ig right">' + ibtn(ord[1], 'sub') + ibtn(ord[1], 'to') + '</div></div>';
   return '<div class="ctlrow"><div class="ig left">' + ibtn(ord[0], 'sub') + ibtn(ord[0], 'to') + sqbtn(ord[0], 'inj') + sqbtn(ord[0], 'card') + '</div>' + clockBox() +
     '<div class="ig right">' + ibtn(ord[1], 'sub') + ibtn(ord[1], 'to') + sqbtn(ord[1], 'inj') + sqbtn(ord[1], 'card') + '</div></div>';
 }
@@ -2838,24 +2959,53 @@ function matchView(){
     out += '<div class="tcbar"><span>Temps mort ' + esc(tn(S.tc.team)) + '</span><span id="tcleft">' + Math.ceil((S.tc.endsAt - Date.now())/1000) + ' s</span><button data-act="tcStop">Fermer</button></div>';
   }
   var ord = S.swap ? [1, 0] : [0, 1];
-  out += '<div class="board">' + tile(ord[0], 'l') + tile(ord[1], 'r') + (showSwap() ? '<button class="swapbtn" data-act="swap" aria-label="Inverser la position des équipes" title="Inverser la position des équipes"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/></svg></button>' : '') +
+  out += '<div class="board">' + tile(ord[0], 'l') + tile(ord[1], 'r') + (showSwap() ? '<button class="swapbtn" data-act="swap"' + (ro() ? ' disabled' : '') + ' aria-label="Inverser la position des équipes" title="Inverser la position des équipes"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/></svg></button>' : '') +
     '<span class="setlbl" aria-label="Set en cours">' + (S.finished ? 'Match terminé' : ordinalSet(setNumber())) + '</span></div>';
   if(S.serving === null && S.cur[0] + S.cur[1] === 0 && !S.finished && pickSet()){
     out += '<p class="last">Touchez « Donner le service » pour l\'équipe qui sert en premier : la rotation automatique en dépend.</p>';
   }
   out += ctlRow(ord);
-  out += courtBoard();
-  if(S.prefs.table) out += setsTableHtml();
-  if(S.prefs.players){
+  var md = modeOf(), vw = ro();
+  if(md === 'complet') out += courtBoard();
+  if(S.prefs.table || vw) out += setsTableHtml();
+  if(S.prefs.players && md === 'complet' && !vw){
     out += '<div class="stack" style="padding-bottom:0"><section class="card a"' + cardStyle(S, 0) + '><h3>' + pillHtml(S, 0, tn(0)) + '</h3>' + statTable(0) + '</section>' +
       '<section class="card b"' + cardStyle(S, 1) + '><h3>' + pillHtml(S, 1, tn(1)) + '</h3>' + statTable(1) + '</section></div>';
   }
-  if(S.prefs.sheet){
+  if(S.prefs.sheet || vw){
     var log = logHtml(15);
     out += '<div class="stack" style="padding-bottom:0"><section class="card"><h3>Feuille de match</h3>' + (log ? '<ul class="log">' + log + '</ul>' : '<p class="muted">Aucun événement pour l\'instant.</p>') +
       (S.events.length > 15 ? '<p class="muted">Les 15 derniers événements. Tout le match est dans l\'onglet Données.</p>' : '') + '</section></div>';
   }
+  if(vw) out += '<p class="hint2 rohint">Lecture seule : vous suivez ce match sans pouvoir le modifier.</p>';
   return out;
+}
+function modePreview(k){
+  var tiles = '<div class="pv-tiles"><i class="a"><b>0</b></i><i class="b"><b>0</b></i></div>';
+  var clock = '<div class="pv-clock">' + (k === 'simple' ? '' : '<i class="sq"></i><i class="sq"></i>') + '<em>00:00</em>' + (k === 'simple' ? '' : '<i class="sq"></i><i class="sq"></i>') + '</div>';
+  var court = k === 'complet' ? '<div class="pv-court"><span class="pl"></span><span class="court"><i></i><i></i></span><span class="pl"></span></div>' : '';
+  var more = '<div class="pv-line"></div>' + (k === 'simple' ? '' : '<div class="pv-line s"></div>') + '<div class="pv-line s"></div>';
+  return '<div class="pv" aria-label="Aperçu de l\'écran de saisie en mode ' + MODES[k].name + '"><div class="pv-top"></div>' + tiles + clock + court + '<div class="pv-card">' + more + '</div></div>';
+}
+function modePickView(){
+  var sel = ui.modeSel, out = '<div class="stack modepick"><p class="hint2" style="margin:0 4px">Choisissez comment saisir ce match. Vous pourrez changer de mode en cours de match.</p>';
+  ['simple', 'normal', 'complet'].forEach(function(k){
+    var m = MODES[k], on = sel === k;
+    out += '<section class="card modecard' + (on ? ' sel' : '') + '"><button class="modesel" role="radio" aria-checked="' + on + '" data-act="modeSel" data-v="' + k + '"><span class="radio" aria-hidden="true"></span><span class="mt"><b>' + m.name + '</b><small>' + m.tag + '</small></span></button>' +
+      '<ul class="modelist">' + m.feats.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></section>';
+  });
+  out += '<section class="card"><h3>Aperçu de l\'écran de saisie</h3>' + (MODES[sel] ? modePreview(sel) : '<p class="muted" style="margin:6px 0 0">Choisissez un mode pour voir son aperçu.</p>') + '</section>' +
+    '<div class="btnrow"><button class="btn wide primary" data-act="modeGo"' + (MODES[sel] ? '' : ' disabled') + '>' + (MODES[sel] ? 'Valider et commencer la saisie en mode ' + MODES[sel].name : 'Choisissez un mode') + '</button></div></div>';
+  return out;
+}
+function swBtn(k, label){
+  var on = !!S.prefs[k];
+  return '<button class="hsw" role="switch" aria-checked="' + on + '" data-act="pref" data-k="' + k + '"><span>' + label + '</span><span class="track" aria-hidden="true"><span class="knob"></span></span></button>';
+}
+function modeBtnHtml(){ return '<button class="hmodebtn" data-act="modeChg">Mode de saisie : <b>' + MODES[modeOf()].name + '</b> <span aria-hidden="true">›</span></button>'; }
+/* Mode Simple : pas de menu dans l'en-tête, les interrupteurs sont sous le reste de l'écran */
+function modeBelowHtml(){
+  return '<div class="stack" style="padding-bottom:0"><section class="card modebelow"><h3>Affichage</h3>' + modeBtnHtml() + swBtn('table', 'Tableau') + swBtn('sheet', 'Feuille de match') + '</section></div>';
 }
 
 /* ---------- Vue : accueil du match ---------- */
@@ -2867,18 +3017,36 @@ function homeView(){
   if(ui.addRes) return addResultView();
   return homeView0() + '<button class="fab" data-act="matchAddOpen" aria-label="Jouer un match ou ajouter un résultat">+</button>';
 }
+/* Carte d'un match suivi : date, état, équipes avec leurs sets, durée et score de chaque set */
+function fmtPlay(ms){
+  var mn = Math.floor(ms / 60000), h = Math.floor(mn / 60);
+  return h ? h + 'h' + ('0' + (mn % 60)).slice(-2) : mn + ' min';
+}
+function isMineTeam(m, i){
+  var id = m.teams[i].clubId, f = id ? findTeam(id) : null;
+  return !!id && (isFav('team', id) || (f && isFav('club', f.c.id)) || (!!S.homeClub && !!f && f.c.id === S.homeClub));
+}
+function matchCardHtml(m){
+  var sm = matchSummary(m), id = esc(m.created), played = m === S ? clockMs() : ((m.clock && m.clock.acc) || 0);
+  var lead = sm.w[0] === sm.w[1] ? -1 : (sm.w[0] > sm.w[1] ? 0 : 1);
+  function row(i){
+    return '<span class="msc-row' + (lead === i ? ' lead' : '') + '"><i class="dot' + (isMineTeam(m, i) ? ' mine' : '') + '" aria-hidden="true"></i><span class="nm">' + esc(tnOf(m, i)) + '</span><b>' + sm.w[i] + '</b></span>';
+  }
+  var tiles = (m.sets || []).map(function(x, k){ return '<span class="msc-set"><small>S' + (k + 1) + '</small><b>' + x[0] + '-' + x[1] + '</b></span>'; }).join('') +
+    '<span class="msc-set cur"><small>S' + sm.setNo + '</small><b>' + sm.cur[0] + '-' + sm.cur[1] + '</b></span>';
+  var title = sm.title;
+  return '<div class="msc"><button class="msc-main" data-act="resumeMatch" data-mid="' + id + '" aria-label="Reprendre ' + esc(title) + '">' +
+    '<span class="msc-top"><span class="msc-tag">Set ' + sm.setNo + '</span><span class="msc-date">' + esc(fmtDay(isoOf(new Date(m.created)))) + '</span>' + (ui.edit ? '' : '<span class="msc-live">' + liveDot() + 'EN DIRECT</span>') + '</span>' +
+    row(0) + row(1) +
+    '<span class="msc-box"><span class="msc-head"><span>SCORES PAR SET</span><span class="msc-time">' + fmtPlay(played) + ' de jeu</span></span><span class="msc-sets">' + tiles + '</span></span></button>' +
+    (ui.edit ? '<span class="msc-edit"><button class="delwrap" data-act="resumeSetup" data-mid="' + id + '" aria-label="Infos et paramètres de ' + esc(title) + '"><span class="editc">' + GEAR + '</span></button>' +
+      '<button class="delwrap" data-act="delLibAsk" data-mid="' + id + '" aria-label="Supprimer ' + esc(title) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></span>' : '') + '</div>';
+}
 function homeView0(){
   var list = savedMatches(), out = '<div class="stack">';
   out += '<div class="clubhead">' + (list.length ? editBtnHtml() : '') + '<h2>Matchs suivis' + (list.length ? ' (' + list.length + ')' : '') + '</h2></div>';
   if(!list.length) out += '<section class="card"><p class="muted" style="margin:0">Aucun match suivi en direct pour l\'instant. Touchez le bouton « + » pour jouer un match ou ajouter un résultat.</p></section>';
-  else out += '<section class="card">' + list.map(function(it){
-    var m = it.m, sm = matchSummary(m);
-    var sub = fmtWhen(sm.date) + (sm.finished ? '' : ' · set ' + sm.setNo + ' (' + sm.cur[0] + '–' + sm.cur[1] + ')');
-    return '<div class="ritem"><button class="fx big" data-act="resumeMatch" data-mid="' + esc(m.created) + '" aria-label="Reprendre ' + esc(sm.title) + '"><span class="fxt"><span class="nm">' + esc(sm.title) + '</span><small>' + esc(sub) + '</small></span>' +
-      '<span class="rsc" aria-label="Sets gagnés">' + sm.w[0] + ' – ' + sm.w[1] + '</span></button>' +
-      (ui.edit ? '<button class="delwrap" data-act="resumeSetup" data-mid="' + esc(m.created) + '" aria-label="Infos et paramètres de ' + esc(sm.title) + '"><span class="editc">' + GEAR + '</span></button>' +
-      '<button class="delwrap" data-act="delLibAsk" data-mid="' + esc(m.created) + '" aria-label="Supprimer ' + esc(sm.title) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</div>';
-  }).join('') + '</section>';
+  else out += '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + '</div>';
   return out + '</div>';
 }
 
@@ -3310,10 +3478,10 @@ function clubsLogo(){
 function clubLine(id, px){ return logoHtml(id, px) + '<span class="nm">' + esc(clubName(id)) + '</span>'; }
 function entryLine(id, px){ return id ? logoHtml(id, px) + '<span class="nm">' + esc(clubName(id)) + '</span>' : ''; }
 function calRow(e, today, favArg){
-  var res = entryResult(e), late = !res && e.date < today, fav = favArg === undefined ? favGet() : favArg;
+  var res = entryResult(e), late = !res && !e.postponed && e.date < today, fav = favArg === undefined ? favGet() : favArg;
   var sel = ui.calDay && ui.calDay === e.date ? ' sel' : '';
   var attrs = ' data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '"';
-  var when = '<span>' + esc(fmtDay(e.date)) + (e.time ? ' · ' + esc(e.time) : '') + '</span>';
+  var when = '<span>' + (e.postponed ? '<s>' : '') + esc(fmtDay(e.date)) + (e.time ? ' · ' + esc(e.time) : '') + (e.postponed ? '</s>' : '') + '</span>';
   if(e.kind === 'event'){
     return '<button class="mc' + sel + '"' + attrs + '><span class="mc-top"><span class="mc-ctx">Événement</span><span class="mc-b">' + (e.date < today ? '<span class="tag">Passé</span>' : '<span class="tag up">À venir</span>') + '</span></span>' +
       '<span class="mc-title">' + esc(e.title) + '</span><span class="mc-foot">' + when + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span></button>';
@@ -3323,7 +3491,7 @@ function calRow(e, today, favArg){
   if(res){
     var fw = (e.home === fav) === (res.hs > res.as);
     b += mine ? '<span class="tag ' + (fw ? 'ok' : 'bad') + '">' + (fw ? 'Victoire' : 'Défaite') + '</span>' : '<span class="tag ok">' + (res.source === 'live' ? 'Joué' : 'Saisi') + '</span>';
-  } else b += late ? '<span class="tag bad">À renseigner</span>' : '<span class="tag up">À venir</span>';
+  } else b += e.postponed ? '<span class="tag bad">Reporté</span>' : (late ? '<span class="tag bad">À renseigner</span>' : '<span class="tag up">À venir</span>');
   var hw = res && res.hs > res.as, aw = res && res.as > res.hs;
   function team(id, win){ return '<span class="mc-team' + (win ? ' win' : '') + '">' + (id ? logoHtml(id, 44) + '<span class="nm">' + esc(clubName(id)) + '</span>' : '') + '</span>'; }
   return '<button class="mc' + sel + '"' + attrs + '><span class="mc-top"><span class="mc-ctx">' + esc(ctx) + '</span><span class="mc-b">' + b + '</span></span>' +
@@ -3354,33 +3522,59 @@ function calStripHtml(){
   var arrow = function(n, p, lab){ return '<button class="ibtn" data-act="calWeek" data-n="' + n + '" aria-label="' + lab + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + p + '"/></svg></button>'; };
   return '<section class="card strip" id="calstrip"><div class="stripH"><b>' + esc(toDate(base).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })) + '</b><span>' + arrow(-1, 'M15 5l-7 7 7 7', 'Semaine précédente') + arrow(1, 'M9 5l7 7-7 7', 'Semaine suivante') + '</span></div><div class="days">' + days + '</div></section>';
 }
+function groupChips(){
+  var g = S.prefs.groupBy === 'day' ? 'day' : 'week';
+  return '<div class="chips modes" role="group" aria-label="Regrouper">' + [['week', 'Par semaine'], ['day', 'Par jour']].map(function(m){ return chip('grpBy', { g:m[0] }, m[1], g === m[0]); }).join('') + '</div>';
+}
+/* Exempts à afficher sous une semaine du calendrier, en respectant les filtres */
+function calExempt(w){
+  if(norm(ui.calQ)) return [];
+  var f = ui.fil;
+  return champs().filter(function(ch){ return !f.champ || f.champ === ch.id; }).map(function(ch){
+    return { ch:ch, ids:exemptOf(ch, w).filter(function(id){ return (!f.team || f.team === id) && (!f.club || clubOfEntrant(id) === f.club); }) };
+  });
+}
 function calListHtml(){
   var out = '', all = calEntries(), today = isoOf(new Date()), mode = ui.calMode || 'all';
   var filtered = all.filter(calKeep);
   var shown = filtered.filter(function(e){ return calModeKeep(e, today); });
-  var weeks = {}, order = [], thisWeek = weekStart(today);
-  shown.forEach(function(e){ var w = weekStart(e.date); if(!weeks[w]){ weeks[w] = []; order.push(w); } weeks[w].push(e); });
-  if(mode === 'done'){ order.reverse(); order.forEach(function(w){ weeks[w].reverse(); }); }
+  var weeks = {}, meta = {}, order = [], thisWeek = weekStart(today), byDay = S.prefs.groupBy === 'day';
+  shown.forEach(function(e){
+    var w = weekStart(e.date), k = byDay ? w + '|' + (e.cid || '~') : w;
+    if(!weeks[k]){ weeks[k] = []; order.push(k); meta[k] = { w:w, ch:byDay ? e.ch : null }; }
+    weeks[k].push(e);
+  });
+  if(byDay) order.sort(function(a, b){
+    var A = meta[a], B = meta[b];
+    return A.w !== B.w ? A.w.localeCompare(B.w) : (A.ch ? A.ch.name : '\uffff').localeCompare(B.ch ? B.ch.name : '\uffff', 'fr');
+  });
+  if(mode === 'done'){ order.reverse(); order.forEach(function(k){ weeks[k].reverse(); }); }
   if(!champs().length && !all.length) out += emptySeasonHtml();
   else if(calAnyFilter()) out += '<p class="muted" style="margin:0 2px">' + shown.length + ' résultat' + (shown.length > 1 ? 's' : '') + ' sur ' + all.length + '</p>';
   if(!order.length && (champs().length || all.length)){
     out += '<section class="card"><p class="muted" style="margin:0">' + (!all.length ? 'Aucune rencontre ni événement pour la saison ' + esc(curSeason().label) + '. Créez-en avec le bouton « + ».' : (filtered.length ? (mode === 'done' ? 'Aucune rencontre terminée.' : 'Rien à venir : tout est terminé.') : 'Aucune rencontre ne correspond à votre recherche.')) + '</p>' +
       (filtered.length === 0 && all.length && calAnyFilter() ? '<div class="btnrow"><button class="btn wide" data-act="calReset">Tout effacer</button></div>' : '') + '</section>';
   }
-  var past = mode === 'done' ? [] : order.filter(function(w){ return w < thisWeek; }), fut = mode === 'done' ? order : order.filter(function(w){ return w >= thisWeek; });
+  var past = mode === 'done' ? [] : order.filter(function(k){ return meta[k].w < thisWeek; }), fut = mode === 'done' ? order : order.filter(function(k){ return meta[k].w >= thisWeek; });
   var collapse = past.length > 0 && fut.length > 0 && !ui.calPast, inRange = inSeason(today) && mode !== 'done';
-  function weekCard(w){
-    var rel = weekRel(w, thisWeek);
-    return '<section class="wkblock"><div class="wkh"><h3>' + esc(rel || weekLabel(w)) + '</h3>' + (rel ? '<span class="muted">' + esc(weekRange(w)) + '</span>' : '') + '</div><div class="mcs">' + weeks[w].map(function(e){ return calRow(e, today); }).join('') + '</div></section>';
+  function weekCard(k){
+    var mt = meta[k], w = mt.w, rel = weekRel(w, thisWeek), ttl, sub;
+    if(byDay){
+      var jr = mt.ch ? jourOf(mt.ch, w) : 0;
+      ttl = mt.ch ? mt.ch.name + ' · ' + (jr ? 'Jour ' + jr : 'Reporté') : 'Autres rencontres et événements';
+      sub = (rel ? rel + ' · ' : '') + weekRange(w);
+    } else { ttl = rel || weekLabel(w); sub = rel ? weekRange(w) : ''; }
+    var ex = byDay ? (mt.ch ? exemptHtml(calExempt(w).filter(function(it){ return it.ch.id === mt.ch.id; }), false) : '') : exemptHtml(calExempt(w), true);
+    return '<section class="wkblock"><div class="wkh"><h3>' + esc(ttl) + '</h3>' + (sub ? '<span class="muted">' + esc(sub) + '</span>' : '') + '</div><div class="mcs">' + weeks[k].map(function(e){ return calRow(e, today); }).join('') + '</div>' + ex + '</section>';
   }
   if(past.length && fut.length){
-    var nPast = past.reduce(function(n, w){ return n + weeks[w].length; }, 0);
-    out += '<button class="btn wide" data-act="calPast" aria-expanded="' + (collapse ? 'false' : 'true') + '">' + (collapse ? 'Voir les ' + past.length + ' semaine' + (past.length > 1 ? 's' : '') + ' passée' + (past.length > 1 ? 's' : '') + ' (' + nPast + ' rencontre' + (nPast > 1 ? 's' : '') + ')' : 'Masquer les semaines passées') + '</button>';
+    var nPast = past.reduce(function(n, k){ return n + weeks[k].length; }, 0), unit = byDay ? 'journée' : 'semaine';
+    out += '<button class="btn wide" data-act="calPast" aria-expanded="' + (collapse ? 'false' : 'true') + '">' + (collapse ? 'Voir les ' + past.length + ' ' + unit + (past.length > 1 ? 's' : '') + ' passée' + (past.length > 1 ? 's' : '') + ' (' + nPast + ' rencontre' + (nPast > 1 ? 's' : '') + ')' : 'Masquer les ' + unit + 's passées') + '</button>';
   }
-  if(!collapse) past.forEach(function(w){ out += weekCard(w); });
+  if(!collapse) past.forEach(function(k){ out += weekCard(k); });
   var mark = '<div class="todaymark" id="todaymark" role="separator"><span>Aujourd\'hui · ' + esc(fmtDay(today)) + '</span></div>';
   if(inRange && fut.length) out += mark;
-  fut.forEach(function(w){ out += weekCard(w); });
+  fut.forEach(function(k){ out += weekCard(k); });
   if(inRange && !fut.length && order.length) out += mark;
   return out;
 }
@@ -3389,6 +3583,7 @@ function calendarView(){
   var out = '<div class="stack">';
   var mode = ui.calMode || 'all';
   out += '<div class="chips modes" role="group" aria-label="Afficher">' + [['all', 'Tous'], ['up', 'À venir'], ['done', 'Terminés']].map(function(m){ return chip('calMode', { m:m[0] }, m[1], mode === m[0]); }).join('') + '</div>';
+  out += groupChips();
   out += calStripHtml();
   out += calFiltersHtml();
   out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
@@ -3453,11 +3648,15 @@ function champView0(){
     out += '</section>';
   } else if(tab === 'agenda'){
     var today = isoOf(new Date()), all = calEntries().filter(function(e){ return e.ch && e.ch.id === ch.id; });
-    var weeks = {}, order = [], thisWeek = weekStart(today);
+    var weeks = {}, order = [], thisWeek = weekStart(today), byDay = S.prefs.groupBy === 'day';
     all.forEach(function(e){ var w = weekStart(e.date); if(!weeks[w]){ weeks[w] = []; order.push(w); } weeks[w].push(e); });
     if(!order.length) out += '<section class="card"><p class="muted" style="margin:0">Aucune rencontre planifiée dans ce championnat. Créez-en dans Calendrier › Créer un événement.</p></section>';
+    else out += groupChips();
     order.forEach(function(w){
-      out += '<section class="card"><h3>' + weekLabel(w) + (w === thisWeek ? ' <span class="tag">cette semaine</span>' : '') + '</h3>' + weeks[w].map(function(e){ return calRow(e, today); }).join('') + '</section>';
+      var jr = jourOf(ch, w), tag = (w === thisWeek ? ' <span class="tag">cette semaine</span>' : '');
+      var head = byDay ? '<h3>' + (jr ? 'Jour ' + jr : 'Reporté') + tag + '</h3><p class="muted" style="margin:0 0 4px">' + esc(weekRange(w)) + '</p>'
+        : '<h3>' + weekLabel(w) + (jr ? ' <span class="tag up">Jour ' + jr + '</span>' : '') + tag + '</h3>';
+      out += '<section class="card">' + head + weeks[w].map(function(e){ return calRow(e, today); }).join('') + exemptHtml([{ ch:ch, ids:exemptOf(ch, w) }], false) + '</section>';
     });
   } else {
     var rows = standings(ch);
@@ -3534,7 +3733,7 @@ function relDay(date, today){
   return n > 0 ? 'Dans ' + n + ' jours' : 'Il y a ' + (-n) + ' jours';
 }
 function canPlayRole(){ return !profOn() || profGet() === 'admin'; }
-function isPastEntry(e, today){ return !!entryResult(e) || e.date < today; }
+function isPastEntry(e, today){ return !e.postponed && (!!entryResult(e) || e.date < today); }
 /* Matchs saisis sur cet appareil et non terminés qui concernent ces équipes (ou ce championnat) */
 function liveFor(ids, ch){
   return savedMatches().filter(function(it){
@@ -3549,7 +3748,7 @@ function liveHtml(list){
     var m = it.m, sm = matchSummary(m);
     function team(i){ var id = m.teams[i].clubId; return '<span class="mc-team">' + (id ? logoHtml(id, 44) : '') + '<span class="nm">' + esc(tnOf(m, i)) + '</span></span>'; }
     var fe = m.fixtureRef ? calEntry(m.fixtureRef.cid, m.fixtureRef.fid) : null;
-    return '<button class="mc live" data-act="resumeMatch" data-mid="' + esc(m.created) + '"><span class="mc-top"><span class="mc-ctx">' + esc(fe && fe.ch ? fe.ch.name : 'Match en direct') + '</span><span class="mc-b"><span class="tag live">En cours</span></span></span>' +
+    return '<button class="mc live" data-act="resumeMatch" data-mid="' + esc(m.created) + '"><span class="mc-top"><span class="mc-ctx">' + esc(fe && fe.ch ? fe.ch.name : 'Match en direct') + '</span><span class="mc-b"><span class="tag live">' + liveDot() + 'En cours</span></span></span>' +
       '<span class="mc-body">' + team(0) + '<span class="mc-mid">' + sm.w[0] + ' – ' + sm.w[1] + '</span>' + team(1) + '</span>' +
       '<span class="mc-sets">Set ' + sm.setNo + ' · ' + sm.cur[0] + ' – ' + sm.cur[1] + '</span><span class="mc-foot"><span>Reprendre la saisie</span></span></button>';
   }).join('');
@@ -3921,14 +4120,14 @@ function sheetView(){
   var sh = ui.sheet, inner = '';
   if(sh.kind === 'point'){
     var how = Object.keys(HOW).filter(function(k){ return k !== 'ace' || S.serving === sh.team; }).map(function(k){ return chip('pickHow', { how:k }, HOW[k], sh.how === k); }).join('') + chip('pickHow', { how:'oppfault' }, 'Faute adverse', false);
-    var hasWho = onCourt(sh.team).length > 0;
+    var hasWho = onCourt(sh.team).length > 0 && modeOf() === 'complet';
     inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2><div class="cols' + (hasWho ? '' : ' one') + '">' + group('Comment ?', how) +
       (hasWho ? group('Qui a marqué ?', whoChips(sh.team, sh.pid, false, sh.how) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')) : '') + '</div>';
-    if(!hasWho) inner += '<p class="hint2">Aucun joueur en jeu. Touchez un poste vide du terrain pour placer vos joueurs.</p>';
+    if(!hasWho && modeOf() === 'complet') inner += '<p class="hint2">Aucun joueur en jeu. Touchez un poste vide du terrain pour placer vos joueurs.</p>';
   } else if(sh.kind === 'fault'){
     var kinds = FAULTS.map(function(k){ return chip('pickHow', { how:k }, esc(k), sh.how === k); }).join('');
     inner = '<h2>Faute de ' + esc(tn(sh.team)) + '</h2><p class="hint2" style="margin-top:4px">Le point est donné à ' + esc(tn(1 - sh.team)) + '.</p>' +
-      '<div class="cols' + (onCourt(sh.team).length ? '' : ' one') + '">' + group('Type de faute', kinds) + (onCourt(sh.team).length ? group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')) : '') + '</div>';
+      '<div class="cols' + (onCourt(sh.team).length && modeOf() === 'complet' ? '' : ' one') + '">' + group('Type de faute', kinds) + (onCourt(sh.team).length && modeOf() === 'complet' ? group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')) : '') + '</div>';
   } else if(sh.kind === 'clubadd'){
     inner = clubAddSheet(sh);
   } else if(sh.kind === 'champteam'){
@@ -4107,12 +4306,14 @@ function sheetView(){
         '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>';
     } else {
       var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Rencontre amicale';
-      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' + formHtml(fe);
+      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' + formHtml(fe);
       if(fm){
         inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
+      } else if(fe.postponed){
+        inner += '<p class="hint2">Ce match est reporté : il ne compte pas dans le Jour de la semaine et reste à jouer. Quand la nouvelle date est connue, saisissez-la.</p><label class="f" for="fnewd">Nouvelle date</label><input type="date" id="fnewd" value="' + esc(fe.date) + '"><div class="btnrow"><button class="btn wide primary" data-act="fixResched">Replanifier à cette date</button><button class="btn wide" data-act="fixUnpost">Annuler le report</button></div>';
       } else {
         inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
-          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button></div>';
+          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button><button class="btn wide" data-act="fixPost">Reporter ce match</button></div>';
       }
       inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
         RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
@@ -4148,6 +4349,10 @@ function sheetView(){
     inner = '<h2>Charger les données de démonstration ?</h2><p class="hint2">Clubs, équipes, membres fictifs et championnats UFOLEP d\'exemple. Toutes les données actuelles de cet appareil seront remplacées. Une copie automatique est gardée : vous pourrez revenir en arrière depuis Sauvegarde.</p>' +
       (sh.err ? '<p class="hint2" style="color:var(--danger)" role="alert">' + esc(sh.err) + '</p>' : '') +
       '<div class="btnrow"><button class="btn wide danger" data-act="demoOk">Oui, charger</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'modechg'){
+    inner = '<h2>Mode de saisie</h2><p class="hint2">Le score et l\'historique du match sont conservés.</p><div class="modeopts">' + ['simple', 'normal', 'complet'].map(function(k){
+      return '<button class="modeopt' + (sh.v === k ? ' sel' : '') + '" role="radio" aria-checked="' + (sh.v === k) + '" data-act="modeChgPick" data-v="' + k + '"><span class="radio" aria-hidden="true"></span><span><b>' + MODES[k].name + '</b><small>' + MODES[k].tag + '</small></span></button>';
+    }).join('') + '</div><div class="btnrow"><button class="btn wide primary" data-act="modeChgOk"' + (sh.v === modeOf() ? ' disabled' : '') + '>Changer de mode</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'favdel'){
     var fdi = favItem(sh.k, sh.id);
     inner = '<h2>Retirer des favoris ?</h2><p class="hint2" style="font-size:17px">' + esc(fdi ? fdi.name : '') + (fdi && fdi.sub ? ' · ' + esc(fdi.sub) : '') + '</p>' +
@@ -4182,7 +4387,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['favdel','setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
+  var own = ['modechg','favdel','setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -4210,7 +4415,7 @@ function render(){
     document.body.classList.remove('hasnav'); document.body.classList.remove('hasfab');
     return;
   }
-  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'settings' ? settingsView() : ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : matchView())) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : (ui.tab === 'backup' ? backupView() : dataView())))));
+  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'settings' ? settingsView() : ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : (needsModePick() ? modePickView() : matchView()))) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : (ui.tab === 'backup' ? backupView() : dataView())))));
   var warn = ui.warn ? '<div class="banner" role="alert">' + esc(ui.warn) + '</div>' : '';
   document.getElementById('app').innerHTML = header() + '<main>' + warn + main + menuBtn() + '</main>' + (navOn() ? navHtml() : '') + (ui.xchg ? '<div class="xshade" data-act="xCancel" aria-hidden="true"></div>' : '');
   document.body.classList.toggle('hasnav', navOn());
@@ -4381,6 +4586,8 @@ document.addEventListener('click', function(e){
   if(!b || b.disabled) return;
   var act = b.dataset.act, d = b.dataset, t = parseInt(d.team, 10), sh = ui.sheet;
   if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = null; render(); return; }
+  /* Lecture seule : qui ne saisit pas le match ne peut agir sur rien (le terrain reste consultable) */
+  if(ro() && { openPoint:1, openFault:1, openSub:1, subExc:1, subCount:1, timeout:1, tcStop:1, undo:1, undoAsk:1, undoOk:1, endSetAsk:1, endSetOk:1, clock:1, serve:1, swap:1, xToggle:1, xPick:1, rot:1, injOpen:1, cardOpen:1, openLineup:1, modeChg:1, modeChgOk:1, modeGo:1, modeSel:1, hdrToggle:1 }[act]) return;
   switch(act){
     case 'slide': {
       var sn = parseInt(d.n, 10), sdir = parseInt(d.dir, 10); ui.sl = ui.sl || {};
@@ -4612,8 +4819,24 @@ document.addEventListener('click', function(e){
     case 'xCancel': ui.xchg = null; render(); break;
     case 'xPick': xPick(t, d.kind, d.v); break;
     case 'rot': manualRotate(t, parseInt(d.dir, 10)); break;
-    case 'openPoint': ui.sheet = { kind:'point', team:t }; render(); break;
-    case 'openFault': ui.sheet = { kind:'fault', team:t }; render(); break;
+    case 'openPoint':
+      if(modeOf() === 'simple') commitPoint(t, '', null);
+      else { ui.sheet = { kind:'point', team:t }; if(modeOf() === 'normal') ui.sheet.pid = ''; render(); }
+      break;
+    case 'openFault': ui.sheet = { kind:'fault', team:t }; if(modeOf() === 'normal') ui.sheet.pid = ''; render(); break;
+    case 'subCount':
+      if(!S.finished && S.subs[t] < 6){ snap(); S.subs[t]++; addEvent({ type:'sub', team:t, how:'', count:S.subs[t] }); save(); render(); }
+      break;
+    case 'modeBack': ui.showSetup = true; ui.sheet = null; render(); window.scrollTo(0, 0); break;
+    case 'modeSel': ui.modeSel = d.v; render(); break;
+    case 'modeGo':
+      if(MODES[ui.modeSel]){ S.mode = ui.modeSel; S.modeSet = true; ui.hdrOpen = false; save(); render(); window.scrollTo(0, 0); }
+      break;
+    case 'modeChg': ui.hdrOpen = false; ui.sheet = { kind:'modechg', v:modeOf() }; render(); break;
+    case 'modeChgPick': sh.v = d.v; render(); break;
+    case 'modeChgOk':
+      if(sh && MODES[sh.v]){ S.mode = sh.v; S.modeSet = true; ui.sheet = null; ui.xchg = null; save(); render(); }
+      break;
     case 'openSub': ui.sheet = S.subs[t] >= 6 ? { kind:'subask', team:t } : { kind:'sub', team:t, exc:false }; render(); break;
     case 'subExc': ui.sheet = { kind:'sub', team:sh.team, exc:true }; render(); break;
     case 'openPlayer': ui.sheet = { kind:'player', team:t, pid:d.pid }; render(); break;
@@ -4628,7 +4851,7 @@ document.addEventListener('click', function(e){
     case 'endSetOk': endSet(); break;
     case 'closeSheet': ui.sheet = null; render(); break;
     case 'pickHow':
-      if(d.how === 'oppfault' && sh.kind === 'point'){ ui.sheet = { kind:'fault', team:1 - sh.team }; render(); }
+      if(d.how === 'oppfault' && sh.kind === 'point'){ ui.sheet = { kind:'fault', team:1 - sh.team }; if(modeOf() === 'normal') ui.sheet.pid = ''; render(); }
       else { sh.how = d.how; var al = whoAllowed(sh.team, d.how); if(al && sh.pid && al.indexOf(sh.pid) < 0) delete sh.pid; tryCommit(); }
       break;
     case 'pickWho': sh.pid = d.pid; tryCommit(); break;
@@ -4750,15 +4973,26 @@ document.addEventListener('click', function(e){
     }
     case 'delChampAsk': ui.sheet = { kind:'delchamp' }; render(); break;
     case 'theme': themeSet(d.t); render(); break;
+    case 'grpBy': S.prefs.groupBy = d.g; save(); render(); break;
     case 'calMode': ui.calMode = d.m; ui.calJump = d.m !== 'done'; render(); break;
     case 'calDay': ui.calDay = d.d; if(d.d < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = d.d; render(); break;
     case 'calWeek': { var cwd = toDate(ui.calDay || isoOf(new Date())); cwd.setDate(cwd.getDate() + 7 * parseInt(d.n, 10)); ui.calDay = isoOf(cwd); if(ui.calDay < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = ui.calDay; render(); break; }
     case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; delete lc.pal; delete lc.palv; ui.msg = ''; save(); render(); } break; }
     case 'openFixture': ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break;
     case 'playFixture': startFixture(sh.cid, sh.fid); break;
+    case 'fixPost': case 'fixUnpost': {
+      var rp = calEntry(sh.cid, sh.fid);
+      if(rp){ rp.f.postponed = act === 'fixPost'; save(); }
+      ui.sheet = null; render(); break;
+    }
+    case 'fixResched': {
+      var rs = calEntry(sh.cid, sh.fid), nd = document.getElementById('fnewd').value;
+      if(rs && nd){ rs.f.date = nd; rs.f.postponed = false; save(); }
+      ui.sheet = null; render(); break;
+    }
     case 'fixRes': {
       var re1 = calEntry(sh.cid, sh.fid);
-      if(re1) setEntryResult(re1, document.getElementById('fres').value);
+      if(re1){ re1.f.postponed = false; setEntryResult(re1, document.getElementById('fres').value); }
       ui.sheet = null; render(); break;
     }
     case 'fixClear': {
