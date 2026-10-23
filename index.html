@@ -871,13 +871,13 @@ var DB = (function(){
   function walk(s, fn){
     (s.clubs || []).forEach(function(c){
       fn('club', c, s.clubs);
-      (c.members || []).forEach(function(m){ fn('member', m, c.members); });
-      (c.teams || []).forEach(function(t){ fn('team', t, c.teams); });
+      (c.members || []).forEach(function(m){ fn('member', m, c.members, c); });
+      (c.teams || []).forEach(function(t){ fn('team', t, c.teams, c); });
     });
     (s.champs || []).forEach(function(ch){
       fn('champ', ch, s.champs);
-      (ch.fixtures || []).forEach(function(f){ fn('fixture', f, ch.fixtures); });
-      (ch.matches || []).forEach(function(m){ fn('result', m, ch.matches); });
+      (ch.fixtures || []).forEach(function(f){ fn('fixture', f, ch.fixtures, ch); });
+      (ch.matches || []).forEach(function(m){ fn('result', m, ch.matches, ch); });
     });
     (s.agenda || []).forEach(function(a){ fn('agenda', a, s.agenda); });
     (s.roles || []).forEach(function(r){ fn('role', r, s.roles); });
@@ -907,7 +907,7 @@ var DB = (function(){
     set:function(k, v){ try{ sessionStorage.setItem(k, v); }catch(e){} }
   };
   return {
-    dev:dev, session:session,
+    dev:dev, session:session, walk:walk,
     /* Photographie des données connues : les changements sont comptés à partir d'ici (chargement, restauration) */
     rebase:function(s){
       known = {};
@@ -935,7 +935,7 @@ var DB = (function(){
     /* Lecture */
     find:function(coll, id){
       var hit = null;
-      walk(S, function(c, o, arr){ if(!hit && c === coll && o && o.id === id) hit = { o:o, arr:arr }; });
+      walk(S, function(c, o, arr, par){ if(!hit && c === coll && o && o.id === id) hit = { o:o, arr:arr, parent:par }; });
       return hit;
     },
     list:function(coll){
@@ -965,6 +965,268 @@ var DB = (function(){
     pending:function(s){ return ((s || S).sync && (s || S).sync.out || []).length; }
   };
 })();
+/* ---------- Connexion à Supabase (compte en ligne et synchronisation) ----------
+   Hors ligne, l'appli marche comme avant. Connectée, elle envoie la file des changements du module DB
+   et reçoit les données du serveur, qui reste le seul juge des droits. */
+var SB = (function(){
+  var URL = 'https://yqaftcczrbqaljpoztvv.supabase.co', ANON = 'sb_publishable_Jj3SueIjwfKRBj4E7Y8RpQ_KrhFqjZG', SESKEY = 'volley-sb-session-v1';
+  var busy = false, timer = null, st = { msg:'' };
+  var META = ['cb', 'ca', 'ub', 'ua'];
+  function now(){ return Date.now() / 1000; }
+  function ses(){ return DB.dev.getJson(SESKEY); }
+  function setSes(o){ if(o) DB.dev.set(SESKEY, JSON.stringify(o)); else DB.dev.del(SESKEY); }
+  function pack(j){ return { access_token:j.access_token, refresh_token:j.refresh_token, expires_at:j.expires_at || (now() + (j.expires_in || 3600)), email:(j.user && j.user.email) || '', uid:(j.user && j.user.id) || '' }; }
+  function errTxt(j, d){ return (j && (j.msg || j.error_description || j.message || j.error)) || d || 'Erreur'; }
+  function notify(){ try{ if(!(ui.sheet && (ui.sheet.draft || ui.sheet.rows))) render(); }catch(e){} }
+  function ensure(){
+    var s = ses();
+    if(!s) return Promise.resolve(null);
+    if(s.expires_at - 60 > now()) return Promise.resolve(s);
+    return fetch(URL + '/auth/v1/token?grant_type=refresh_token', { method:'POST', headers:{ apikey:ANON, 'Content-Type':'application/json' }, body:JSON.stringify({ refresh_token:s.refresh_token }) })
+      .then(function(r){ return r.json().then(function(j){
+        if(r.ok && j.access_token){ var n = pack(j); setSes(n); return n; }
+        setSes(null); st.msg = 'Session expirée : reconnectez-vous.'; return null;
+      }); }, function(){ return s; });
+  }
+  function req(method, path, body, extra){
+    return ensure().then(function(s){
+      var h = { apikey:ANON, Authorization:'Bearer ' + (s ? s.access_token : ANON), 'Content-Type':'application/json' };
+      Object.keys(extra || {}).forEach(function(k){ h[k] = extra[k]; });
+      return fetch(URL + path, { method:method, headers:h, body:body === undefined ? undefined : JSON.stringify(body) }).then(function(r){
+        return r.text().then(function(t){ var j = null; try{ j = t ? JSON.parse(t) : null; }catch(e){} return { ok:r.ok, status:r.status, json:j }; });
+      });
+    });
+  }
+  function all(table, order){
+    var out = [], off = 0;
+    function next(){
+      return req('GET', '/rest/v1/' + table + '?select=*&order=' + order + '.asc', undefined, { Range:off + '-' + (off + 999) }).then(function(r){
+        if(!r.ok) throw new Error(table + ' : ' + errTxt(r.json, r.status));
+        out = out.concat(r.json || []);
+        if((r.json || []).length >= 1000){ off += 1000; return next(); }
+        return out;
+      });
+    }
+    return next();
+  }
+  function strip(o, skip){ var d = {}; Object.keys(o).forEach(function(k){ if(skip.indexOf(k) < 0 && META.indexOf(k) < 0) d[k] = o[k]; }); return d; }
+  function meta(o, r){ META.forEach(function(k){ if(r[k]) o[k] = r[k]; }); return o; }
+  function nn(v){ return v == null ? '' : v; }
+  /* local -> lignes de la base */
+  function rowsOf(c, o, parent){
+    var pid = parent ? parent.id : '';
+    if(c === 'club') return [['clubs', { id:o.id, name:o.name, data:strip(o, ['id', 'name', 'members', 'teams', 'squad']) }]];
+    if(c === 'team') return [['teams', { id:o.id, club_id:pid, name:o.name, member_ids:o.memberIds || [], data:strip(o, ['id', 'name', 'memberIds', 'squad']) }]];
+    if(c === 'member'){
+      var l = [['members', { id:o.id, club_id:pid, nom:o.nom || '', prenom:o.prenom || '', lic_season:o.licSeason == null || o.licSeason === '' ? null : o.licSeason, data:strip(o, ['id', 'nom', 'prenom', 'licSeason', 'licence', 'age', 'photo', 'photoPublic']) }]];
+      var priv = true; try{ priv = canSeePriv(o); }catch(e){}
+      if(priv) l.push(['member_private', { member_id:o.id, licence:o.licence || '', age:(o.age === '' || o.age == null) ? null : parseInt(o.age, 10) }]);
+      if(o.photo || o.photoPublic) l.push(['member_photos', { member_id:o.id, photo:o.photo || null, is_public:!!o.photoPublic }]);
+      return l;
+    }
+    if(c === 'champ') return [['champs', { id:o.id, name:o.name, season_id:o.seasonId || null, club_ids:o.clubIds || [], data:strip(o, ['id', 'name', 'seasonId', 'clubIds', 'fixtures', 'matches']) }]];
+    if(c === 'fixture') return [['fixtures', { id:o.id, champ_id:pid, home:o.home, away:o.away, date:o.date || null, time:o.time || '', place:o.place || '', postponed:!!o.postponed, match_id:o.matchId || null, locked:o.locked || null, compo:o.compo || {}, data:strip(o, ['id', 'home', 'away', 'date', 'time', 'place', 'postponed', 'matchId', 'locked', 'compo']) }]];
+    if(c === 'result') return [['results', { id:o.id, champ_id:pid, fid:o.fid || null, home:o.home, away:o.away, home_sets:o.hs, away_sets:o['as'], data:strip(o, ['id', 'home', 'away', 'hs', 'as', 'fid']) }]];
+    if(c === 'agenda') return [['agenda', { id:o.id, kind:o.kind === 'event' ? 'event' : 'amical', title:o.title || '', home:o.home || null, away:o.away || null, date:o.date || null, time:o.time || '', place:o.place || '', postponed:!!o.postponed, result:o.result || null, locked:o.locked || null, compo:o.compo || {}, data:strip(o, ['id', 'kind', 'title', 'home', 'away', 'date', 'time', 'place', 'postponed', 'result', 'locked', 'compo']) }]];
+    if(c === 'role') return [['roles', { id:o.id, mid:o.mid, role:o.role, cid:o.cid || null, tid:o.tid || null, ref:o.ref || null, state:o.state || 'actif', code:o.code || null, exp:o.exp || null, data:{ by:o.by || '', date:o.date || '' } }]];
+    return [];
+  }
+  var TABLE = { club:'clubs', team:'teams', member:'members', champ:'champs', fixture:'fixtures', result:'results', agenda:'agenda', role:'roles' };
+  var ORDER = ['club', 'team', 'member', 'champ', 'fixture', 'result', 'agenda', 'role'];
+  /* lignes de la base -> local */
+  function build(R){
+    var L = { club:[], team:[], member:[], champ:[], fixture:[], result:[], agenda:[], role:[], request:[] }, mp = {}, mph = {};
+    R.mp.forEach(function(r){ mp[r.member_id] = r; });
+    R.mph.forEach(function(r){ mph[r.member_id] = r; });
+    R.clubs.forEach(function(r){ L.club.push({ o:meta(Object.assign({}, r.data, { id:r.id, name:r.name, members:[], teams:[] }), r), pid:'' }); });
+    R.teams.forEach(function(r){ L.team.push({ o:meta(Object.assign({}, r.data, { id:r.id, name:r.name, memberIds:r.member_ids || [], squad:null }), r), pid:r.club_id }); });
+    R.members.forEach(function(r){
+      var p = mp[r.id], ph = mph[r.id], o = Object.assign({}, r.data, { id:r.id, nom:r.nom, prenom:r.prenom, licence:p ? nn(p.licence) : '', age:p && p.age != null ? p.age : '' });
+      if(r.lic_season != null) o.licSeason = r.lic_season;
+      if(ph){ if(ph.photo) o.photo = ph.photo; o.photoPublic = !!ph.is_public; }
+      L.member.push({ o:meta(o, r), pid:r.club_id });
+    });
+    R.champs.forEach(function(r){ L.champ.push({ o:meta(Object.assign({}, r.data, { id:r.id, name:r.name, seasonId:r.season_id || undefined, clubIds:r.club_ids || [], fixtures:[], matches:[] }), r), pid:'' }); });
+    R.fixtures.forEach(function(r){
+      var o = Object.assign({}, r.data, { id:r.id, date:r.date || '', time:r.time || '', place:r.place || '', home:r.home, away:r.away, matchId:r.match_id || null });
+      if(r.postponed) o.postponed = true;
+      if(r.locked) o.locked = r.locked;
+      if(r.compo && Object.keys(r.compo).length) o.compo = r.compo;
+      L.fixture.push({ o:meta(o, r), pid:r.champ_id });
+    });
+    R.results.forEach(function(r){ L.result.push({ o:meta(Object.assign({}, r.data, { id:r.id, home:r.home, away:r.away, hs:r.home_sets, 'as':r.away_sets, fid:r.fid || undefined }), r), pid:r.champ_id }); });
+    R.agenda.forEach(function(r){
+      var o = Object.assign({}, r.data, { id:r.id, kind:r.kind === 'event' ? 'event' : 'match', date:r.date || '', time:r.time || '', place:r.place || '' });
+      if(r.kind === 'event') o.title = r.title; else { o.home = r.home; o.away = r.away; o.result = r.result || null; }
+      if(r.postponed) o.postponed = true;
+      if(r.locked) o.locked = r.locked;
+      if(r.compo && Object.keys(r.compo).length) o.compo = r.compo;
+      L.agenda.push({ o:meta(o, r), pid:'' });
+    });
+    R.roles.forEach(function(r){
+      var o = { id:r.id, mid:r.mid, role:r.role, cid:r.cid || '', tid:r.tid || '', state:r.state, by:(r.data && r.data.by) || '', date:(r.data && r.data.date) || (r.ca || '').slice(0, 10) };
+      if(r.ref) o.ref = r.ref; if(r.code) o.code = r.code; if(r.exp) o.exp = r.exp;
+      L.role.push({ o:meta(o, r), pid:'' });
+    });
+    R.requests.forEach(function(r){
+      L.request.push({ o:meta({ id:r.id, dev:r.dev || '', prenom:r.prenom, nom:r.nom, licence:r.licence, cid:r.cid, mid:r.mid || '', age:r.age == null ? null : r.age, ageOk:r.data && r.data.ageOk !== undefined ? r.data.ageOk : null, date:(r.ca || '').slice(0, 10), state:r.state }, r), pid:'' });
+    });
+    return L;
+  }
+  /* fusion : le serveur fait foi, sauf pour ce qui attend d'être envoyé */
+  function merge(L){
+    var pend = {}, prev = {}, LI = {}, loc = {}, M = {}, ids = [];
+    S.sync.out.forEach(function(x){ pend[x.c + ':' + x.id] = x.op; });
+    ((S.sb && S.sb.ids) || []).forEach(function(k){ prev[k] = 1; });
+    DB.walk(S, function(c, o, arr, parent){ (loc[c] = loc[c] || []).push({ o:o, pid:parent ? parent.id : '' }); (LI[c] = LI[c] || {})[o.id] = loc[c][loc[c].length - 1]; });
+    Object.keys(L).forEach(function(c){
+      var keys = {}; M[c] = [];
+      L[c].forEach(function(x){
+        var k = c + ':' + x.o.id; keys[k] = 1; ids.push(k);
+        var p = pend[k];
+        if(p === 'del') return;
+        var l = LI[c] && LI[c][x.o.id];
+        if((p === 'add' || p === 'mod') && l){ M[c].push(l); return; }
+        if(c === 'team' && l) x.o.squad = l.o.squad || null;
+        M[c].push(x);
+      });
+      (loc[c] || []).forEach(function(l){
+        var k = c + ':' + l.o.id;
+        if(keys[k]) return;
+        if(prev[k] && !pend[k]) return;
+        M[c].push(l);
+      });
+    });
+    var cm = {}, hm = {};
+    S.clubs = M.club.map(function(x){ x.o.members = []; x.o.teams = []; cm[x.o.id] = x.o; return x.o; });
+    M.team.forEach(function(x){ if(cm[x.pid]) cm[x.pid].teams.push(x.o); });
+    M.member.forEach(function(x){ if(cm[x.pid]) cm[x.pid].members.push(x.o); });
+    S.champs = M.champ.map(function(x){ x.o.fixtures = []; x.o.matches = []; hm[x.o.id] = x.o; return x.o; });
+    M.fixture.forEach(function(x){ if(hm[x.pid]) hm[x.pid].fixtures.push(x.o); });
+    M.result.forEach(function(x){ if(hm[x.pid]) hm[x.pid].matches.push(x.o); });
+    S.agenda = M.agenda.map(function(x){ return x.o; });
+    S.roles = M.role.map(function(x){ return x.o; });
+    S.requests = M.request.map(function(x){ return x.o; });
+    S.sb = S.sb || {}; S.sb.ids = ids;
+  }
+  function pull(){
+    return ensure().then(function(s){
+      if(!s) return false;
+      var T = [['settings', 'k'], ['clubs', 'id'], ['teams', 'id'], ['members', 'id'], ['member_private', 'member_id'], ['member_photos', 'member_id'], ['champs', 'id'], ['fixtures', 'id'], ['results', 'id'], ['agenda', 'id'], ['roles', 'id'], ['requests', 'id'], ['profiles', 'user_id']];
+      return Promise.all(T.map(function(t){ return all(t[0], t[1]); })).then(function(a){
+        var R = { settings:a[0], clubs:a[1], teams:a[2], members:a[3], mp:a[4], mph:a[5], champs:a[6], fixtures:a[7], results:a[8], agenda:a[9], roles:a[10], requests:a[11] }, prof = a[12];
+        merge(build(R));
+        var set = {}; R.settings.forEach(function(r){ set[r.k] = r.v; });
+        S.adminId = typeof set.admin_id === 'string' ? set.admin_id : '';
+        if(typeof set.lic_fin === 'string') S.licFin = set.lic_fin;
+        if(Array.isArray(set.seasons) && set.seasons.length){ S.seasons = set.seasons; if(!S.seasons.some(function(x){ return x.id === S.season; })) S.season = S.seasons[S.seasons.length - 1].id; }
+        if(prof.length && prof[0].member_id && findMember(prof[0].member_id)) meSet(prof[0].member_id);
+        S.sb.at = new Date().toISOString(); S.sb.email = s.email;
+        DB.rebase(S);
+        st.msg = ''; save(); return true;
+      });
+    }).catch(function(e){ st.msg = (navigator.onLine === false) ? 'Hors ligne : les changements seront envoyés au retour du réseau.' : 'Synchronisation impossible : ' + e.message; return false; });
+  }
+  function push(){
+    if(!S.sync.out.length) return Promise.resolve(false);
+    return ensure().then(function(s){
+      if(!s) return false;
+      var list = S.sync.out.slice().sort(function(a, b){ return (a.op === 'del') - (b.op === 'del') || ORDER.indexOf(a.c) - ORDER.indexOf(b.c); });
+      var rejected = 0, stop = false;
+      function done(x){ S.sync.out = S.sync.out.filter(function(y){ return !(y.c === x.c && y.id === x.id && y.op === x.op && y.at === x.at); }); }
+      function one(i){
+        if(i >= list.length || stop) return Promise.resolve();
+        var x = list[i], p;
+        if(x.op === 'del') p = req('DELETE', '/rest/v1/' + TABLE[x.c] + '?id=eq.' + encodeURIComponent(x.id), undefined, { Prefer:'return=minimal' }).then(function(r){ return [r]; });
+        else {
+          var h = DB.find(x.c, x.id);
+          if(!h || !TABLE[x.c]){ done(x); return one(i + 1); }
+          var parent = null; DB.walk(S, function(c, o, arr, par){ if(c === x.c && o === h.o) parent = par; });
+          var rows = rowsOf(x.c, h.o, parent), res = [];
+          p = rows.reduce(function(chain, rw){
+            return chain.then(function(){ return req('POST', '/rest/v1/' + rw[0] + '?on_conflict=' + (rw[0] === 'member_private' || rw[0] === 'member_photos' ? 'member_id' : 'id'), rw[1], { Prefer:'resolution=merge-duplicates,return=minimal' }).then(function(r){ res.push(r); }); });
+          }, Promise.resolve()).then(function(){ return res; });
+        }
+        return p.then(function(res){
+          var bad = res.filter(function(r){ return !r.ok; });
+          if(bad.some(function(r){ return r.status === 401 || r.status >= 500; })){ stop = true; st.msg = 'Envoi interrompu, nouvel essai plus tard.'; return; }
+          if(bad.length){ rejected++; st.msg = 'Le serveur a refusé une modification : ' + errTxt(bad[0].json, bad[0].status); }
+          done(x); return one(i + 1);
+        });
+      }
+      return one(0).then(function(){ save(); if(rejected) return pull().then(function(){ return true; }); return true; });
+    }).catch(function(){ st.msg = 'Hors ligne : les changements seront envoyés au retour du réseau.'; return false; });
+  }
+  function sync(){
+    if(busy || !ses()) return Promise.resolve(false);
+    busy = true;
+    return push().then(pull).then(function(r){ busy = false; notify(); return r; }, function(){ busy = false; });
+  }
+  return {
+    status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length, busy:busy, msg:st.msg }; },
+    kick:function(){ if(!ses() || !S.sync.out.length) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
+    sync:sync,
+    start:function(){
+      if(!ses()) return;
+      var go = function(){ if(!(matchStarted() && !S.finished)) sync(); };
+      go();
+      window.addEventListener('online', go);
+      document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible') go(); });
+    },
+    sendCode:function(email){
+      return fetch(URL + '/auth/v1/otp', { method:'POST', headers:{ apikey:ANON, 'Content-Type':'application/json' }, body:JSON.stringify({ email:email, create_user:true }) })
+        .then(function(r){ return r.text().then(function(t){ var j = null; try{ j = JSON.parse(t); }catch(e){} return r.ok ? { ok:true } : { ok:false, msg:errTxt(j, 'Envoi impossible') }; }); }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
+    },
+    verify:function(email, code){
+      return fetch(URL + '/auth/v1/verify', { method:'POST', headers:{ apikey:ANON, 'Content-Type':'application/json' }, body:JSON.stringify({ type:'email', email:email, token:String(code).replace(/\s/g, '') }) })
+        .then(function(r){ return r.json().then(function(j){
+          if(r.ok && j.access_token){ setSes(pack(j)); return sync().then(function(){ return { ok:true }; }); }
+          return { ok:false, msg:errTxt(j, 'Code incorrect ou expiré') };
+        }); }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
+    },
+    claim:function(member, code){
+      return req('POST', '/rest/v1/rpc/v2c_claim_admin', { p_member:member, p_code:String(code).trim() }).then(function(r){
+        if(!r.ok) return { ok:false, msg:errTxt(r.json, 'Refusé') };
+        return pull().then(function(){ return { ok:true }; });
+      }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
+    },
+    logout:function(){ setSes(null); st.msg = ''; },
+    setting:function(k, v){ if(!ses()) return; req('POST', '/rest/v1/settings?on_conflict=k', { k:k, v:v }, { Prefer:'resolution=merge-duplicates,return=minimal' }).then(function(r){ if(!r.ok){ st.msg = 'Réglage refusé : ' + errTxt(r.json, r.status); notify(); } }, function(){}); }
+  };
+})();
+function sbLoginSheet(sh){
+  var dr = sh.draft, dis = dr.busy ? ' disabled' : '', out = '<h2>Se connecter</h2>';
+  if(dr.step === 'code'){
+    out += '<p class="hint2" style="margin-top:4px">Un code à 6 chiffres vient d\'être envoyé à <b>' + esc(dr.email) + '</b>. Saisissez-le ci-dessous (regardez aussi les courriers indésirables).</p>' +
+      rsField('sb_code', 'Code reçu par e-mail', 'code', dr.code) + sheetErr(sh) +
+      '<div class="btnrow"><button class="btn wide primary" data-act="sbVerify"' + dis + '>' + (dr.busy ? 'Vérification…' : 'Valider') + '</button><button class="btn wide" data-act="sbBack">Changer d\'adresse</button></div>';
+  } else {
+    out += '<p class="hint2" style="margin-top:4px">Saisissez votre adresse e-mail : vous recevrez un code pour vous connecter. Pas de mot de passe à retenir.</p>' +
+      rsField('sb_email', 'Adresse e-mail', 'email', dr.email, 'email') + sheetErr(sh) +
+      '<div class="btnrow"><button class="btn wide primary" data-act="sbSend"' + dis + '>' + (dr.busy ? 'Envoi…' : 'Recevoir un code') + '</button></div>';
+  }
+  return out;
+}
+function sbClaimSheet(sh){
+  var dr = sh.draft, mc = dr.mcid ? clubById(dr.mcid) : null;
+  return '<h2>Devenir administrateur</h2><p class="hint2" style="margin-top:4px">Réservé à la première installation : saisissez le code de première connexion fourni par le propriétaire du projet.</p>' +
+    rsSelect('sc_c', 'Votre club', 'mcid', clubItems(S.clubs), dr.mcid, '— Choisir —') +
+    rsSelect('sc_m', 'Vous', 'mid', memberItems(mc), dr.mid, mc ? '— Choisir —' : 'Choisissez d\'abord le club') +
+    rsField('sc_code', 'Code de première connexion', 'code', dr.code) + sheetErr(sh) +
+    '<div class="btnrow"><button class="btn wide primary" data-act="sbClaimOk"' + (dr.busy ? ' disabled' : '') + '>Valider</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+}
+function sbCardHtml(){
+  var s = SB.status(), out = '<section class="card"><h2>Compte en ligne</h2>';
+  if(!s.logged){
+    return out + '<p class="muted" style="margin:6px 0 0">Connectez-vous pour retrouver vos données, vos rôles et les mises à jour du club sur tous vos appareils. Sans connexion, l\'application continue de fonctionner sur cet appareil.</p><div class="btnrow"><button class="btn wide primary" data-act="sbOpen">Se connecter</button></div></section>';
+  }
+  out += '<p class="muted" style="margin:6px 0 0">Connecté : <b>' + esc(s.email) + '</b><br>' + (s.at ? 'Dernière synchronisation : ' + esc(new Date(s.at).toLocaleString('fr-FR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })) : 'Pas encore synchronisé') +
+    (s.pending ? ' · ' + s.pending + ' changement' + (s.pending > 1 ? 's' : '') + ' à envoyer' : '') + '</p>' + (s.msg ? '<p class="hint2">' + esc(s.msg) + '</p>' : '') +
+    '<div class="btnrow"><button class="btn wide primary" data-act="sbSync"' + (s.busy ? ' disabled' : '') + '>' + (s.busy ? 'Synchronisation…' : 'Synchroniser maintenant') + '</button>' +
+    (!S.adminId ? '<button class="btn wide" data-act="sbClaimOpen">Je suis l\'administrateur (code de première connexion)</button>' : '') +
+    '<button class="btn wide" data-act="sbOut">Se déconnecter</button></div></section>';
+  return out;
+}
 var KEY = 'volley-match-v1';
 var HOW = { attack:'Attaque', block:'Bloc', ace:'Service gagnant', relance:'Relance' };
 var FAULTS = ['Filet','Ballon sorti','Double touche','Quatre touches','Faute de service','Faute de rotation','Pied sur la ligne','Autre'];
@@ -1017,7 +1279,7 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], sync:{ out:[] }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
     prefs:{ schema:true, table:false, players:false, sheet:false }
   };
 }
@@ -1034,6 +1296,7 @@ function migrate(s){
   if(!s.roles) s.roles = [];
   if(!s.requests) s.requests = [];
   if(!s.sync || !s.sync.out) s.sync = { out:[] };
+  if(!s.sb) s.sb = { ids:[], at:'', email:'' };
   if(!s.licFin) s.licFin = '07-15';
   ensureSeasons(s);
   if(s.fixtureRef === undefined) s.fixtureRef = null;
@@ -1086,7 +1349,7 @@ function syncSquads(){
   });
 }
 function save(){
-  try{ syncSquads(); DB.track(S); DB.dev.set(KEY, JSON.stringify(S)); if(ui.warn) ui.warn = ''; }
+  try{ syncSquads(); DB.track(S); DB.dev.set(KEY, JSON.stringify(S)); if(ui.warn) ui.warn = ''; SB.kick(); }
   catch(e){ ui.warn = 'Enregistrement impossible : l\'espace de stockage de l\'appareil est plein. Faites une sauvegarde puis supprimez des photos ou d\'anciens matchs.'; }
 }
 function switchClub(t, newId){
@@ -1737,6 +2000,7 @@ function settingsView(){
   if(can('settings')) out += '<section class="card"><h2>Données</h2><div class="backupbox' + (bk.warn ? ' warn' : '') + '" style="margin:10px 0 0"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>' +
     '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, données officielles, cohérence…</button></div></section>';
   if(can('licFin')) out += '<section class="card"><h2>Fin de saison des licences</h2><p class="muted" style="margin:6px 0 0">Chaque année à cette date, le président peut démarrer une nouvelle saison de licences.</p><label class="f" for="licfin">Date de fin de saison</label><input type="date" id="licfin" data-bind="licfin" value="2000-' + esc(S.licFin || '07-15') + '"></section>';
+  out += sbCardHtml();
   out += '<section class="card"><h2>Apparence</h2><div class="chips modes" style="margin-top:10px">' +
     chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
     '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
@@ -2354,7 +2618,7 @@ function loadMatch(created){
 }
 function keepShared(){
   return { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(x){ return x.slice(); }), cfg:S.cfg,
-    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, licFin:S.licFin, sync:S.sync };
+    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, licFin:S.licFin, sync:S.sync, sb:S.sb };
 }
 function resetForNew(){
   stopClock(); archiveCurrent();
@@ -4798,6 +5062,8 @@ function sheetView(){
         (fm ? '<button class="btn wide" data-act="fixClearAsk">Effacer le résultat</button>' : '') +
         '<button class="btn wide danger" data-act="fixDelAsk">Supprimer du calendrier</button></div>';
     }
+  } else if(sh.kind === 'sblogin'){ inner = sbLoginSheet(sh);
+  } else if(sh.kind === 'sbclaim'){ inner = sbClaimSheet(sh);
   } else if(sh.kind === 'desig'){ inner = desigSheet(sh);
   } else if(sh.kind === 'compo'){ inner = compoSheet(sh);
   } else if(sh.kind === 'validfix'){
@@ -4883,7 +5149,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
+  var own = ['sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -5572,6 +5838,44 @@ document.addEventListener('click', function(e){
     case 'calWeek': { var cwd = toDate(ui.calDay || isoOf(new Date())); cwd.setDate(cwd.getDate() + 7 * parseInt(d.n, 10)); ui.calDay = isoOf(cwd); if(ui.calDay < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = ui.calDay; render(); break; }
     case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; delete lc.pal; delete lc.palv; ui.msg = ''; save(); render(); } break; }
     case 'openFixture': ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break;
+    case 'sbOpen': ui.sheet = { kind:'sblogin', draft:{ step:'email', email:'', code:'' }, err:'' }; render(); break;
+    case 'sbBack': sh.draft.step = 'email'; sh.draft.code = ''; sh.err = ''; render(); break;
+    case 'sbSend': {
+      var q_em = (sh.draft.email || '').trim();
+      if(!/^\S+@\S+\.\S+$/.test(q_em)){ sh.err = 'Saisissez une adresse e-mail valide.'; render(); break; }
+      sh.err = ''; sh.draft.busy = true; render();
+      SB.sendCode(q_em).then(function(r){
+        if(!ui.sheet || ui.sheet.kind !== 'sblogin') return;
+        ui.sheet.draft.busy = false;
+        if(r.ok){ ui.sheet.draft.email = q_em; ui.sheet.draft.step = 'code'; ui.sheet.err = ''; } else ui.sheet.err = r.msg;
+        render();
+      });
+      break;
+    }
+    case 'sbVerify': {
+      if(!(sh.draft.code || '').trim()){ sh.err = 'Saisissez le code reçu.'; render(); break; }
+      sh.err = ''; sh.draft.busy = true; render();
+      SB.verify(sh.draft.email, sh.draft.code).then(function(r){
+        if(!ui.sheet || ui.sheet.kind !== 'sblogin') return;
+        if(r.ok){ ui.sheet = null; ui.msg = 'Connecté.'; } else { ui.sheet.draft.busy = false; ui.sheet.err = r.msg; }
+        render();
+      });
+      break;
+    }
+    case 'sbSync': SB.sync().then(function(){ render(); }); render(); break;
+    case 'sbOut': SB.logout(); render(); break;
+    case 'sbClaimOpen': ui.sheet = { kind:'sbclaim', draft:{ mcid:'', mid:'', code:'' }, err:'' }; render(); break;
+    case 'sbClaimOk': {
+      if(!sh.draft.mid){ sh.err = 'Choisissez votre nom dans la liste.'; render(); break; }
+      if(!(sh.draft.code || '').trim()){ sh.err = 'Saisissez le code.'; render(); break; }
+      sh.err = ''; sh.draft.busy = true; render();
+      SB.claim(sh.draft.mid, sh.draft.code).then(function(r){
+        if(!ui.sheet || ui.sheet.kind !== 'sbclaim') return;
+        if(r.ok){ ui.sheet = null; ui.msg = 'Vous êtes administrateur.'; } else { ui.sheet.draft.busy = false; ui.sheet.err = r.msg; }
+        render();
+      });
+      break;
+    }
     case 'fixBack': ui.sheet = { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
     case 'desigOpen': ui.sheet = { kind:'desig', cid:sh.cid, fid:sh.fid, role:d.role, q:'', ext:false }; render(); break;
     case 'desigExt': sh.ext = !sh.ext; sh.q = ''; ui.focus = sh.ext ? 'dq' : null; render(); break;
@@ -5826,13 +6130,14 @@ document.addEventListener('input', function(e){
         else if(q_k === 'role'){ if(!q_dr.cid) q_dr.cid = q_dr.mcid; q_dr.tid = ''; render(); }
         else if(q_k === 'cid'){ q_dr.tid = ''; render(); }
       } else if(ui.sheet.kind === 'testas' && q_k === 'mcid'){ q_dr.mid = ''; render(); }
+      else if(ui.sheet.kind === 'sbclaim' && q_k === 'mcid'){ q_dr.mid = ''; render(); }
     }
     return;
   }
   else if(bind === 'licclub'){ if(ui.sheet){ ui.sheet.cid = v; render(); } return; }
   else if(bind === 'photopub'){ var q_pm = meInfo(); if(q_pm && !meTest()){ q_pm.m.photoPublic = !!e.target.checked; save(); } return; }
   else if(bind === 'emfpub'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft.photoPublic = !!e.target.checked; return; }
-  else if(bind === 'licfin'){ if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ S.licFin = v.slice(5); save(); } return; }
+  else if(bind === 'licfin'){ if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ S.licFin = v.slice(5); save(); SB.setting('lic_fin', S.licFin); } return; }
   else if(bind === 'emf'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
   else if(bind === 'ncname'){ ui.newClub.name = v; return; }
   else if(bind === 'evf'){ if(ui.ev){ ui.ev[ds.k] = v; if(ds.k === 'a' || ds.k === 'b') render(); } return; }
@@ -5980,6 +6285,7 @@ render();
 if(navY){ window.scrollTo(0, navY); }
 window.addEventListener('scroll', function(){ if(ui.tab !== 'menu') navSave(); }, { passive:true });
 if(FRESH && location.protocol !== 'file:'){ fetchDemo(function(ok){ if(ok){ render(); } }); }
+SB.start();
 ensurePalettes();   /* palettes de couleurs des logos déjà enregistrés */
 })();
 </script>
