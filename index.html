@@ -907,7 +907,7 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
     prefs:{ schema:true, table:false, players:false, sheet:false }
   };
 }
@@ -921,6 +921,9 @@ function migrate(s){
     (c.matches || []).forEach(function(m){ if(m.ref === undefined) m.ref = null; if(m.sets === undefined) m.sets = null; if(!m.source) m.source = 'manual'; });
   });
   if(!s.agenda) s.agenda = [];
+  if(!s.roles) s.roles = [];
+  if(!s.requests) s.requests = [];
+  if(!s.licFin) s.licFin = '07-15';
   ensureSeasons(s);
   if(s.fixtureRef === undefined) s.fixtureRef = null;
   if(s.prepared === undefined) s.prepared = (s.events.length > 0 || s.sets.length > 0 || s.teams.some(function(t){ return t.players.length > 0; }));
@@ -1191,30 +1194,144 @@ function prevBtnHtml(pv){
 /* ---------- Profils (administrateur principal / licencié / visiteur) ----------
    Le profil admin principal est un licencié désigné dans les données (S.adminId). S'il existe, un écran de choix
    s'affiche à chaque lancement ; le type choisi est gardé sur l'appareil. Pour l'instant, il ne change que l'identité affichée. */
-var PROFKEY = 'volley-profile-v1', PROFS = [['admin', 'Administrateur principal'], ['licencie', 'Licencié'], ['visiteur', 'Visiteur']];
+var PROFKEY = 'volley-profile-v1', MEKEY = 'volley-me-v1', TESTKEY = 'volley-test-v1', DEVKEY = 'volley-dev-v1';
+var ROLES = [['admin', 'Administrateur'], ['fede', 'Gestionnaire fédération'], ['pres', 'Président de club'], ['rclub', 'Responsable de club'], ['requ', 'Responsable d\'équipe'], ['arbitre', 'Arbitre'], ['compteur', 'Compteur'], ['capitaine', 'Capitaine'], ['licencie', 'Licencié'], ['visiteur', 'Visiteur']];
+var PROFS = ROLES;
+function lsGet(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
+function lsSet(k, v){ try{ if(v) localStorage.setItem(k, v); else localStorage.removeItem(k); }catch(e){} }
+function devId(){ var v = lsGet(DEVKEY); if(!v){ v = 'd' + Math.random().toString(36).slice(2, 10); lsSet(DEVKEY, v); } return v; }
 function adminInfo(){ return S.adminId ? findMember(S.adminId) : null; }
-function profOn(){ return !!adminInfo(); }
-function profGet(){ try{ var v = localStorage.getItem(PROFKEY); return PROFS.some(function(p){ return p[0] === v; }) ? v : 'admin'; }catch(e){ return 'admin'; } }
+/* Personne de cet appareil (licencié). Sans serveur, c'est un choix local ; avec les comptes en ligne, ce sera la personne connectée. */
+function meReal(){
+  var v = lsGet(MEKEY);
+  if(v === '-') return '';
+  if(v && findMember(v)) return v;
+  return (S.adminId && findMember(S.adminId)) ? S.adminId : '';
+}
+function meTest(){ var v = lsGet(TESTKEY), r = meReal(); return (v && r && r === S.adminId && findMember(v)) ? v : ''; }
+function meGet(){ return meTest() || meReal(); }
+function meInfo(){ var id = meGet(); return id ? findMember(id) : null; }
+function meSet(v){ lsSet(MEKEY, v || '-'); }
+function profOn(){ var a = availRoles(); return !!a && a.length > 1; }
+function myRoles(){ var me = meGet(); return (S.roles || []).filter(function(r){ return r.mid === me && r.state !== 'invite'; }); }
+/* Rôles disponibles pour la personne de l'appareil. null = installation sans administrateur : tout est ouvert. */
+function availRoles(){
+  var f = meInfo();
+  if(!f) return adminInfo() ? ['visiteur'] : null;
+  var out = ['visiteur', 'licencie'];
+  if(S.adminId === f.m.id) out.push('admin');
+  myRoles().forEach(function(r){ if(out.indexOf(r.role) < 0) out.push(r.role); });
+  return ROLES.map(function(r){ return r[0]; }).filter(function(k){ return out.indexOf(k) >= 0; });
+}
+function profGet(){
+  var av = availRoles();
+  if(av === null) return 'admin';
+  var v = lsGet(PROFKEY);
+  if(av.indexOf(v) >= 0) return v;
+  var top = av.filter(function(k){ return k !== 'visiteur' && k !== 'licencie'; })[0];
+  return top || (av.indexOf('licencie') >= 0 ? 'licencie' : 'visiteur');
+}
 function profSet(v){ try{ localStorage.setItem(PROFKEY, v); sessionStorage.setItem('volley-profile-ok', '1'); }catch(e){} }
 function profAsked(){ try{ return sessionStorage.getItem('volley-profile-ok') === '1'; }catch(e){ return true; } }
-function profLabel(v){ return PROFS.filter(function(p){ return p[0] === v; })[0][1]; }
+function profLabel(v){ return ROLES.filter(function(p){ return p[0] === v; })[0][1]; }
+/* Droits (tableau validé le 23/10/2026) : 1 = partout, 'club' / 'team' / 'match' = dans sa portée */
+var RIGHTS = {
+  champEdit:{ admin:1, fede:1 }, matchDate:{ admin:1, fede:1, pres:'club', rclub:'club' }, clubCreate:{ admin:1, fede:1 },
+  clubEdit:{ admin:1, fede:1, pres:'club', rclub:'club' },
+  memberEdit:{ admin:1, pres:'club', rclub:'club' },
+  licValidate:{ admin:1, pres:'club', rclub:'club' },
+  seasonLic:{ admin:1, pres:'club' },
+  evCreate:{ admin:1, fede:1, pres:'club', rclub:'club', requ:'team' },
+  designate:{ admin:1, fede:1, pres:'club', rclub:'club' },
+  compo:{ admin:1, requ:'team' },
+  score:{ admin:1, compteur:'match' },
+  settings:{ admin:1 }, licFin:{ admin:1, fede:1 }
+};
+function can(act, ctx){
+  if(availRoles() === null) return true;
+  var p = profGet(), r = RIGHTS[act], v = r && r[p];
+  if(!v) return false;
+  if(v === 1) return true;
+  var mine = myRoles().filter(function(x){ return x.role === p; });
+  if(!mine.length) return false;
+  if(!ctx) return true;
+  return mine.some(function(x){
+    if(v === 'club') return !ctx.cid || x.cid === ctx.cid;
+    if(v === 'team') return (ctx.tid && x.tid === ctx.tid) || (!ctx.tid && !!ctx.cid && x.cid === ctx.cid);
+    if(v === 'match') return !!ctx.ref && x.ref === ctx.ref;
+    return false;
+  });
+}
+/* Âge et numéro de licence : visibles selon le rôle et la portée (le visiteur ne les voit jamais) */
+function canSeePriv(m){
+  if(availRoles() === null) return true;
+  var p = profGet(), me = meGet();
+  if(p === 'admin' || p === 'fede') return true;
+  if(p === 'licencie') return m.id === me;
+  var f = findMember(m.id), cid = f ? f.club.id : '', mine = myRoles().filter(function(x){ return x.role === p; });
+  if(p === 'pres' || p === 'rclub') return mine.some(function(x){ return x.cid === cid; });
+  if(p === 'requ') return mine.some(function(x){ var t = findTeam(x.tid); return !!t && t.t.memberIds.indexOf(m.id) >= 0; });
+  return false;
+}
+function photoShown(m){ return !!m && !!m.photo && (profGet() !== 'visiteur' || !!m.photoPublic); }
+function scopeTxt(r){
+  var t = r.tid ? findTeam(r.tid) : null, c = r.cid ? clubById(r.cid) : null;
+  return t ? t.t.name : (c ? c.name : (r.ref ? 'un match' : ''));
+}
+function scopeTxtFor(role){
+  var l = myRoles().filter(function(r){ return r.role === role; }).map(scopeTxt).filter(Boolean);
+  return l.length ? ' · ' + l.join(', ') : '';
+}
+/* Qui nomme qui */
+var NOMINATE = { admin:['admin', 'fede', 'pres', 'rclub', 'requ'], fede:['pres'], pres:['rclub'], rclub:['requ'] };
+function nominable(){ var p = profGet(); return availRoles() === null ? [] : (NOMINATE[p] || []); }
+function nomClubs(){
+  var p = profGet();
+  if(p === 'admin' || p === 'fede') return S.clubs;
+  var ids = myRoles().filter(function(r){ return r.role === p; }).map(function(r){ return r.cid; });
+  return S.clubs.filter(function(c){ return ids.indexOf(c.id) >= 0; });
+}
+function nomScopeOk(r){
+  var p = profGet();
+  if(p === 'admin' || p === 'fede') return true;
+  return nomClubs().some(function(c){ return c.id === r.cid; });
+}
+/* Licences : saison de licences par club, fin de saison réglable (S.licFin, « MM-JJ ») */
+function licYear(c){ return c.licSeason != null ? c.licSeason : seasonYear(isoOf(new Date())); }
+function licLabel(y){ return y + '-' + (y + 1); }
+function licDue(c){ return isoOf(new Date()) >= (licYear(c) + 1) + '-' + (S.licFin || '07-15'); }
+function licOf(c, m){ return m.licSeason != null ? m.licSeason : licYear(c); }
+function licToRenew(c){ return c.members.filter(function(m){ return licOf(c, m) < licYear(c); }); }
+function licClubs(){ return S.clubs.filter(function(c){ return can('seasonLic', { cid:c.id }); }); }
+function ageFrom(d){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) return null;
+  var b = toDate(d), n = new Date(), a = n.getFullYear() - b.getFullYear();
+  if(n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--;
+  return a;
+}
+function pendingRequests(){ return (S.requests || []).filter(function(r){ return r.state === 'attente' && can('licValidate', { cid:r.cid }); }); }
+function newCode(){
+  var al = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', s = '', i;
+  for(i = 0; i < 6; i++) s += al.charAt(Math.floor(Math.random() * al.length));
+  return s;
+}
 function profBtnHtml(){
-  var a = adminInfo(), photo = (a && profGet() === 'admin' && a.m.photo) ? a.m.photo : '';
+  var a = meInfo(), photo = (a && photoShown(a.m) && profGet() !== 'visiteur') ? a.m.photo : '';
   return '<button class="ibtn" data-act="profOpen" aria-label="Profil' + (a ? ' : ' + esc(profLabel(profGet())) : '') + '">' + (photo ? '<img class="av" src="' + esc(photo) + '" alt="" width="30" height="30">' :
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>') + '</button>';
 }
 function profPickerHtml(){
-  var a = adminInfo(), cur = profGet();
+  var a = meInfo(), av = availRoles() || [], cur = profGet();
   var out = '<div class="profpick"><img class="logo" src="' + LOGO_V2C + '" alt="" width="104" height="104"><h1>Volley-Club Commentry</h1><p class="muted">Choisissez votre rôle</p><div class="stack">';
-  PROFS.forEach(function(p){
+  PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){
     out += '<button class="bigbtn' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '"><span>' + p[1] +
-      (p[0] === 'admin' && a ? '<small>' + esc(memberName(a.m)) + ' · ' + esc(a.club.name) + '</small>' : '') + '</span></button>';
+      (p[0] !== 'visiteur' && a ? '<small>' + esc(memberName(a.m)) + scopeTxtFor(p[0]) + '</small>' : '') + '</span></button>';
   });
   return out + '</div></div>';
 }
 /* ---------- Favoris : propres à la personne (licencié désigné), quel que soit son rôle ---------- */
 var FAVKINDS = [['club', 'Clubs'], ['team', 'Équipes'], ['champ', 'Championnats']];
-function personKey(){ return S.adminId || '_'; }
+function personKey(){ return meGet() || '_'; }
 function favOf(){
   if(!S.fav) S.fav = {};
   var k = personKey();
@@ -1251,14 +1368,140 @@ function favHtml(){
   return out + '</div>';
 }
 function profSheetHtml(){ return profSheetHtml0() + favHtml(); }
+/* ---------- Rôles, demandes, invitations, licences : fenêtres ---------- */
+function selOpts(items, sel, ph){ return '<option value="">' + esc(ph) + '</option>' + items.map(function(x){ return '<option value="' + esc(x[0]) + '"' + (x[0] === sel ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join(''); }
+function clubItems(list){ return list.slice().sort(function(a, b){ return a.name.localeCompare(b.name, 'fr'); }).map(function(c){ return [c.id, c.name]; }); }
+function memberItems(c){ return c ? sortMembers(c.members).map(function(m){ return [m.id, memberName(m)]; }) : []; }
+function sheetErr(sh){ return sh.err ? '<p class="hint2" style="color:var(--danger)" role="alert">' + esc(sh.err) + '</p>' : ''; }
+function rsField(id, label, k, val, type){ return '<label class="f" for="' + id + '">' + label + '</label><input type="' + (type || 'text') + '" id="' + id + '" data-bind="rs" data-k="' + k + '" value="' + esc(val || '') + '" autocomplete="off">'; }
+function rsSelect(id, label, k, items, sel, ph){ return '<label class="f" for="' + id + '">' + label + '</label><select id="' + id + '" data-bind="rs" data-k="' + k + '">' + selOpts(items, sel, ph) + '</select>'; }
+function btnRow(okAct, okLabel){ return '<div class="btnrow"><button class="btn wide primary" data-act="' + okAct + '">' + okLabel + '</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>'; }
+function meCreateSheet(sh){
+  var dr = sh.draft;
+  return '<h2>Créer mon profil</h2><p class="hint2" style="margin-top:4px">' + (S.adminId ? 'Votre profil sera créé dans votre club.' : 'Vous deviendrez l\'administrateur de cette installation.') + '</p>' +
+    '<div class="row2"><div>' + rsField('mc_pre', 'Prénom', 'prenom', dr.prenom) + '</div><div>' + rsField('mc_nom', 'Nom', 'nom', dr.nom) + '</div></div>' +
+    rsField('mc_lic', 'Licence (facultatif)', 'licence', dr.licence) +
+    rsSelect('mc_cid', 'Club', 'cid', clubItems(S.clubs), dr.cid, S.clubs.length ? '— Choisir —' : 'Aucun club') +
+    rsField('mc_new', 'Ou nom d\'un nouveau club (s\'il n\'est pas dans la liste)', 'newclub', dr.newclub) + sheetErr(sh) + btnRow('meCreateOk', 'Créer mon profil');
+}
+function rolesSheet(){
+  var nom = nominable(), pend = pendingRequests(), out = '<h2>Rôles et demandes</h2><div class="btnrow">';
+  if(nom.length) out += '<button class="btn wide primary" data-act="roleAddOpen">Attribuer un rôle ou inviter</button>';
+  if(can('licValidate')) out += '<button class="btn wide" data-act="reqOpen">Demandes à traiter (' + pend.length + ')</button>';
+  out += '</div>';
+  var list = (S.roles || []).filter(function(r){ return nom.indexOf(r.role) >= 0 && nomScopeOk(r); });
+  out += '<p class="hint2" style="margin:14px 0 6px">Rôles que vous gérez (' + list.length + ')</p>';
+  if(!list.length) out += '<p class="muted" style="margin:0">Aucun rôle attribué pour l\'instant.</p>';
+  list.forEach(function(r){
+    var f = findMember(r.mid), sc = scopeTxt(r);
+    out += '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="nm">' + esc(f ? memberName(f.m) : 'Licencié supprimé') + '</span><small>' + esc(profLabel(r.role) + (sc ? ' · ' + sc : '') + (r.state === 'invite' ? ' · invitation, code ' + r.code + ' jusqu\'au ' + fmtDay(r.exp) : '')) + '</small></span></div>' +
+      '<button class="delwrap" data-act="roleDelAsk" data-id="' + r.id + '" aria-label="Retirer ce rôle"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
+  });
+  return out;
+}
+function roleAddSheet(sh){
+  var dr = sh.draft, nom = nominable(), mclubs = nomClubs(), mc = dr.mcid ? clubById(dr.mcid) : null, sc = dr.cid ? clubById(dr.cid) : null;
+  var out = '<h2>Attribuer un rôle</h2>' + rsSelect('ra_mc', 'Club du licencié', 'mcid', clubItems(mclubs), dr.mcid, '— Choisir —') +
+    rsSelect('ra_m', 'Licencié', 'mid', memberItems(mc), dr.mid, mc ? '— Choisir —' : 'Choisissez d\'abord le club') +
+    rsSelect('ra_r', 'Rôle', 'role', nom.map(function(r){ return [r, profLabel(r)]; }), dr.role, '— Choisir —');
+  if(dr.role === 'pres' || dr.role === 'rclub' || dr.role === 'requ'){
+    out += rsSelect('ra_c', 'Club concerné', 'cid', clubItems(mclubs), dr.cid, '— Choisir —');
+    if(dr.role === 'requ') out += rsSelect('ra_t', 'Équipe', 'tid', sc ? (sc.teams || []).map(function(t){ return [t.id, t.name]; }) : [], dr.tid, sc ? '— Choisir —' : 'Choisissez d\'abord le club');
+  }
+  return out + '<p class="hint2">« Attribuer maintenant » donne le rôle tout de suite. « Créer une invitation » donne un code valable 7 jours : la personne le saisit sur son appareil.</p>' + sheetErr(sh) +
+    '<div class="btnrow"><button class="btn wide primary" data-act="roleAttrOk">Attribuer maintenant</button><button class="btn wide" data-act="roleInvOk">Créer une invitation</button><button class="btn wide" data-act="rolesOpen">Retour</button></div>';
+}
+function roleDelSheet(sh){
+  var r = (S.roles || []).filter(function(x){ return x.id === sh.id; })[0], f = r && findMember(r.mid);
+  return '<h2>Retirer ce rôle ?</h2><p class="hint2">' + (r ? esc((f ? memberName(f.m) : 'Licencié supprimé') + ' : ' + profLabel(r.role) + (scopeTxt(r) ? ' · ' + scopeTxt(r) : '')) : '') + '. La personne garde son profil de licencié.</p>' +
+    '<div class="btnrow"><button class="btn wide danger" data-act="roleDelOk">Oui, retirer</button><button class="btn wide" data-act="rolesOpen">Annuler</button></div>';
+}
+function invCodeSheet(sh){
+  return '<h2>J\'ai un code d\'invitation</h2><p class="hint2" style="margin-top:4px">Saisissez le code reçu de la personne qui vous a nommé.</p>' + rsField('ic_code', 'Code', 'code', sh.draft.code) + sheetErr(sh) + btnRow('invCodeOk', 'Valider le code');
+}
+function requestSheet(sh){
+  var dr = sh.draft;
+  return '<h2>Demander à être licencié</h2><p class="hint2" style="margin-top:4px">Le président ou le responsable de votre club vérifie votre fiche. Votre date de naissance sert à cette vérification et n\'est pas conservée.</p>' +
+    '<div class="row2"><div>' + rsField('rq_pre', 'Prénom', 'prenom', dr.prenom) + '</div><div>' + rsField('rq_nom', 'Nom', 'nom', dr.nom) + '</div></div>' +
+    rsField('rq_nai', 'Date de naissance', 'naiss', dr.naiss, 'date') + rsField('rq_lic', 'Numéro de licence', 'licence', dr.licence) +
+    rsSelect('rq_cid', 'Club', 'cid', clubItems(S.clubs), dr.cid, '— Choisir —') + sheetErr(sh) + btnRow('requestOk', 'Envoyer la demande');
+}
+function requestsSheet(){
+  var l = pendingRequests(), out = '<h2>Demandes à traiter (' + l.length + ')</h2>';
+  if(!l.length) return out + '<p class="muted" style="margin:0">Aucune demande en attente.</p>';
+  l.forEach(function(r){
+    var c = clubById(r.cid), f = r.mid ? findMember(r.mid) : null;
+    out += '<div class="card" style="margin:10px 0"><b>' + esc(r.prenom + ' ' + r.nom) + '</b><br><span class="muted">Licence ' + esc(r.licence) + ' · ' + esc(c ? c.name : '') + '</span><br>' +
+      '<span class="muted">' + (f ? 'Fiche trouvée' + (r.ageOk === true ? ', âge cohérent' : (r.ageOk === false ? ', âge différent de la fiche' : '')) : 'Aucune fiche correspondante : l\'acceptation la créera') + '</span>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="reqAcc" data-id="' + r.id + '">Accepter</button><button class="btn wide" data-act="reqRef" data-id="' + r.id + '">Refuser</button></div></div>';
+  });
+  return out;
+}
+function licSheet(sh){
+  var cl = licClubs(), c = clubById(sh.cid) || cl[0];
+  if(!c) return '<h2>Licences</h2><p class="muted">Aucun club à gérer.</p>';
+  var y = licYear(c), tr = licToRenew(c), out = '<h2>Licences</h2>';
+  if(cl.length > 1) out += '<label class="f" for="lc_club">Club</label><select id="lc_club" data-bind="licclub">' + selOpts(clubItems(cl), c.id, '— Choisir —') + '</select>';
+  else out += '<p class="muted" style="margin:4px 0 0">' + esc(c.name) + '</p>';
+  out += '<p class="hint2" style="margin:10px 0 4px">Saison de licences : <b>' + licLabel(y) + '</b>' + (licDue(c) ? ' · fin de saison dépassée (' + esc(String(S.licFin || '07-15').split('-').reverse().join('/')) + ')' : '') + '</p>' +
+    '<div class="btnrow"><button class="btn wide' + (licDue(c) ? ' primary' : '') + '" data-act="licStart">Démarrer la saison ' + licLabel(y + 1) + '</button></div>';
+  out += '<p class="hint2" style="margin:14px 0 6px">À renouveler (' + tr.length + ')</p>';
+  if(!tr.length) out += '<p class="muted" style="margin:0">Tous les licenciés sont à jour.</p>';
+  else {
+    out += '<div class="btnrow"><button class="btn wide" data-act="licRenewAll">Tout renouveler</button></div>';
+    sortMembers(tr).forEach(function(m){
+      out += '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="nm">' + esc(memberName(m)) + '</span></span></div><button class="mini" data-act="licRenew" data-mid="' + m.id + '">Renouveler</button><button class="mini" data-act="licDel" data-mid="' + m.id + '">Supprimer</button></div>';
+    });
+  }
+  return out + '<p class="hint2">Supprimer un licencié : son nom et son prénom restent dans les statistiques ; sa photo, son âge et sa licence sont effacés.</p>';
+}
+function testSheet(sh){
+  var dr = sh.draft, mc = dr.mcid ? clubById(dr.mcid) : null;
+  return '<h2>Tester un rôle</h2><p class="hint2" style="margin-top:4px">Vous agissez à la place d\'un licencié, avec ses rôles, pour vérifier ce qu\'il voit et peut faire. Aucun message n\'est envoyé.</p>' +
+    rsSelect('ts_c', 'Club', 'mcid', clubItems(S.clubs), dr.mcid, '— Choisir —') + rsSelect('ts_m', 'Licencié', 'mid', memberItems(mc), dr.mid, mc ? '— Choisir —' : 'Choisissez d\'abord le club') +
+    '<div class="btnrow"><button class="btn wide primary" data-act="testOn">Agir comme cette personne</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+}
 function profSheetHtml0(){
-  if(!profOn()) return '<h2>Mon profil</h2><div class="profid">' + avatar('', 64, 'Profil') + '<div><b>Profil par défaut</b><br><span class="muted">Aucun administrateur principal défini</span></div></div><p class="hint2" style="margin-top:14px">Dans ces données, aucun administrateur principal n\'est désigné : toutes les fonctions sont disponibles et aucun choix de profil n\'est demandé.</p>';
-  var a = adminInfo(), cur = profGet(), isAdm = cur === 'admin' && a;
-  var out = '<h2>Mon profil</h2><div class="profid">' + avatar(isAdm ? a.m.photo : '', 64, isAdm ? memberName(a.m) : profLabel(cur)) + '<div><b>' + esc(isAdm ? memberName(a.m) : profLabel(cur)) + '</b><br><span class="muted">' +
-    esc(isAdm ? profLabel(cur) + ' · ' + a.club.name : (cur === 'licencie' ? 'Accès licencié' : 'Consultation')) + '</span></div></div>' +
+  var av = availRoles(), f = meInfo(), cur = profGet(), out = '<h2>Mon profil</h2>';
+  if(av === null){
+    return out + '<div class="profid">' + avatar('', 64, 'Profil') + '<div><b>Installation</b><br><span class="muted">Aucun administrateur défini</span></div></div>' +
+      '<p class="hint2" style="margin-top:14px">Aucun administrateur n\'est désigné : toutes les fonctions sont ouvertes. Créez votre profil pour devenir l\'administrateur de cette installation ; les autres rôles se donnent ensuite depuis « Rôles et demandes ».</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="meCreate">Créer mon profil administrateur</button></div>';
+  }
+  if(!f){
+    out += '<div class="profid">' + avatar('', 64, 'Visiteur') + '<div><b>Visiteur</b><br><span class="muted">Consultation</span></div></div>';
+    var mine = (S.requests || []).filter(function(r){ return r.dev === devId(); }).slice(-1)[0];
+    if(mine && mine.state === 'attente') out += '<p class="hint2" style="margin-top:14px">Votre demande du ' + esc(fmtDay(mine.date)) + ' est en attente de validation.</p>';
+    else if(mine && mine.state === 'acceptee') out += '<p class="hint2" style="margin-top:14px">Votre demande est acceptée.</p><div class="btnrow"><button class="btn wide primary" data-act="reqActivate" data-id="' + mine.id + '">Activer mon accès</button></div>';
+    else {
+      if(mine && mine.state === 'refusee') out += '<p class="hint2" style="margin-top:14px;color:var(--danger)">Votre dernière demande a été refusée.</p>';
+      out += '<div class="btnrow"><button class="btn wide primary" data-act="requestOpen">Demander à être licencié</button></div>';
+    }
+    return out + '<div class="btnrow"><button class="btn wide" data-act="invCodeOpen">J\'ai un code d\'invitation</button></div>';
+  }
+  var sc = scopeTxtFor(cur);
+  out += '<div class="profid">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div></div>' +
     '<p class="hint2" style="margin:14px 0 6px">Changer de rôle</p><div class="btnrow">';
-  PROFS.forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
-  return out + '</div>';
+  PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
+  out += '</div>';
+  var due = licClubs().some(licDue);
+  if(nominable().length || can('licValidate') || licClubs().length){
+    out += '<div class="btnrow">';
+    if(nominable().length || can('licValidate')) out += '<button class="btn wide" data-act="rolesOpen">Rôles et demandes' + (pendingRequests().length ? ' (' + pendingRequests().length + ')' : '') + '</button>';
+    if(licClubs().length) out += '<button class="btn wide' + (due ? ' primary' : '') + '" data-act="licOpen">Licences et nouvelle saison' + (due ? ' · à faire' : '') + '</button>';
+    out += '</div>';
+  }
+  if(!meTest()){
+    out += '<label class="f" style="display:flex;gap:10px;align-items:center;margin-top:14px"><input type="checkbox" data-bind="photopub"' + (f.m.photoPublic ? ' checked' : '') + '> Ma photo est visible par les visiteurs</label>';
+    if(meReal() === S.adminId) out += '<div class="btnrow"><button class="btn wide" data-act="testOpen">Tester un rôle (administrateur)</button></div>';
+  } else out += '<div class="btnrow"><button class="btn wide danger" data-act="testOff">Quitter le mode test</button></div>';
+  return out;
+}
+function licBannerHtml(){
+  var due = licClubs().filter(licDue)[0];
+  if(!due) return '';
+  return '<section class="card"><h3>Fin de saison</h3><p class="muted" style="margin:4px 0 0">La saison de licences ' + licLabel(licYear(due)) + ' est terminée. Démarrez la nouvelle saison pour renouveler ou supprimer vos licenciés.</p>' +
+    '<div class="btnrow"><button class="btn wide primary" data-act="licOpen" data-cid="' + due.id + '">Nouvelle saison de licences</button></div></section>';
 }
 function dotsBtnHtml(){
   return '<button class="ibtn" data-act="dots" aria-label="Paramètres" title="Paramètres"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.8" fill="currentColor" stroke="none"/></svg></button>';
@@ -1272,8 +1515,9 @@ function tabSub(){
 }
 function settingsView(){
   var bk = bkStatus(), th = themeGet(), out = '<div class="stack">';
-  out += '<section class="card"><h2>Données</h2><div class="backupbox' + (bk.warn ? ' warn' : '') + '" style="margin:10px 0 0"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>' +
+  if(can('settings')) out += '<section class="card"><h2>Données</h2><div class="backupbox' + (bk.warn ? ' warn' : '') + '" style="margin:10px 0 0"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>' +
     '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, données officielles, cohérence…</button></div></section>';
+  if(can('licFin')) out += '<section class="card"><h2>Fin de saison des licences</h2><p class="muted" style="margin:6px 0 0">Chaque année à cette date, le président peut démarrer une nouvelle saison de licences.</p><label class="f" for="licfin">Date de fin de saison</label><input type="date" id="licfin" data-bind="licfin" value="2000-' + esc(S.licFin || '07-15') + '"></section>';
   out += '<section class="card"><h2>Apparence</h2><div class="chips modes" style="margin-top:10px">' +
     chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
     '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
@@ -1891,7 +2135,7 @@ function loadMatch(created){
 }
 function keepShared(){
   return { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(x){ return x.slice(); }), cfg:S.cfg,
-    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season };
+    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, licFin:S.licFin };
 }
 function resetForNew(){
   stopClock(); archiveCurrent();
@@ -2166,9 +2410,9 @@ function findMember(mid){
 }
 function photoOfPlayer(p){
   if(!p) return '';
-  if(p.photo) return p.photo;
+  if(p.photo && profGet() !== 'visiteur') return p.photo;
   var f = p.mid ? findMember(p.mid) : null;
-  return (f && f.m.photo) || '';
+  return (f && photoShown(f.m) && f.m.photo) || '';
 }
 function photoFor(m, t, pid){
   if(!pid) return '';
@@ -2813,7 +3057,7 @@ var MODES = {
 };
 function modeOf(){ return MODES[S.mode] ? S.mode : 'complet'; }
 /* Qui peut saisir : pour l'instant l'administrateur principal (ou sans profil défini). Les autres rôles seront précisés avec la gestion des rôles. */
-function canScore(){ return !profOn() || profGet() === 'admin'; }
+function canScore(){ return can('score', { ref:S.fixtureRef ? S.fixtureRef.fid : '' }); }
 function ro(){ return !canScore(); }
 function needsModePick(){ return ui.tab === 'match' && S.stage === 'play' && !S.finished && !S.modeSet && !hasContent() && canScore(); }
 function ibtn(t, kind){
@@ -3019,7 +3263,7 @@ function fmtWhen(iso){
 }
 function homeView(){
   if(ui.addRes) return addResultView();
-  return homeView0() + '<button class="fab" data-act="matchAddOpen" aria-label="Jouer un match ou ajouter un résultat">+</button>';
+  return homeView0() + ((canScore() || can('champEdit')) ? '<button class="fab" data-act="matchAddOpen" aria-label="Jouer un match ou ajouter un résultat">+</button>' : '');
 }
 /* Carte d'un match suivi : date, état, équipes avec leurs sets, durée et score de chaque set */
 function fmtPlay(ms){
@@ -3048,7 +3292,7 @@ function matchCardHtml(m){
 }
 function homeView0(){
   var list = savedMatches(), out = '<div class="stack">';
-  out += '<div class="clubhead">' + (list.length ? editBtnHtml() : '') + '<h2>Matchs suivis' + (list.length ? ' (' + list.length + ')' : '') + '</h2></div>';
+  out += '<div class="clubhead">' + (list.length && canScore() ? editBtnHtml() : '') + '<h2>Matchs suivis' + (list.length ? ' (' + list.length + ')' : '') + '</h2></div>';
   if(!list.length) out += '<section class="card"><p class="muted" style="margin:0">Aucun match suivi en direct pour l\'instant. Touchez le bouton « + » pour jouer un match ou ajouter un résultat.</p></section>';
   else out += '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + '</div>';
   return out + '</div>';
@@ -3284,20 +3528,21 @@ function clubRowsHtml(){
   }).join('');
 }
 function clubsList(){
-  var out = '<div class="stack">';
+  var out = '<div class="stack">' + licBannerHtml();
   if(!S.clubs.length) return out + '<section class="card"><h2>Clubs</h2><p class="muted" style="margin:6px 0 0">Aucun club pour l\'instant. Touchez le bouton « + » pour créer le premier.</p></section></div><button class="fab" data-act="clubsGo" data-v="create" aria-label="Créer un club">+</button>';
   out += '<label class="vh" for="clq">Rechercher un club</label><input type="search" id="clq" data-clq="1" value="' + esc(ui.clq || '') + '" placeholder="Club ou équipe…" autocomplete="off" enterkeyhint="search">' +
     '<p class="cnt" id="clcnt">' + clubCountText() + '</p><section class="card"><div id="clublist">' + clubRowsHtml() + '</div></section>';
-  return out + '</div><button class="fab" data-act="clubsGo" data-v="create" aria-label="Créer un club">+</button>';
+  return out + '</div>' + (can('clubCreate') ? '<button class="fab" data-act="clubsGo" data-v="create" aria-label="Créer un club">+</button>' : '');
 }
 function clubCountText(){
   var q = norm(ui.clq || ''), n = S.clubs.filter(function(c){ return !q || norm(c.name).indexOf(q) >= 0 || (c.teams || []).some(function(t){ return norm(t.name).indexOf(q) >= 0; }); }).length;
   return n + ' club' + (n > 1 ? 's' : '') + (q ? ' sur ' + S.clubs.length : '');
 }
 function memberRows(list, withActions){
-  return '<div class="tablewrap"><table class="tbl-left"><thead><tr><th>Nom</th><th>Prénom</th><th>Licence</th><th>Âge</th>' + (withActions ? '<th><span class="sr">Actions</span></th>' : '') + '</tr></thead><tbody>' +
+  var priv = list.some(canSeePriv);
+  return '<div class="tablewrap"><table class="tbl-left"><thead><tr><th>Nom</th><th>Prénom</th>' + (priv ? '<th>Licence</th><th>Âge</th>' : '') + (withActions ? '<th><span class="sr">Actions</span></th>' : '') + '</tr></thead><tbody>' +
     list.map(function(m){
-      return '<tr><td><span class="fxteam">' + avatar(m.photo, 32, memberName(m)) + '<span class="nm" title="' + esc(m.nom) + '">' + esc(m.nom) + '</span></span></td><td>' + esc(m.prenom) + '</td><td>' + esc(m.licence) + '</td><td>' + esc(m.age) + '</td>' +
+      return '<tr><td><span class="fxteam">' + avatar(photoShown(m) ? m.photo : '', 32, memberName(m)) + '<span class="nm" title="' + esc(m.nom) + '">' + esc(m.nom) + '</span></span></td><td>' + esc(m.prenom) + '</td>' + (priv ? (canSeePriv(m) ? '<td>' + esc(m.licence) + '</td><td>' + esc(m.age) + '</td>' : '<td></td><td></td>') : '') +
         (withActions ? '<td><span class="actcell"><button class="delwrap" data-act="editMember" data-mid="' + m.id + '" aria-label="Modifier les informations de ' + esc(memberName(m)) + '"><span class="editc">' + GEAR + '</span></button>' +
         '<button class="delwrap" data-act="delMemberAsk" data-mid="' + m.id + '" aria-label="Supprimer ' + esc(memberName(m)) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></span></td>' : '') + '</tr>';
     }).join('') + '</tbody></table></div>';
@@ -3344,7 +3589,7 @@ function clubsEdit(){
   if(!c || c.id !== ui.clubSel){ ui.clubView = 'list'; return clubsList(); }
   ensureTeams(c);
   var tab = ui.clubTab, out = '<div class="stack">';
-  out += '<div class="clubhead">' + editBtnHtml() + '<h2>' + esc(c.name) + favStar('club', c.id) + '</h2></div>';
+  out += '<div class="clubhead">' + (can('clubEdit', { cid:c.id }) ? editBtnHtml() : '') + '<h2>' + esc(c.name) + favStar('club', c.id) + '</h2></div>';
   out += '<section class="card"><h3>Logo</h3><div class="logoedit">' + (c.logo ? logoHtml(c.id, 64) : '<span class="logo none" style="width:64px;height:64px">Pas de logo</span>') +
     (ui.edit ? '<span class="actcell"><button class="delwrap" data-act="clubLogo" aria-label="Logo, nom et couleurs de ' + esc(c.name) + '"><span class="editc">' + GEAR + '</span></button>' +
     (c.logo ? '<button class="delwrap" data-act="logoRemoveAsk" aria-label="Retirer le logo de ' + esc(c.name) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</span>' : '') + '</div></section>';
@@ -3352,7 +3597,7 @@ function clubsEdit(){
     '<button class="btn wide ' + (tab === 'teams' ? 'primary' : '') + '" data-act="clubTab" data-k="teams" aria-pressed="' + (tab === 'teams') + '">Équipe</button></div>';
   if(tab === 'members'){
     var members = sortMembers(c.members);
-    out += '<div class="clubhead"><h2>Membres (' + members.length + ')</h2>' + addBtn('Ajouter des membres') + '</div><section class="card">' + (members.length ? memberRows(members, !!ui.edit) : '<p class="muted">Aucun membre existant</p>') + '</section>';
+    out += '<div class="clubhead"><h2>Membres (' + members.length + ')</h2>' + addBtn('Ajouter des membres') + '</div><section class="card">' + (members.length ? memberRows(members, !!ui.edit && can('memberEdit', { cid:c.id })) : '<p class="muted">Aucun membre existant</p>') + '</section>';
   } else if(tab === 'teams'){
     out += '<div class="clubhead"><h2>Équipes (' + c.teams.length + ')</h2>' + addBtn('Ajouter des équipes') + '</div><section class="card">' + c.teams.map(function(t){
       var n = t.memberIds.length;
@@ -3367,7 +3612,7 @@ function clubsTeam(){
   var c = clubById(ui.clubSel), f = c && findTeam(ui.teamSel);
   if(!c || !f || f.c.id !== c.id){ ui.clubView = 'edit'; return clubsEdit(); }
   var t = f.t, isDef = t.id === c.id, out = '<div class="stack">';
-  out += '<div class="clubhead">' + editBtnHtml() + '<h2><span class="hnm">' + esc(t.name) + '</span>' + favStar('team', t.id) + '</h2></div>';
+  out += '<div class="clubhead">' + (can('clubEdit', { cid:c.id }) ? editBtnHtml() : '') + '<h2><span class="hnm">' + esc(t.name) + '</span>' + favStar('team', t.id) + '</h2></div>';
   var curCh = champOfTeam(t.id);
   out += '<section class="card"><div class="tmrow"><label class="f tmlab" for="tmname">Nom de l\'équipe</label>' + ifield('tmname', { value:t.name, attrs:'data-bind="tmname"', aria:'Nom de l\'équipe' }) + '</div>' +
     '<div class="tmrow" style="margin-top:12px"><span class="f tmlab">Championnat</span>';
@@ -3388,7 +3633,7 @@ function clubsTeam(){
     if(ui.edit) out += '<label class="f" for="tmadd">Ajouter un membre</label><select id="tmadd" data-bind="tmadd"><option value="">' + (others.length ? '— Choisir un membre —' : 'Tous les membres sont dans l\'équipe') + '</option>' +
       others.map(function(m){ return '<option value="' + m.id + '">' + esc(memberName(m)) + (m.licence ? ' · ' + esc(m.licence) : '') + '</option>'; }).join('') + '</select>';
     out += inTeam.length ? '<div style="margin-top:10px">' + inTeam.map(function(m){
-      return '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="fxteam">' + avatar(m.photo, 32, memberName(m)) + '<span class="nm">' + esc(memberName(m)) + '</span></span><small>' + esc([m.licence, m.age !== '' && m.age != null ? m.age + ' ans' : ''].filter(Boolean).join(' · ')) + '</small></span></div>' +
+      return '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="fxteam">' + avatar(photoShown(m) ? m.photo : '', 32, memberName(m)) + '<span class="nm">' + esc(memberName(m)) + '</span></span><small>' + esc(canSeePriv(m) ? [m.licence, m.age !== '' && m.age != null ? m.age + ' ans' : ''].filter(Boolean).join(' · ') : '') + '</small></span></div>' +
         (ui.edit ? '<button class="delwrap" data-act="toggleTeamMember" data-mid="' + m.id + '" aria-label="Retirer ' + esc(memberName(m)) + ' de l\'équipe"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</div>';
     }).join('') + '</div>' : '<p class="muted" style="margin:10px 0 0">Aucun membre dans cette équipe.</p>';
   }
@@ -3591,7 +3836,7 @@ function calendarView(){
   out += calStripHtml();
   out += calFiltersHtml();
   out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
-  return out + '<button class="fab" data-act="calCreate" aria-label="Créer une rencontre ou un événement">+</button>';
+  return out + (can('evCreate') ? '<button class="fab" data-act="calCreate" aria-label="Créer une rencontre ou un événement">+</button>' : '');
 }
 /* Deux clubs au choix, puis la question « qui joue à domicile ? » : l'autre joue à l'extérieur */
 function homePicker(list, st, bindName, chipAct){
@@ -3624,11 +3869,11 @@ function eventForm(){
 }
 
 function champView(){
-  return champView0() + '<button class="fab" data-act="champNewOpen" aria-label="Créer un championnat">+</button>';
+  return champView0() + (can('champEdit') ? '<button class="fab" data-act="champNewOpen" aria-label="Créer un championnat">+</button>' : '');
 }
 function champView0(){
   var out = '<div class="stack">';
-  out += '<section class="card"><div class="clubhead">' + (champs().length ? editBtnHtml() : '') + '<h2>Championnat</h2></div>';
+  out += '<section class="card"><div class="clubhead">' + (champs().length && can('champEdit') ? editBtnHtml() : '') + '<h2>Championnat</h2></div>';
   if(champs().length){
     out += '<label class="f" for="champsel">Championnat affiché</label><div class="selrow"><select id="champsel" data-bind="champsel">' +
       champs().map(function(c){ return '<option value="' + c.id + '"' + (c.id === ui.champSel ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' + (curChamp() ? favStar('champ', curChamp().id) : '') + '</div>';
@@ -3770,7 +4015,7 @@ function slArrow(key, n, dir, loop){
 function matchSlider(key, ents, start, today, favId, label){
   if(!ents.length) return '<h3 class="hsec">' + label + '</h3><p class="muted hempty">' + (start === 'last' ? 'Aucun match passé.' : 'Aucun match à venir.') + '</p>';
   var n = ents.length, i = slideState(key, n, start), e = ents[i];
-  var play = (!entryResult(e) && e.kind !== 'event' && canPlayRole() && e.home && e.away) ? '<button class="btn wide primary homeplay" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Saisir ce match</button>' : '';
+  var play = (!entryResult(e) && e.kind !== 'event' && can('score', { ref:e.fid }) && e.home && e.away) ? '<button class="btn wide primary homeplay" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Saisir ce match</button>' : '';
   return '<h3 class="hsec">' + label + (n > 1 ? ' <span class="slcnt">' + (i + 1) + ' / ' + n + '</span>' : '') + '</h3>' +
     '<div class="slider" data-sl="' + esc(key) + '">' + (n > 1 ? slArrow(key, n, -1) : '<span class="slbtn ph"></span>') +
     '<div class="slview"><p class="rel">' + esc(relDay(e.date, today)) + (e.time && e.date >= today ? ' · ' + esc(e.time) : '') + '</p>' + calRow(e, today, favId) + play + '</div>' +
@@ -4033,7 +4278,7 @@ function dataPlayersView(){
     var tot = { pts:0, attack:0, block:0, ace:0, relance:0, faults:0 };
     p.matches.forEach(function(x){ Object.keys(tot).forEach(function(k){ tot[k] += x.st[k]; }); });
     var cells = [['Matchs', p.matches.length], ['Points', tot.pts], ['Attaques', tot.attack], ['Blocs', tot.block], ['Services', tot.ace], ['Relances', tot.relance], ['Fautes', tot.faults]];
-    out += backBtn('Tous les joueurs') + '<section class="card"><div class="pcell">' + avatar(p.photo, 72, p.name) + '<div><h2>' + esc(p.name) + '</h2><p class="muted" style="margin:4px 0 0">' + esc(p.team) + (p.num ? ' · #' + esc(p.num) : '') + (p.licence ? ' · licence ' + esc(p.licence) : '') + '</p></div></div>' +
+    out += backBtn('Tous les joueurs') + '<section class="card"><div class="pcell">' + avatar(p.photo, 72, p.name) + '<div><h2>' + esc(p.name) + '</h2><p class="muted" style="margin:4px 0 0">' + esc(p.team) + (p.num ? ' · #' + esc(p.num) : '') + (p.licence && profGet() !== 'visiteur' ? ' · licence ' + esc(p.licence) : '') + '</p></div></div>' +
       '<div class="statgrid">' + cells.map(function(c){ return '<div><b>' + c[1] + '</b><span>' + c[0] + '</span></div>'; }).join('') + '</div></section>';
     out += '<section class="card"><h3>Performances par match</h3><div class="tablewrap"><table><thead><tr><th>Match</th><th>Rés.</th><th title="Points marqués">Pts</th><th title="Attaques">Att.</th><th>Bloc</th><th title="Services gagnants">Ace</th><th title="Relances">Rel.</th><th>Fautes</th></tr></thead><tbody>' +
       p.matches.map(function(x){
@@ -4304,22 +4549,26 @@ function sheetView(){
     }
   } else if(sh.kind === 'fixture'){
     var fe = calEntry(sh.cid, sh.fid);
+    var fDate = !!fe && fe.kind !== 'event' && (can('matchDate', { cid:clubOfEntrant(fe.home) }) || (fe.kind === 'amical' && can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home })));
+    var fEd = !!fe && (fe.kind === 'fixture' ? can('champEdit') : (fe.kind === 'event' ? can('evCreate') : (can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home }) || can('evCreate', { cid:clubOfEntrant(fe.away), tid:fe.away }))));
     if(!fe){ inner = '<h2>Événement introuvable</h2>'; }
     else if(fe.kind === 'event'){
       inner = '<h2>' + esc(fe.title) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' +
-        '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>';
+        (fEd ? '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>' : '');
     } else {
       var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Rencontre amicale';
       inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' + formHtml(fe);
       if(fm){
         inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
+      } else if(fe.postponed && !fDate){
+        inner += '<p class="hint2">Ce match est reporté : il reste à jouer.</p>';
       } else if(fe.postponed){
         inner += '<p class="hint2">Ce match est reporté : il ne compte pas dans le Jour de la semaine et reste à jouer. Quand la nouvelle date est connue, saisissez-la.</p><label class="f" for="fnewd">Nouvelle date</label><input type="date" id="fnewd" value="' + esc(fe.date) + '"><div class="btnrow"><button class="btn wide primary" data-act="fixResched">Replanifier à cette date</button><button class="btn wide" data-act="fixUnpost">Annuler le report</button></div>';
-      } else {
+      } else if(can('score', { ref:fe.fid }) || fDate){
         inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
-          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button><button class="btn wide" data-act="fixPost">Reporter ce match</button></div>';
+          '<div class="btnrow">' + (can('score', { ref:fe.fid }) ? '<button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button>' : '') + (fDate ? '<button class="btn wide" data-act="fixPost">Reporter ce match</button>' : '') + '</div>' + (fDate ? '<div class="row2"><div><label class="f" for="fnewd">Date</label><input type="date" id="fnewd" value="' + esc(fe.date) + '"></div><div><label class="f" for="fnewt">Heure</label><input type="time" id="fnewt" value="' + esc(fe.time || '') + '"></div></div><div class="btnrow"><button class="btn wide" data-act="fixDate">Modifier la date et l\'heure</button></div>' : '');
       }
-      inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
+      if(fEd) inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
         RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
         '<div class="btnrow"><button class="btn wide" data-act="fixRes">Enregistrer le résultat</button>' +
         (fm ? '<button class="btn wide" data-act="fixClearAsk">Effacer le résultat</button>' : '') +
@@ -4339,6 +4588,7 @@ function sheetView(){
     inner = '<h2>Modifier le licencié</h2><div class="logoedit" style="margin-top:10px">' + avatar(dr.photo, 72, ((dr.prenom || '') + ' ' + (dr.nom || '')).trim()) +
       '<div class="btnrow" style="margin:0;flex:1"><input type="file" id="memphoto" class="vh" accept="image/*"><label for="memphoto" class="btn wide">' + (dr.photo ? 'Changer la photo' : 'Ajouter une photo') + '</label>' +
       (dr.photo ? '<button class="btn wide" data-act="memPhotoDel">Retirer la photo</button>' : '') + '</div></div>' +
+      '<label class="f" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-bind="emfpub"' + (dr.photoPublic ? ' checked' : '') + '> Photo visible par les visiteurs</label>' +
       '<div class="row2"><div><label class="f" for="em_lic">Licence</label><input type="text" id="em_lic" data-bind="emf" data-k="licence" value="' + esc(dr.licence) + '" autocomplete="off"></div>' +
       '<div><label class="f" for="em_age">Âge</label><input type="text" inputmode="numeric" id="em_age" maxlength="3" data-bind="emf" data-k="age" value="' + esc(dr.age) + '"></div></div>' +
       '<div class="row2"><div><label class="f" for="em_nom">Nom</label><input type="text" id="em_nom" data-bind="emf" data-k="nom" value="' + esc(dr.nom) + '" autocomplete="off"></div>' +
@@ -4377,6 +4627,16 @@ function sheetView(){
     var dch = curChamp();
     inner = '<h2>Supprimer ' + esc(dch ? dch.name : 'ce championnat') + ' ?</h2><p class="hint2">Tous ses résultats seront supprimés. Les clubs sont conservés.</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="delChampOk">Supprimer le championnat</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'meCreate'){ inner = meCreateSheet(sh);
+  } else if(sh.kind === 'roles'){ inner = rolesSheet();
+  } else if(sh.kind === 'roleAdd'){ inner = roleAddSheet(sh);
+  } else if(sh.kind === 'roledel'){ inner = roleDelSheet(sh);
+  } else if(sh.kind === 'invcode'){ inner = invCodeSheet(sh);
+  } else if(sh.kind === 'request'){ inner = requestSheet(sh);
+  } else if(sh.kind === 'requests'){ inner = requestsSheet();
+  } else if(sh.kind === 'licseason'){ inner = licSheet(sh);
+  } else if(sh.kind === 'testas'){ inner = testSheet(sh);
+  } else if(sh.kind === 'info'){ inner = '<h2>' + esc(sh.title) + '</h2><p class="hint2">' + esc(sh.note) + '</p>';
   } else if(sh.kind === 'profile'){
     inner = profSheetHtml();
   } else if(sh.kind === 'injrec'){
@@ -4391,7 +4651,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['modechg','favdel','setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
+  var own = ['meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -4421,6 +4681,7 @@ function render(){
   }
   var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'settings' ? settingsView() : ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : (needsModePick() ? modePickView() : matchView()))) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : (ui.tab === 'backup' ? backupView() : dataView())))));
   var warn = ui.warn ? '<div class="banner" role="alert">' + esc(ui.warn) + '</div>' : '';
+  if(meTest()){ var tf = meInfo(); warn += '<div class="banner" role="status">Mode test : vous agissez comme ' + esc(tf ? memberName(tf.m) : '') + ' (' + esc(profLabel(profGet())) + ') <button class="mini" data-act="testOff">Quitter</button></div>'; }
   document.getElementById('app').innerHTML = header() + '<main>' + warn + main + menuBtn() + '</main>' + (navOn() ? navHtml() : '') + (ui.xchg ? '<div class="xshade" data-act="xCancel" aria-hidden="true"></div>' : '');
   document.body.classList.toggle('hasnav', navOn());
   document.body.classList.toggle('hasfab', !ui.sheet && ((ui.tab === 'cal' && ui.calView !== 'create') || (ui.tab === 'clubs' && (ui.clubView === 'home' || ui.clubView === 'list')) || (ui.tab === 'champ') || (ui.tab === 'match' && S.stage === 'home' && !ui.addRes)));
@@ -4655,7 +4916,7 @@ document.addEventListener('click', function(e){
       render(); window.scrollTo(0,0); break;
     case 'editMember': {
       var fm = findMember(d.mid);
-      if(fm){ ui.sheet = { kind:'editmember', mid:d.mid, err:'', draft:{ licence:fm.m.licence || '', nom:fm.m.nom || '', prenom:fm.m.prenom || '', age:fm.m.age === '' || fm.m.age == null ? '' : String(fm.m.age), photo:fm.m.photo || '' } }; render(); }
+      if(fm){ ui.sheet = { kind:'editmember', mid:d.mid, err:'', draft:{ licence:fm.m.licence || '', nom:fm.m.nom || '', prenom:fm.m.prenom || '', age:fm.m.age === '' || fm.m.age == null ? '' : String(fm.m.age), photo:fm.m.photo || '', photoPublic:!!fm.m.photoPublic } }; render(); }
       break;
     }
     case 'memPhotoDel': sh.draft.photo = ''; render(); break;
@@ -4666,6 +4927,7 @@ document.addEventListener('click', function(e){
       var ag = parseInt(dr2.age, 10);
       ef.m.licence = (dr2.licence || '').trim(); ef.m.nom = (dr2.nom || '').trim(); ef.m.prenom = (dr2.prenom || '').trim(); ef.m.age = isNaN(ag) ? '' : ag;
       if(dr2.photo) ef.m.photo = dr2.photo; else delete ef.m.photo;
+      ef.m.photoPublic = !!dr2.photoPublic;
       var nm2 = memberName(ef.m);
       function upd(p){ if(p.mid === ef.m.id){ p.name = nm2; p.licence = ef.m.licence; } }
       S.teams.forEach(function(tm){ tm.players.forEach(upd); });
@@ -4771,6 +5033,99 @@ document.addEventListener('click', function(e){
       try{ window.print(); }catch(err){ back(); }
       break;
     }
+    case 'meCreate': ui.sheet = { kind:'meCreate', err:'', draft:{ prenom:'', nom:'', licence:'', cid:'', newclub:'' } }; render(); break;
+    case 'meCreateOk': {
+      var q_d = sh.draft, q_pre = (q_d.prenom || '').trim(), q_nom = (q_d.nom || '').trim(), q_nc = (q_d.newclub || '').trim();
+      if(!q_pre || !q_nom){ sh.err = 'Indiquez votre prénom et votre nom.'; render(); break; }
+      if(!q_d.cid && !q_nc){ sh.err = 'Choisissez votre club ou saisissez-en un nouveau.'; render(); break; }
+      var q_club = q_d.cid ? clubById(q_d.cid) : null;
+      if(!q_club){ var q_id = uid(); q_club = { id:q_id, name:q_nc, members:[], teams:[{ id:q_id, name:q_nc, memberIds:[], squad:null }] }; S.clubs.push(q_club); }
+      var q_mem = { id:uid(), licence:(q_d.licence || '').trim(), nom:q_nom, prenom:q_pre, age:'', licSeason:licYear(q_club) };
+      q_club.members.push(q_mem);
+      var q_dt = defaultTeam(q_club); if(q_dt) q_dt.memberIds.push(q_mem.id);
+      if(!S.adminId) S.adminId = q_mem.id;
+      if(S.fav && S.fav['_'] && !S.fav[q_mem.id]) S.fav[q_mem.id] = S.fav['_'];
+      meSet(q_mem.id); ui.sheet = null; save(); render(); break;
+    }
+    case 'rolesOpen': ui.sheet = { kind:'roles' }; render(); break;
+    case 'roleAddOpen': ui.sheet = { kind:'roleAdd', err:'', draft:{ mcid:'', mid:'', role:'', cid:'', tid:'' } }; render(); break;
+    case 'roleAttrOk': case 'roleInvOk': {
+      var q_r = sh.draft, q_err = '', q_f = q_r.mid ? findMember(q_r.mid) : null, q_scoped = q_r.role === 'pres' || q_r.role === 'rclub' || q_r.role === 'requ';
+      if(!q_f) q_err = 'Choisissez le licencié.';
+      else if(!q_r.role) q_err = 'Choisissez le rôle.';
+      else if(nominable().indexOf(q_r.role) < 0) q_err = 'Vous ne pouvez pas attribuer ce rôle.';
+      else if(q_scoped && !q_r.cid) q_err = 'Choisissez le club concerné.';
+      else if(q_r.role === 'requ' && !q_r.tid) q_err = 'Choisissez l\'équipe concernée.';
+      else if((S.roles || []).some(function(x){ return x.mid === q_r.mid && x.role === q_r.role && (x.cid || '') === (q_scoped ? q_r.cid : '') && (x.tid || '') === (q_r.role === 'requ' ? q_r.tid : ''); })) q_err = 'Ce rôle est déjà attribué (ou invité) à cette personne.';
+      if(q_err){ sh.err = q_err; render(); break; }
+      var q_row = { id:uid(), mid:q_r.mid, role:q_r.role, cid:q_scoped ? q_r.cid : '', tid:q_r.role === 'requ' ? q_r.tid : '', by:meGet(), date:stamp(), state:act === 'roleInvOk' ? 'invite' : 'actif' };
+      if(act === 'roleInvOk'){ q_row.code = newCode(); var q_x = new Date(); q_x.setDate(q_x.getDate() + 7); q_row.exp = isoOf(q_x); }
+      S.roles.push(q_row); save();
+      if(act === 'roleInvOk') ui.sheet = { kind:'text', title:'Invitation créée', note:'Envoyez ce message à la personne. Le code est valable jusqu\'au ' + fmtDay(q_row.exp) + '.', text:'Invitation Volley-Club Commentry : ' + profLabel(q_row.role) + (scopeTxt(q_row) ? ' · ' + scopeTxt(q_row) : '') + ' pour ' + memberName(q_f.m) + '.\nCode : ' + q_row.code + '\nDans l\'application, touchez votre profil puis « J\'ai un code d\'invitation ».', canShare:!!navigator.share };
+      else ui.sheet = { kind:'roles' };
+      render(); break;
+    }
+    case 'roleDelAsk': ui.sheet = { kind:'roledel', id:d.id }; render(); break;
+    case 'roleDelOk': S.roles = (S.roles || []).filter(function(x){ return x.id !== sh.id; }); save(); ui.sheet = { kind:'roles' }; render(); break;
+    case 'invCodeOpen': ui.sheet = { kind:'invcode', err:'', draft:{ code:'' } }; render(); break;
+    case 'invCodeOk': {
+      var q_code = String(sh.draft.code || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), q_today = isoOf(new Date());
+      var q_inv = q_code ? (S.roles || []).filter(function(x){ return x.state === 'invite' && x.code === q_code; })[0] : null;
+      if(!q_inv){ sh.err = 'Code inconnu.'; render(); break; }
+      if(q_inv.exp < q_today){ sh.err = 'Ce code a expiré. Demandez une nouvelle invitation.'; render(); break; }
+      var q_me = meReal(), q_who = findMember(q_inv.mid);
+      if(q_me && q_me !== q_inv.mid && q_me !== S.adminId){ sh.err = 'Cet appareil est déjà utilisé par une autre personne.'; render(); break; }
+      q_inv.state = 'actif'; delete q_inv.code; delete q_inv.exp;
+      if(!q_me) meSet(q_inv.mid);
+      save();
+      ui.sheet = { kind:'info', title:'Invitation acceptée', note:q_me && q_me !== q_inv.mid ? 'Le rôle est activé pour ' + (q_who ? memberName(q_who.m) : 'cette personne') + '. Utilisez « Tester un rôle » pour l\'essayer.' : 'Votre rôle « ' + profLabel(q_inv.role) + ' » est activé. Touchez votre profil pour le choisir.' };
+      render(); break;
+    }
+    case 'requestOpen': ui.sheet = { kind:'request', err:'', draft:{ prenom:'', nom:'', naiss:'', licence:'', cid:'' } }; render(); break;
+    case 'requestOk': {
+      var q_q = sh.draft, q_e = '';
+      if(!(q_q.prenom || '').trim() || !(q_q.nom || '').trim()) q_e = 'Indiquez votre prénom et votre nom.';
+      else if(!q_q.naiss) q_e = 'Indiquez votre date de naissance.';
+      else if(!(q_q.licence || '').trim()) q_e = 'Indiquez votre numéro de licence.';
+      else if(!q_q.cid) q_e = 'Choisissez votre club.';
+      if(q_e){ sh.err = q_e; render(); break; }
+      var q_age = ageFrom(q_q.naiss), q_cl = clubById(q_q.cid);
+      var q_m = q_cl && q_cl.members.filter(function(x){ return norm(x.licence) === norm(q_q.licence) && norm(x.nom) === norm(q_q.nom) && norm(x.prenom) === norm(q_q.prenom); })[0];
+      S.requests.push({ id:uid(), dev:devId(), prenom:q_q.prenom.trim(), nom:q_q.nom.trim(), licence:q_q.licence.trim(), cid:q_q.cid, mid:q_m ? q_m.id : '', age:q_age, ageOk:(q_m && q_m.age !== '' && q_m.age != null && q_age != null) ? Math.abs(q_age - q_m.age) <= 1 : null, date:stamp(), state:'attente' });
+      save(); ui.sheet = { kind:'info', title:'Demande envoyée', note:'Le président ou le responsable de ' + (q_cl ? q_cl.name : 'votre club') + ' va la traiter. Revenez dans votre profil pour activer votre accès.' };
+      render(); break;
+    }
+    case 'reqOpen': ui.sheet = { kind:'requests' }; render(); break;
+    case 'reqAcc': case 'reqRef': {
+      var q_rq = (S.requests || []).filter(function(x){ return x.id === d.id; })[0];
+      if(q_rq && can('licValidate', { cid:q_rq.cid })){
+        if(act === 'reqRef') q_rq.state = 'refusee';
+        else {
+          var q_c2 = clubById(q_rq.cid), q_fm = q_rq.mid ? findMember(q_rq.mid) : null;
+          if(q_fm) q_fm.m.licSeason = licYear(q_fm.club);
+          else if(q_c2){
+            var q_nm = { id:uid(), licence:q_rq.licence, nom:q_rq.nom, prenom:q_rq.prenom, age:q_rq.age == null ? '' : q_rq.age, licSeason:licYear(q_c2) };
+            q_c2.members.push(q_nm); var q_dt2 = defaultTeam(q_c2); if(q_dt2) q_dt2.memberIds.push(q_nm.id); q_rq.mid = q_nm.id;
+          }
+          q_rq.state = 'acceptee';
+        }
+        q_rq.by = meGet(); save();
+      }
+      render(); break;
+    }
+    case 'reqActivate': {
+      var q_ra = (S.requests || []).filter(function(x){ return x.id === d.id; })[0];
+      if(q_ra && q_ra.mid){ meSet(q_ra.mid); q_ra.state = 'active'; save(); }
+      ui.sheet = null; render(); break;
+    }
+    case 'licOpen': ui.sheet = { kind:'licseason', cid:d.cid || '' }; render(); break;
+    case 'licStart': { var q_lc = clubById(sh.cid) || licClubs()[0]; if(q_lc && can('seasonLic', { cid:q_lc.id })){ q_lc.licSeason = licYear(q_lc) + 1; save(); } render(); break; }
+    case 'licRenew': { var q_lf = findMember(d.mid); if(q_lf){ q_lf.m.licSeason = licYear(q_lf.club); save(); } render(); break; }
+    case 'licRenewAll': { var q_la = clubById(sh.cid) || licClubs()[0]; if(q_la){ licToRenew(q_la).forEach(function(m){ m.licSeason = licYear(q_la); }); save(); } render(); break; }
+    case 'licDel': { var q_ld = clubById(sh.cid) || licClubs()[0]; if(q_ld){ ui.clubSel = q_ld.id; ui.sheet = { kind:'delmember', mid:d.mid }; } render(); break; }
+    case 'testOpen': ui.sheet = { kind:'testas', draft:{ mcid:'', mid:'' } }; render(); break;
+    case 'testOn': { if(sh.draft.mid && meReal() === S.adminId){ lsSet(TESTKEY, sh.draft.mid); ui.sheet = null; render(); } break; }
+    case 'testOff': lsSet(TESTKEY, ''); ui.sheet = null; render(); break;
     case 'profOpen': ui.sheet = { kind:'profile' }; render(); break;
     case 'profPick': profSet(d.v); ui.sheet = null; render(); window.scrollTo(0,0); break;
     case 'calIcs': doIcs(); break;
@@ -4925,11 +5280,13 @@ document.addEventListener('click', function(e){
     case 'delMemberOk': {
       var c = curClub();
       var gm = c && c.members.filter(function(x){ return x.id === sh.mid; })[0];
-      if(gm && gm.photo){
-        var keepPh = function(p){ if(p.mid === gm.id && !p.photo) p.photo = gm.photo; };
-        S.teams.forEach(function(tm){ tm.players.forEach(keepPh); });
-        S.clubs.forEach(function(cl){ (cl.teams || []).forEach(function(tt){ if(tt.squad && tt.squad.players) tt.squad.players.forEach(keepPh); }); });
-        S.library.forEach(function(en){ (en.teams || []).forEach(function(tm){ (tm.players || []).forEach(keepPh); }); });
+      if(gm){
+        var scrub = function(p){ if(p.mid === gm.id){ p.licence = ''; delete p.photo; } };
+        S.teams.forEach(function(tm){ tm.players.forEach(scrub); });
+        S.clubs.forEach(function(cl){ (cl.teams || []).forEach(function(tt){ if(tt.squad && tt.squad.players) tt.squad.players.forEach(scrub); }); });
+        S.library.forEach(function(en){ (en.teams || []).forEach(function(tm){ (tm.players || []).forEach(scrub); }); });
+        S.roles = (S.roles || []).filter(function(x){ return x.mid !== gm.id; });
+        if(S.fav) delete S.fav[gm.id];
       }
       if(c){ c.members = c.members.filter(function(x){ return x.id !== sh.mid; }); (c.teams || []).forEach(function(tt){ tt.memberIds = tt.memberIds.filter(function(i){ return i !== sh.mid; }); }); }
       ui.sheet = null; save(); render();
@@ -4987,6 +5344,11 @@ document.addEventListener('click', function(e){
     case 'fixPost': case 'fixUnpost': {
       var rp = calEntry(sh.cid, sh.fid);
       if(rp){ rp.f.postponed = act === 'fixPost'; save(); }
+      ui.sheet = null; render(); break;
+    }
+    case 'fixDate': {
+      var rd = calEntry(sh.cid, sh.fid), dn = document.getElementById('fnewd').value, tn2 = document.getElementById('fnewt').value;
+      if(rd && dn && rd.kind !== 'event' && can('matchDate', { cid:clubOfEntrant(rd.home) })){ rd.f.date = dn; rd.f.time = tn2 || ''; save(); }
       ui.sheet = null; render(); break;
     }
     case 'fixResched': {
@@ -5178,6 +5540,22 @@ document.addEventListener('input', function(e){
   else if(bind === 'champsel'){ ui.edit = false; ui.champSel = v; ui.mm = { a:'', b:'', homeIs:'a', res:'3-0' }; render(); return; }
   else if(bind === 'calf'){ ui.fil[ds.k] = v; ui.calPast = false; render(); return; }
   else if(bind === 'sn'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
+  else if(bind === 'rs'){
+    if(ui.sheet && ui.sheet.draft){
+      var q_dr = ui.sheet.draft, q_k = ds.k;
+      q_dr[q_k] = v;
+      if(ui.sheet.kind === 'roleAdd'){
+        if(q_k === 'mcid'){ q_dr.mid = ''; if(!q_dr.cid) q_dr.cid = v; render(); }
+        else if(q_k === 'role'){ if(!q_dr.cid) q_dr.cid = q_dr.mcid; q_dr.tid = ''; render(); }
+        else if(q_k === 'cid'){ q_dr.tid = ''; render(); }
+      } else if(ui.sheet.kind === 'testas' && q_k === 'mcid'){ q_dr.mid = ''; render(); }
+    }
+    return;
+  }
+  else if(bind === 'licclub'){ if(ui.sheet){ ui.sheet.cid = v; render(); } return; }
+  else if(bind === 'photopub'){ var q_pm = meInfo(); if(q_pm && !meTest()){ q_pm.m.photoPublic = !!e.target.checked; save(); } return; }
+  else if(bind === 'emfpub'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft.photoPublic = !!e.target.checked; return; }
+  else if(bind === 'licfin'){ if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ S.licFin = v.slice(5); save(); } return; }
   else if(bind === 'emf'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
   else if(bind === 'ncname'){ ui.newClub.name = v; return; }
   else if(bind === 'evf'){ if(ui.ev){ ui.ev[ds.k] = v; if(ds.k === 'a' || ds.k === 'b') render(); } return; }
