@@ -754,6 +754,20 @@ header.top.hc{position:sticky}
 .slbtn.ph{visibility:hidden}
 .rel{margin:0 0 4px;font-size:13px;font-weight:600;color:var(--muted)}
 .homeplay{margin-top:8px}
+.lg{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);margin-top:8px}
+.lgh,.lgr{display:grid;grid-template-columns:28px minmax(0,1fr) 26px 50px 36px;gap:6px;align-items:center;padding:10px 10px}
+.lgh{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lgh>span:not(:first-child){display:block}.lgj,.lgv{text-align:center}.lgp{text-align:right}.lgh .lgn{text-align:left}
+.lgsort{background:none;border:0;padding:0;margin:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;cursor:pointer}.lgsort.on{color:var(--ink)}
+.lgr{border-top:1px solid var(--line);min-height:56px}
+.lgk{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--surface2);color:var(--muted);font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+.lgn{display:flex;align-items:center;gap:8px;min-width:0}.lgn .logo{flex:none;border-radius:6px}.lgx{display:flex;flex-direction:column;min-width:0}.lgn b{font-size:15px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lgn small{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgj{font-size:14px;color:var(--muted);font-weight:600}.lgv{font-size:14px;color:var(--muted);font-weight:700;white-space:nowrap}.lgp{font-family:var(--font-d);font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.lgr.up .lgk{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}.lgr.up .lgn small,.lgr.up .lgv{color:var(--ok)}
+.lgr.down .lgk{background:color-mix(in srgb,var(--danger) 20%,transparent);color:var(--danger)}.lgr.down .lgn small,.lgr.down .lgv,.lgr.down .lgp{color:var(--danger)}
+.lgr.me{background:linear-gradient(90deg,color-mix(in srgb,var(--acc) 24%,transparent),color-mix(in srgb,var(--acc) 4%,transparent));box-shadow:inset 4px 0 0 var(--acc)}
+.lgr.me .lgk{background:var(--acc);color:var(--acc-ink)}.lgr.me .lgn b,.lgr.me .lgn small,.lgr.me .lgv,.lgr.me .lgj,.lgr.me .lgp{color:var(--acc-text)}
+.lgleg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 2px 0;font-size:12px;font-weight:600;color:var(--muted)}.lgleg span{display:inline-flex;align-items:center;gap:6px}.lgleg i{width:10px;height:10px;border-radius:50%;display:inline-block}.lgleg .g{background:var(--ok)}.lgleg .r{background:var(--danger)}.lgleg .o{background:var(--acc)}
 .hstand{width:100%;min-width:0;font-size:13px}
 .hstand th,.hstand td{padding:6px 5px}
 .hstand th:first-child,.hstand td:first-child{text-align:left;position:static;box-shadow:none}
@@ -4399,12 +4413,8 @@ function champView0(){
     }
     out += '<section class="card"><h3>Classement</h3>';
     if(!rows.length) out += '<p class="muted">Ajoutez des équipes au championnat pour voir le classement.</p>';
-    else out += '<div class="tablewrap"><table><thead><tr>' + th('club','Équipe','Trier par équipe') + th('j','J','Matchs joués') + th('g','G','Matchs gagnés') + th('p','P','Matchs perdus') +
-      th('sp','S+','Sets gagnés') + th('sc','S−','Sets perdus') + th('pts','Pts','Points du championnat') + '</tr></thead><tbody>' +
-      rows.map(function(r){
-        return '<tr><td><span class="fxteam"><span class="rank">' + r.rank + '</span>' + logoHtml(r.id, 24) + '<span class="nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span></span></td><td>' + r.j + '</td><td>' + r.g + '</td><td>' + r.p + '</td><td>' + r.sp + '</td><td>' + r.sc + '</td><td class="pts">' + r.pts + '</td></tr>';
-      }).join('') + '</tbody></table></div>' +
-      '<p class="hint2">J joués · G gagnés · P perdus · S+ sets gagnés · S− sets perdus · Pts points. Touchez un en-tête pour trier. Barème : 3-0 → 5, 3-1 → 4, 3-2 → 3, 2-3 → 2, 1-3 → 1, 0-3 → 0.</p>';
+    else out += standHtml(rows, '', true) +
+      '<p class="hint2">MJ matchs joués · V-D victoires et défaites · Pts points. Touchez un en-tête pour trier. Barème : 3-0 → 5, 3-1 → 4, 3-2 → 3, 2-3 → 2, 1-3 → 1, 0-3 → 0.</p>';
     out += '</section><section class="card"><h3>Résultats</h3>';
     var ms = ch.matches.filter(function(m){ return pairActive(ch, m.home, m.away); }).reverse().map(function(m){
       var warn = known(m.hs, m.as) ? '' : ' <span class="tag" title="Le barème ne prévoit que les matchs en 3 sets gagnants">barème non défini</span>';
@@ -4505,13 +4515,27 @@ function matchSlider(key, ents, start, today, favId, label){
     '<div class="slview"><p class="rel">' + esc(relDay(e.date, today)) + (e.time && e.date >= today ? ' · ' + esc(e.time) : '') + '</p>' + calRow(e, today, favId) + play + '</div>' +
     (n > 1 ? slArrow(key, n, 1) : '<span class="slbtn ph"></span>') + '</div>';
 }
+/* Tableau de classement (maquette du 23/10/2026) : 1er en vert, dernier en rouge, équipes favorites en orange */
+function standHl(r, hi){ return (!!hi && r.id === hi) || isFav('team', r.id) || isFav('club', clubOfEntrant(r.id)); }
+function standHtml(rows, hi, sortable){
+  var n = rows.length;
+  function hd(k, label, cls){
+    if(!sortable) return '<span class="' + cls + '">' + label + '</span>';
+    var on = ui.sort.k === k;
+    return '<span class="' + cls + '" aria-sort="' + (on ? (ui.sort.dir > 0 ? 'ascending' : 'descending') : 'none') + '"><button class="lgsort' + (on ? ' on' : '') + '" data-act="sort" data-k="' + k + '">' + label + (on ? (ui.sort.dir > 0 ? ' ▴' : ' ▾') : '') + '</button></span>';
+  }
+  var out = '<div class="lg" role="table"><div class="lgh" role="row"><span>#</span>' + hd('club', 'Équipe', 'lgn') + hd('j', 'MJ', 'lgj') + hd('g', 'V-D', 'lgv') + hd('pts', 'Pts', 'lgp') + '</div>';
+  rows.forEach(function(r){
+    var me = standHl(r, hi), tone = me ? 'me' : (n > 1 && r.rank === 1 ? 'up' : (n > 1 && r.rank === n ? 'down' : '')), diff = r.sp - r.sc;
+    out += '<div class="lgr ' + tone + '" role="row"><span class="lgk">' + r.rank + '</span><span class="lgn">' + logoHtml(r.id, 26) + '<span class="lgx"><b title="' + esc(r.name) + '">' + esc(r.name) + '</b><small>Sets: ' + r.sp + '-' + r.sc + (me ? ' (' + (diff > 0 ? '+' : '') + diff + ')' : '') + '</small></span></span>' +
+      '<span class="lgj">' + r.j + '</span><span class="lgv">' + r.g + '-' + r.p + '</span><span class="lgp">' + r.pts + '</span></div>';
+  });
+  return out + '</div><div class="lgleg"><span><i class="g"></i>Premier</span><span><i class="r"></i>Dernier</span><span><i class="o"></i>Mes favoris</span></div>';
+}
 function standingsHome(ch, hi){
   var rows = standings(ch).slice().sort(function(a, b){ return a.rank - b.rank; });
   if(!rows.length) return '';
-  return '<h3 class="hsec">Classement</h3><div class="tablewrap"><table class="hstand"><thead><tr><th>Équipe</th><th>J</th><th>G</th><th>P</th><th>S+</th><th>S−</th><th>Pts</th></tr></thead><tbody>' +
-    rows.map(function(r){
-      return '<tr' + (r.id === hi ? ' class="me"' : '') + '><td><span class="fxteam"><span class="rank">' + r.rank + '</span>' + logoHtml(r.id, 22) + '<span class="nm" title="' + esc(r.name) + '">' + esc(r.name) + '</span></span></td><td>' + r.j + '</td><td>' + r.g + '</td><td>' + r.p + '</td><td>' + r.sp + '</td><td>' + r.sc + '</td><td class="pts">' + r.pts + '</td></tr>';
-    }).join('') + '</tbody></table></div>';
+  return '<h3 class="hsec">Classement</h3>' + standHtml(rows, hi, false);
 }
 function favHead(kind, id, title, sub, logoId){
   return '<div class="favhd">' + (logoId ? logoHtml(logoId, 40) : '') + '<button class="favtitle" data-act="favGo" data-kind="' + kind + '" data-id="' + esc(id) + '"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></button>' + favStar(kind, id) + '</div>';
