@@ -915,7 +915,11 @@ function migrate(s){
   var d = newState();
   s.clubs = s.clubs || []; s.champs = s.champs || [];
   s.clubs.forEach(function(c){ if(c.members === undefined) c.members = []; if(!c.teams){ c.teams = [{ id:c.id, name:c.name, memberIds:c.members.map(function(m){ return m.id; }), squad:c.squad || null }]; delete c.squad; } if(!c.teams.some(function(t){ return t.id === c.id; })) c.teams.unshift({ id:c.id, name:c.name, memberIds:[], squad:null }); c.teams.forEach(function(t){ if(!t.memberIds) t.memberIds = []; }); });
-  s.champs.forEach(function(c){ c.fixtures = c.fixtures || []; });
+  s.champs.forEach(function(c){
+    c.fixtures = c.fixtures || [];
+    c.fixtures.forEach(function(f){ if(f.time === undefined) f.time = ''; if(f.place === undefined) f.place = ''; });
+    (c.matches || []).forEach(function(m){ if(m.ref === undefined) m.ref = null; if(m.sets === undefined) m.sets = null; if(!m.source) m.source = 'manual'; });
+  });
   if(!s.agenda) s.agenda = [];
   ensureSeasons(s);
   if(s.fixtureRef === undefined) s.fixtureRef = null;
@@ -1269,7 +1273,7 @@ function tabSub(){
 function settingsView(){
   var bk = bkStatus(), th = themeGet(), out = '<div class="stack">';
   out += '<section class="card"><h2>Données</h2><div class="backupbox' + (bk.warn ? ' warn' : '') + '" style="margin:10px 0 0"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>' +
-    '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, démonstration, cohérence…</button></div></section>';
+    '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, données officielles, cohérence…</button></div></section>';
   out += '<section class="card"><h2>Apparence</h2><div class="chips modes" style="margin-top:10px">' +
     chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
     '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
@@ -1466,7 +1470,7 @@ function teamLoad(ch, tid){
   return { played:ch.matches.filter(function(m){ return m.home === tid || m.away === tid; }).length,
            planned:ch.fixtures.filter(function(f){ return f.home === tid || f.away === tid; }).length };
 }
-/* copie automatique de l'état actuel avant de le remplacer (restauration, démonstration, retour arrière) */
+/* copie automatique de l'état actuel avant de le remplacer (restauration, données officielles, retour arrière) */
 var PREVKEY = 'volley-match-v1-avant';
 function keepBefore(reason){
   try{ localStorage.setItem(PREVKEY, JSON.stringify({ savedAt:new Date().toISOString(), reason:reason, state:S })); }catch(e){}
@@ -2238,7 +2242,7 @@ function backupText(){
 }
 function fetchDemo(cb, keep){
   try{
-    fetch('demo.json', { cache:'no-cache' }).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){
+    fetch('donnees.json', { cache:'no-cache' }).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(o){
       if(!o || !o.data) throw 0; if(keep) keepBefore(keep); applyBackup(o); bkMark(); cb(true);
     }).catch(function(){ cb(false); });
   }catch(e){ cb(false); }
@@ -3841,7 +3845,7 @@ function backupView(){
     '<p class="hint2"><b>Confidentialité :</b> le fichier contient les noms, licences et âges des licenciés. Gardez-le pour vous (téléphone, stockage privé) et ne le déposez jamais sur un dépôt public comme GitHub : l\'historique y conserve tout.</p>' +
     '<div class="btnrow"><button class="btn wide primary" data-act="backup">Sauvegarder toutes les données</button>' +
     '<input type="file" id="restorefile" class="vh" accept=".json,application/json"><label for="restorefile" class="btn wide">Restaurer une sauvegarde</label>' +
-    '<button class="btn wide" data-act="demoAsk">Charger les données de démonstration</button><button class="btn wide" data-act="cohOpen">Vérifier la cohérence des données</button></div></section>' +
+    '<button class="btn wide" data-act="demoAsk">Recharger les données officielles</button><button class="btn wide" data-act="cohOpen">Vérifier la cohérence des données</button></div></section>' +
     (prevGet() ? '<section class="card"><h3>Copie automatique</h3><p class="muted" style="margin:6px 0 0">Vos données d\'avant la dernière ' + esc(prevGet().reason) + ' (' + esc(fmtWhen(prevGet().savedAt)) + ') sont gardées sur cet appareil.</p><div class="btnrow"><button class="btn wide" data-act="prevRestoreAsk">Revenir à l\'état d\'avant</button></div></section>' : '') + '</div>';
   return out;
 }
@@ -4346,7 +4350,7 @@ function sheetView(){
     inner = '<h2>Restaurer cette sauvegarde ?</h2><p class="hint2">Sauvegarde du ' + esc(fmtWhen(pr ? pr.exportedAt : '')) + ' : ' + (dd.clubs || []).length + ' club' + ((dd.clubs || []).length > 1 ? 's' : '') + ', ' + (dd.champs || []).length + ' championnat' + ((dd.champs || []).length > 1 ? 's' : '') + ', ' + (((dd.library || []).length) + ((dd.events || []).length || (dd.sets || []).length ? 1 : 0)) + ' match' + '(s). Toutes les données actuelles de cet appareil seront remplacées. Une copie automatique est gardée : vous pourrez revenir en arrière depuis Sauvegarde.</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="restoreOk">Oui, restaurer</button><button class="btn wide" data-act="restoreNo">Annuler</button></div>';
   } else if(sh.kind === 'demo'){
-    inner = '<h2>Charger les données de démonstration ?</h2><p class="hint2">Clubs, équipes, membres fictifs et championnats UFOLEP d\'exemple. Toutes les données actuelles de cet appareil seront remplacées. Une copie automatique est gardée : vous pourrez revenir en arrière depuis Sauvegarde.</p>' +
+    inner = '<h2>Recharger les données officielles ?</h2><p class="hint2">Clubs, équipes et championnats UFOLEP (résultats 2025-2026 et calendrier 2026-2027), sans licenciés. Toutes les données actuelles de cet appareil seront remplacées. Une copie automatique est gardée : vous pourrez revenir en arrière depuis Sauvegarde.</p>' +
       (sh.err ? '<p class="hint2" style="color:var(--danger)" role="alert">' + esc(sh.err) + '</p>' : '') +
       '<div class="btnrow"><button class="btn wide danger" data-act="demoOk">Oui, charger</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'modechg'){
@@ -4676,7 +4680,7 @@ document.addEventListener('click', function(e){
     }
     case 'restoreOk': if(ui.pendingRestore){ keepBefore('restauration'); applyBackup(ui.pendingRestore); bkMark(ui.pendingRestore.exportedAt); ui.pendingRestore = null; ui.sheet = null; ui.msg = 'Sauvegarde restaurée. Vos anciennes données sont gardées : Sauvegarde › Revenir à l\'état d\'avant.'; var rcz = coherence(); if(rcz.broken) ui.msg += ' ' + rcz.broken + ' référence' + (rcz.broken > 1 ? 's' : '') + ' cassée' + (rcz.broken > 1 ? 's' : '') + ' : Sauvegarde › Vérifier la cohérence des données.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } break;
     case 'demoAsk': ui.sheet = { kind:'demo' }; render(); break;
-    case 'demoOk': fetchDemo(function(ok){ if(ok){ ui.sheet = null; ui.msg = 'Données de démonstration chargées. Vos anciennes données sont gardées : Sauvegarde › Revenir à l\'état d\'avant.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } else { ui.sheet = { kind:'demo', err:'Fichier demo.json introuvable à côté de l\'application.' }; render(); } }, 'démonstration'); break;
+    case 'demoOk': fetchDemo(function(ok){ if(ok){ ui.sheet = null; ui.msg = 'Données officielles chargées. Vos anciennes données sont gardées : Sauvegarde › Revenir à l\'état d\'avant.'; ui.dataView = 'home'; render(); window.scrollTo(0,0); } else { ui.sheet = { kind:'demo', err:'Fichier donnees.json introuvable à côté de l\'application.' }; render(); } }, 'données officielles'); break;
     case 'cohOpen': ui.sheet = { kind:'coherence' }; render(); break;
     case 'cohFix': { var cn = cohFix(); ui.sheet = { kind:'coherence', note:cn + ' élément' + (cn > 1 ? 's' : '') + ' réparé' + (cn > 1 ? 's' : '') + '.' }; render(); break; }
     case 'cohPurge': { var cp = cohPurge(); ui.sheet = { kind:'coherence', note:cp + ' élément' + (cp > 1 ? 's' : '') + ' supprimé' + (cp > 1 ? 's' : '') + '.' }; render(); break; }
