@@ -744,6 +744,43 @@ header.top.hc{position:sticky}
 .cupbtn[aria-pressed=true]{border-color:var(--a);box-shadow:inset 0 0 0 2px var(--a);background:var(--surface2)}
 .cupmore{font-size:1.4rem;font-weight:700;color:var(--muted)}
 .cupbtn:disabled{opacity:.3}
+.repc{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);border-left:4px solid var(--line)}
+.repc.haute{border-left-color:var(--acc)}
+.repc.urgente{border-left-color:var(--danger)}
+.repc.done{opacity:.6}
+.repc .chip.on,.msgbar .chip.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.msgtag.rpurgente{color:var(--danger);border-color:var(--danger)}
+.msgtag.rpbasse{color:var(--muted);border-color:var(--line)}
+textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.mbtn{position:relative}
+.mbadge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--acc);color:var(--acc-ink);font-size:12px;font-weight:800;line-height:1}
+.mbtn .mbadge{position:absolute;top:2px;right:0}
+.msgtop h2{margin:0}
+.msgths{display:flex;flex-direction:column;gap:8px}
+.msgth{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:64px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);text-align:left}
+.msgth.unread{border-color:var(--acc)}
+.msgth .mtt{display:flex;flex-direction:column;min-width:0;flex:1}
+.msgth .mtt small{color:var(--muted);font-size:13px}
+.msgth .mts{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msgth.unread .mts{color:var(--ink);font-weight:600}
+.msgth .mtr{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:0 0 auto}
+.msgth .mtr small{color:var(--muted);font-size:12px}
+.msglist{display:flex;flex-direction:column;gap:8px}
+.msgb{align-self:flex-start;max-width:88%;padding:8px 12px;border-radius:14px;background:var(--surface2);border:1px solid var(--line)}
+.msgb.me{align-self:flex-end;background:var(--surface);border-color:var(--a)}
+.msgb.ann{border-left:4px solid var(--acc)}
+.msgb.pend{opacity:.6}
+.msgb p{margin:4px 0 0;overflow-wrap:anywhere}
+.msgh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.msgh small{color:var(--muted);font-size:12px;margin-left:auto}
+.msgtag{font-size:12px;font-weight:700;color:var(--acc-text);border:1px solid var(--acc);border-radius:8px;padding:0 6px}
+.msgev{display:flex;align-items:center;gap:6px;margin-top:6px;min-height:36px;padding:4px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font-size:14px;text-align:left}
+.msgev.off{color:var(--muted)}
+.msgdel{display:block;margin-top:6px;background:none;border:0;color:var(--muted);font-size:13px;padding:4px 0;text-decoration:underline}
+.msgc{position:sticky;bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--bg);padding:8px 0 4px;display:flex;flex-direction:column;gap:6px}
+.msgc textarea{width:100%;resize:none;font:inherit;font-size:16px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
+.msgbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.msgsend{margin-left:auto;min-height:44px;padding:0 18px}
 .selrow{display:flex;align-items:center;gap:6px}
 .selrow select{flex:1;min-width:0}
 .favh{margin:18px 0 6px;font-size:16px}
@@ -1026,7 +1063,7 @@ var SB = (function(){
   function setSes(o){ if(o) DB.dev.set(SESKEY, JSON.stringify(o)); else DB.dev.del(SESKEY); }
   function pack(j){ return { access_token:j.access_token, refresh_token:j.refresh_token, expires_at:j.expires_at || (now() + (j.expires_in || 3600)), email:(j.user && j.user.email) || '', uid:(j.user && j.user.id) || '' }; }
   function errTxt(j, d){ return (j && (j.msg || j.error_description || j.message || j.error)) || d || 'Erreur'; }
-  function notify(){ try{ if(!(ui.sheet && (ui.sheet.draft || ui.sheet.rows))) render(); }catch(e){} }
+  function notify(){ try{ if(ui.tab === 'msg' && ui.msgThread){ msgAfter(); return; } if(!(ui.sheet && (ui.sheet.draft || ui.sheet.rows))) render(); }catch(e){} }
   function ensure(){
     var s = ses();
     if(!s) return Promise.resolve(null);
@@ -1245,15 +1282,128 @@ var SB = (function(){
       return one(0).then(function(){ save(); if(rejected) return pull().then(function(){ return true; }); return true; });
     }).catch(function(){ st.msg = 'Hors ligne : les changements seront envoyés au retour du réseau.'; return false; });
   }
+  /* Messagerie : S.msgs = [{id, scope, ref, author, body, annonce, entry, at, p}] (p = en attente d'envoi) ; S.sb.md = suppressions à envoyer */
+  function pushMsgs(){
+    var out = (S.msgs || []).filter(function(m){ return m.p; }), del = ((S.sb && S.sb.md) || []).slice();
+    if(!out.length && !del.length) return Promise.resolve(false);
+    return ensure().then(function(s){
+      if(!s) return false;
+      var stop = false;
+      function sendOne(i){
+        if(i >= out.length || stop) return Promise.resolve();
+        var m = out[i];
+        return req('POST', '/rest/v1/messages', { id:m.id, scope:m.scope, ref:m.ref || '', body:m.body, annonce:!!m.annonce, entry_id:m.entry || null }, { Prefer:'return=minimal' }).then(function(r){
+          if(r.ok || r.status === 409){ delete m.p; return sendOne(i + 1); }
+          if(r.status === 401 || r.status >= 500){ stop = true; st.msg = 'Envoi interrompu, nouvel essai plus tard.'; return; }
+          st.msg = 'Message refusé : ' + errTxt(r.json, r.status);
+          S.msgs = S.msgs.filter(function(x){ return x.id !== m.id; });
+          return sendOne(i + 1);
+        });
+      }
+      function delOne(i){
+        if(i >= del.length || stop) return Promise.resolve();
+        var id = del[i];
+        return req('DELETE', '/rest/v1/messages?id=eq.' + encodeURIComponent(id), undefined, { Prefer:'return=minimal' }).then(function(r){
+          if(r.status === 401 || r.status >= 500){ stop = true; return; }
+          S.sb.md = S.sb.md.filter(function(x){ return x !== id; });
+          return delOne(i + 1);
+        });
+      }
+      return sendOne(0).then(function(){ return delOne(0); }).then(function(){ save(); return true; });
+    }).catch(function(){ st.msg = 'Hors ligne : les changements seront envoyés au retour du réseau.'; return false; });
+  }
+  function pullMsgs(){
+    return ensure().then(function(s){
+      if(!s || !meGet()) return false;
+      var since = new Date(Date.now() - 90 * 86400000).toISOString(), out = [], off = 0;
+      function next(){
+        return req('GET', '/rest/v1/messages?select=*&ca=gte.' + encodeURIComponent(since) + '&order=ca.asc', undefined, { Range:off + '-' + (off + 999) }).then(function(r){
+          if(!r.ok) throw new Error('messages : ' + errTxt(r.json, r.status));
+          out = out.concat(r.json || []);
+          if((r.json || []).length >= 1000 && off < 4000){ off += 1000; return next(); }
+          return out;
+        });
+      }
+      return next().then(function(rows){
+        var md = (S.sb && S.sb.md) || [], seen = {};
+        var list = rows.filter(function(r){ return md.indexOf(r.id) < 0; }).map(function(r){ return { id:r.id, scope:r.scope, ref:r.ref || '', author:r.author, body:r.body, annonce:!!r.annonce, entry:r.entry_id || '', at:r.ca }; });
+        list.forEach(function(x){ seen[x.id] = 1; });
+        (S.msgs || []).forEach(function(m){ if(m.p && !seen[m.id]) list.push(m); });
+        list.sort(function(a, b){ return a.at < b.at ? -1 : (a.at > b.at ? 1 : 0); });
+        S.msgs = list; save(); return true;
+      });
+    }).catch(function(){ return false; });
+  }
+  /* Signalements : S.reports = [{id, author, prio, area, body, state, at, p}] ; S.sb.rq = changements d'état ou suppressions à envoyer [{id, op:'state'|'del', v}] */
+  function pushRep(){
+    var out = (S.reports || []).filter(function(m){ return m.p; }), q = ((S.sb && S.sb.rq) || []).slice();
+    if(!out.length && !q.length) return Promise.resolve(false);
+    return ensure().then(function(s){
+      if(!s) return false;
+      var stop = false;
+      function sendOne(i){
+        if(i >= out.length || stop) return Promise.resolve();
+        var m = out[i];
+        return req('POST', '/rest/v1/reports', { id:m.id, prio:m.prio, area:m.area, body:m.body }, { Prefer:'return=minimal' }).then(function(r){
+          if(r.ok || r.status === 409){ delete m.p; return sendOne(i + 1); }
+          if(r.status === 401 || r.status >= 500){ stop = true; st.msg = 'Envoi interrompu, nouvel essai plus tard.'; return; }
+          st.msg = 'Signalement refusé : ' + errTxt(r.json, r.status);
+          S.reports = S.reports.filter(function(x){ return x.id !== m.id; });
+          return sendOne(i + 1);
+        });
+      }
+      function qOne(i){
+        if(i >= q.length || stop) return Promise.resolve();
+        var x = q[i], p = x.op === 'del'
+          ? req('DELETE', '/rest/v1/reports?id=eq.' + encodeURIComponent(x.id), undefined, { Prefer:'return=minimal' })
+          : req('PATCH', '/rest/v1/reports?id=eq.' + encodeURIComponent(x.id), { state:x.v }, { Prefer:'return=minimal' });
+        return p.then(function(r){
+          if(r.status === 401 || r.status >= 500){ stop = true; return; }
+          S.sb.rq = S.sb.rq.filter(function(y){ return !(y.id === x.id && y.op === x.op && y.v === x.v); });
+          return qOne(i + 1);
+        });
+      }
+      return sendOne(0).then(function(){ return qOne(0); }).then(function(){ save(); return true; });
+    }).catch(function(){ return false; });
+  }
+  function pullRep(){
+    return ensure().then(function(s){
+      if(!s || !meGet()) return false;
+      return all('reports', 'ca').then(function(rows){
+        var q = (S.sb && S.sb.rq) || [], seen = {};
+        var list = [];
+        rows.forEach(function(r){
+          var x = { id:r.id, author:r.author, prio:r.prio, area:r.area, body:r.body, state:r.state, at:r.ca };
+          var del = false;
+          q.forEach(function(y){ if(y.id === r.id){ if(y.op === 'del') del = true; else x.state = y.v; } });
+          if(!del){ list.push(x); seen[x.id] = 1; }
+        });
+        (S.reports || []).forEach(function(m){ if(m.p && !seen[m.id]) list.push(m); });
+        list.sort(function(a, b){ return a.at < b.at ? -1 : (a.at > b.at ? 1 : 0); });
+        S.reports = list; save(); return true;
+      });
+    }).catch(function(){ return false; });
+  }
+  var again = false;
+  function msgSync(){
+    if(!ses()) return Promise.resolve(false);
+    if(busy){ again = true; return Promise.resolve(false); }
+    busy = true;
+    var fin = function(){ busy = false; if(again){ again = false; setTimeout(msgSync, 50); } };
+    return pushMsgs().then(pushRep).then(pullMsgs).then(pullRep).then(function(r){ fin(); try{ msgAfter(); }catch(e){} return r; }, function(){ fin(); });
+  }
+  function staff(){
+    return req('POST', '/rest/v1/rpc/v2c_staff_list', {}).then(function(r){ return r.ok ? (r.json || []) : []; }, function(){ return []; });
+  }
   function sync(){
     if(busy || !ses()) return Promise.resolve(false);
     busy = true;
-    return push().then(pushPres).then(pull).then(function(r){ busy = false; notify(); return r; }, function(){ busy = false; });
+    return push().then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); return r; }, function(){ busy = false; });
   }
   return {
     status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length + ((S.sb && S.sb.pq) ? S.sb.pq.length : 0), busy:busy, msg:st.msg }; },
-    kick:function(){ if(!ses() || !(S.sync.out.length || (S.sb && S.sb.pq && S.sb.pq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
-    sync:sync,
+    kick:function(){ if(!ses() || !(S.sync.out.length || (S.sb && S.sb.pq && S.sb.pq.length) || (S.sb && S.sb.md && S.sb.md.length) || (S.msgs || []).some(function(m){ return m.p; }) || (S.reports || []).some(function(m){ return m.p; }) || (S.sb && S.sb.rq && S.sb.rq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
+    sync:sync, msgSync:msgSync, staff:staff,
     start:function(){
       if(!ses()) return;
       var go = function(){ if(!(matchStarted() && !S.finished)) sync(); };
@@ -1381,7 +1531,7 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], pres:{}, sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], pres:{}, msgs:[], msgSeen:{}, reports:[], sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
     prefs:{ schema:true, table:false, players:false, sheet:false }
   };
 }
@@ -1417,6 +1567,9 @@ function migrate(s){
   s.library.forEach(function(e){ if(e.mode === undefined){ e.mode = 'complet'; e.modeSet = true; } if(!e.sanc) e.sanc = [{},{}]; if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; if(e.titleAuto === undefined) e.titleAuto = false; if(!e.starters) e.starters = [[],[]]; if(!e.subPairs) e.subPairs = [[],[]]; });
   if(s.homeClub === undefined) s.homeClub = '';
   if(!s.pres || typeof s.pres !== 'object') s.pres = {};
+  if(!Array.isArray(s.msgs)) s.msgs = [];
+  if(!Array.isArray(s.reports)) s.reports = [];
+  if(!s.msgSeen || typeof s.msgSeen !== 'object') s.msgSeen = {};
   if(s.adminId === undefined) s.adminId = '';
   if(!s.fav) s.fav = {};
   if(s.mode === undefined){ s.mode = 'complet'; s.modeSet = true; }
@@ -2094,6 +2247,7 @@ function dotsBtnHtml(){
   return '<button class="ibtn" data-act="dots" aria-label="Paramètres" title="Paramètres"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.8" fill="currentColor" stroke="none"/></svg></button>';
 }
 function tabSub(){
+  if(ui.tab === 'msg') return ui.msgThread ? msgTitle(ui.msgThread) : '';
   if(ui.tab === 'clubs'){ var c = (ui.clubView === 'edit' || ui.clubView === 'team' || ui.clubView === 'logo' || ui.clubView === 'created') ? clubById(ui.clubSel) : null; return c ? c.name : ''; }
   if(ui.tab === 'champ'){ var ch = curChamp(); return ch ? ch.name : ''; }
   if(ui.tab === 'cal' && ui.calView === 'create') return ui.ev && ui.ev.kind === 'train' ? 'Nouvel entraînement' : (ui.ev && ui.ev.kind === 'event' ? 'Nouvel événement' : 'Nouvelle rencontre');
@@ -2161,7 +2315,7 @@ function calKeep(e){
     if(hr && !(pid && (hr.t ? pid === hr.t : clubOfEntrant(pid) === hr.c))) return false;
     if(!hr && !e.home) return false;
   }
-  if(f.team && !(e.home === f.team || e.away === f.team)) return false;
+  if(f.team && !(e.home === f.team || e.away === f.team) && !(e.f && e.f.train && e.f.club && clubOfEntrant(f.team) === e.f.club)) return false;
   if(ui.calType && entryType(e) !== ui.calType) return false;
   if(f.club && !(e.home && clubOfEntrant(e.home) === f.club) && !(e.away && clubOfEntrant(e.away) === f.club) && !(e.f && e.f.train && e.f.club === f.club)) return false;
   if(f.champ && e.cid !== f.champ) return false;
@@ -2743,7 +2897,7 @@ function loadMatch(created){
 }
 function keepShared(){
   return { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(x){ return x.slice(); }), cfg:S.cfg,
-    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, pres:S.pres, licFin:S.licFin, sync:S.sync, sb:S.sb };
+    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, pres:S.pres, msgs:S.msgs, msgSeen:S.msgSeen, reports:S.reports, licFin:S.licFin, sync:S.sync, sb:S.sb };
 }
 function resetForNew(){
   stopClock(); archiveCurrent();
@@ -3567,7 +3721,7 @@ function copyText(text){
 
 /* ---------- Vues : commun ---------- */
 function inSetup(){ return ui.tab === 'match' && (S.stage === 'setup' || (ui.showSetup && S.stage === 'play')); }
-function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', data:'Statistiques', backup:'Sauvegarde', settings:'Paramètres' }[ui.tab] || ''; }
+function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', data:'Statistiques', backup:'Sauvegarde', settings:'Paramètres', msg:'Messages' }[ui.tab] || ''; }
 function clockLabel(){ return S.clock.running ? 'Pause' : (S.clock.acc > 0 ? 'Reprendre' : 'Démarrer'); }
 /* Rang du set en cours : « 1er set », « 2e set »… */
 function ordinalSet(n){ return n === 1 ? '1er set' : n + 'e set'; }
@@ -3577,7 +3731,7 @@ function header(){
   function bare(t, sub, extra){ return '<header class="top"><div class="hset"><strong>' + esc(t) + '</strong>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</div>' + (extra || '') + '</header>'; }
   function plain(t, sub, extra){
     var pv = prevAct(), left = pv ? prevBtnHtml(pv) : '<button class="ibtn" data-act="tab" data-tab="menu" aria-label="Accueil"><img src="' + LOGO_V2C + '" alt=""></button>';
-    return '<header class="top"><div class="hl">' + left + '<div class="hset"><strong>' + esc(t) + '</strong>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</div></div><div class="hr">' + (extra || '') + profBtnHtml() + dotsBtnHtml() + '</div></header>';
+    return '<header class="top"><div class="hl">' + left + '<div class="hset"><strong>' + esc(t) + '</strong>' + (sub ? '<span>' + esc(sub) + '</span>' : '') + '</div></div><div class="hr">' + (extra || '') + msgBtnHtml() + profBtnHtml() + dotsBtnHtml() + '</div></header>';
   }
   if(ui.tab === 'menu') return plain('Accueil', '');
   if(ui.tab === 'match' && S.stage === 'home') return plain('Match', ui.addRes ? 'Ajouter un résultat' : '', seasonBtnQuick());
@@ -3640,6 +3794,7 @@ function prevAct(){
     if(v === 'logo') return { act:'clubEdit', cid:ui.clubSel };
     return null;
   }
+  if(t === 'msg') return ui.msgThread ? { act:'msgBack' } : null;
   if(t === 'backup') return { act:'tab', tab:'settings' };
   if(t === 'cal') return ui.calView === 'create' ? { act:'calBack' } : null;
   if(t === 'data') return (ui.dataView === 'match' || (ui.dataView === 'teams' && ui.dataTeam) || (ui.dataView === 'players' && ui.dataPlayer)) ? { act:'dataBack' } : null;
@@ -4487,7 +4642,7 @@ function groupChips(){
 }
 /* Exempts à afficher sous une semaine du calendrier, en respectant les filtres */
 function calExempt(w){
-  if(norm(ui.calQ)) return [];
+  if(norm(ui.calQ) || (ui.calType && ui.calType !== 'c')) return [];
   var f = ui.fil;
   return champs().filter(function(ch){ return !f.champ || f.champ === ch.id; }).map(function(ch){
     return { ch:ch, ids:exemptOf(ch, w).filter(function(id){ return (!f.team || f.team === id) && (!f.club || clubOfEntrant(id) === f.club); }) };
@@ -4860,6 +5015,214 @@ function backupView(){
     (prevGet() ? '<section class="card"><h3>Copie automatique</h3><p class="muted" style="margin:6px 0 0">Vos données d\'avant la dernière ' + esc(prevGet().reason) + ' (' + esc(fmtWhen(prevGet().savedAt)) + ') sont gardées sur cet appareil.</p><div class="btnrow"><button class="btn wide" data-act="prevRestoreAsk">Revenir à l\'état d\'avant</button></div></section>' : '') + '</div>';
   return out;
 }
+
+/* ---------- Messagerie (24/10/2026) : fils d'équipe, annonces de club, annonces à tous, messages privés entre responsables ---------- */
+function msgKey(sc, rf){ return sc + ':' + (rf || ''); }
+function msgMe(){ return meGet() || ''; }
+function msgIsAdmin(){ return !!S.adminId && S.adminId === msgMe(); }
+function msgRole(role, k, v){ var me = msgMe(); return (S.roles || []).some(function(r){ return r.mid === me && r.role === role && r.state === 'actif' && (!k || r[k] === v); }); }
+function msgTeamClub(tid){ var f = findTeam(tid); return f ? f.c.id : ''; }
+function msgClubStaff(cid){ return !!cid && (msgIsAdmin() || msgRole('pres', 'cid', cid) || msgRole('rclub', 'cid', cid)); }
+function msgInTeam(tid){ var f = findTeam(tid); return !!f && (f.t.memberIds || []).indexOf(msgMe()) >= 0; }
+function msgIsStaffer(){ return msgIsAdmin() || msgRole('fede') || msgRole('pres') || msgRole('rclub') || msgRole('requ'); }
+function msgOther(rf){ var me = msgMe(), p = String(rf).split('|'); return p[0] === me ? p[1] : p[0]; }
+function msgDmKey(a, b){ return a < b ? a + '|' + b : b + '|' + a; }
+function msgCanRead(sc, rf){
+  if(!msgMe()) return false;
+  if(sc === 'all') return true;
+  if(sc === 'club') return msgIsAdmin() || msgClubStaff(rf) || myClubId() === rf;
+  if(sc === 'team') return msgIsAdmin() || msgInTeam(rf) || msgRole('requ', 'tid', rf) || msgClubStaff(msgTeamClub(rf));
+  if(sc === 'dm') return String(rf).split('|').indexOf(msgMe()) >= 0;
+  return false;
+}
+function msgCanWrite(sc, rf){
+  if(!msgCanRead(sc, rf)) return false;
+  if(sc === 'all') return msgIsAdmin();
+  if(sc === 'club') return msgClubStaff(rf);
+  if(sc === 'dm') return msgIsStaffer();
+  return true;
+}
+function msgCanMod(sc, rf){
+  if(sc === 'all') return msgIsAdmin();
+  if(sc === 'club') return msgClubStaff(rf);
+  if(sc === 'team') return msgIsAdmin() || msgRole('requ', 'tid', rf) || msgClubStaff(msgTeamClub(rf));
+  return false;
+}
+function msgTitle(th){
+  if(th.sc === 'all') return 'Tout le monde';
+  if(th.sc === 'club'){ var c = clubById(th.rf); return c ? c.name : 'Club'; }
+  if(th.sc === 'team'){ var f = findTeam(th.rf); return f ? f.t.name : 'Équipe'; }
+  var o = findMember(msgOther(th.rf)); return o ? memberName(o.m) : 'Responsable';
+}
+function msgSubtitle(th){
+  if(th.sc === 'all') return 'Annonces de l\'administrateur';
+  if(th.sc === 'club') return 'Annonces du club';
+  if(th.sc === 'team'){ var f = findTeam(th.rf); return 'Équipe' + (f ? ' · ' + f.c.name : ''); }
+  return 'Message privé';
+}
+function msgThreads(){
+  var map = {}, me = msgMe(), mc = myClubId();
+  function add(sc, rf){ var k = msgKey(sc, rf); if(!map[k]) map[k] = { sc:sc, rf:rf, k:k, last:null, unread:0 }; return map[k]; }
+  if(!me) return [];
+  add('all', '');
+  if(mc) add('club', mc);
+  S.clubs.forEach(function(c){ (c.teams || []).forEach(function(t){ if(msgInTeam(t.id) || msgRole('requ', 'tid', t.id) || (!msgIsAdmin() && msgClubStaff(c.id))) add('team', t.id); }); });
+  (S.msgs || []).forEach(function(m){
+    if(!msgCanRead(m.scope, m.ref)) return;
+    var th = add(m.scope, m.ref);
+    th.last = m;
+    if(m.author !== me && m.at > ((S.msgSeen || {})[th.k] || '')) th.unread++;
+  });
+  return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a, b){
+    var x = a.last ? a.last.at : '', y = b.last ? b.last.at : '';
+    return x === y ? msgTitle(a).localeCompare(msgTitle(b), 'fr') : (x < y ? 1 : -1);
+  });
+}
+function msgUnread(){
+  if(!(typeof SB !== 'undefined' && SB.status().logged) || !msgMe()) return 0;
+  var n = 0, me = msgMe();
+  (S.msgs || []).forEach(function(m){ if(m.author !== me && msgCanRead(m.scope, m.ref) && m.at > ((S.msgSeen || {})[msgKey(m.scope, m.ref)] || '')) n++; });
+  if(msgIsAdmin()) n += repNew();
+  return n;
+}
+function msgBtnHtml(){
+  if(!SB.status().logged || !msgMe()) return '';
+  var n = msgUnread();
+  return '<button class="ibtn mbtn" data-act="msgOpenTab" aria-label="Messages' + (n ? ', ' + n + ' non lu' + (n > 1 ? 's' : '') : '') + '" title="Messages"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 1-2z"/></svg>' + (n ? '<span class="mbadge">' + (n > 99 ? '99+' : n) + '</span>' : '') + '</button>';
+}
+function msgSeenMark(th){
+  var last = null;
+  (S.msgs || []).forEach(function(m){ if(m.scope === th.sc && m.ref === th.rf) last = m; });
+  if(last){ S.msgSeen = S.msgSeen || {}; S.msgSeen[msgKey(th.sc, th.rf)] = last.at; }
+}
+function msgTime(iso){
+  var d = new Date(iso); if(isNaN(d.getTime())) return '';
+  var t = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  return isoOf(d) === isoOf(new Date()) ? t : d.toLocaleDateString('fr-FR', { day:'numeric', month:'short' }) + ' ' + t;
+}
+function msgEntryOf(id){
+  if(!id) return null;
+  var a = S.agenda.filter(function(x){ return x.id === id; })[0];
+  if(a) return calEntry('', id);
+  for(var i = 0; i < S.champs.length; i++) if(fixtureOf(S.champs[i], id)) return calEntry(S.champs[i].id, id);
+  return null;
+}
+function msgEntryLabel(e){
+  return fmtDay(e.date) + (e.time ? ' ' + e.time : '') + ' · ' + (e.home ? clubName(e.home) + ' – ' + clubName(e.away) : (e.title || 'Événement'));
+}
+function msgBubble(m){
+  var me = msgMe(), mine = m.author === me, f = findMember(m.author), e = msgEntryOf(m.entry);
+  var canDel = mine || msgCanMod(m.scope, m.ref);
+  return '<div class="msgb' + (mine ? ' me' : '') + (m.annonce ? ' ann' : '') + (m.p ? ' pend' : '') + '"><div class="msgh"><b>' + esc(mine ? 'Moi' : (f ? memberName(f.m) : 'Un licencié')) + '</b>' + (m.annonce ? '<span class="msgtag">Annonce</span>' : '') + '<small>' + (m.p ? 'Envoi…' : esc(msgTime(m.at))) + '</small></div>' +
+    '<p>' + esc(m.body).replace(/\n/g, '<br>') + '</p>' +
+    (e ? '<button class="msgev" data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + esc(e.fid) + '">' + dotHtml(entryType(e)) + esc(msgEntryLabel(e)) + '</button>' : (m.entry ? '<span class="msgev off">Événement non visible</span>' : '')) +
+    (canDel ? '<button class="msgdel" data-act="msgDelAsk" data-id="' + esc(m.id) + '" aria-label="Supprimer ce message">Supprimer</button>' : '') + '</div>';
+}
+function msgListHtml(){
+  var th = ui.msgThread, l = (S.msgs || []).filter(function(m){ return m.scope === th.sc && m.ref === th.rf; });
+  return l.length ? l.map(msgBubble).join('') : '<p class="muted" style="text-align:center;margin:24px 0">Aucun message pour l\'instant.</p>';
+}
+function msgComposer(th){
+  if(!msgCanWrite(th.sc, th.rf)) return '<p class="hint2" style="text-align:center">' + (th.sc === 'all' ? 'Seul l\'administrateur écrit à tout le monde.' : 'Seuls les responsables du club écrivent ici. Vous pouvez lire les annonces.') + '</p>';
+  var mod = th.sc === 'team' && msgCanMod(th.sc, th.rf), e = msgEntryOf(ui.msgEntry);
+  return '<div class="msgc"><textarea id="msgtxt" rows="2" maxlength="2000" placeholder="Votre message" aria-label="Votre message" data-msgdraft="1">' + esc(ui.msgDraft || '') + '</textarea><div class="msgbar">' +
+    (mod ? '<button class="chip' + (ui.msgAnn ? ' on' : '') + '" data-act="msgAnnTog" aria-pressed="' + (ui.msgAnn ? 'true' : 'false') + '">Annonce</button>' : '') +
+    '<button class="chip' + (e ? ' on' : '') + '" data-act="msgEvOpen">' + (e ? esc(msgEntryLabel(e)) : 'Lier à un événement') + '</button>' +
+    (e ? '<button class="chip" data-act="msgEvClear" aria-label="Retirer le lien">✕</button>' : '') +
+    '<button class="btn primary msgsend" data-act="msgSend">Envoyer</button></div></div>';
+}
+function msgThreadView(){
+  var th = ui.msgThread;
+  return '<div class="stack"><div class="msgtop"><h2>' + esc(msgTitle(th)) + '</h2><small class="muted">' + esc(msgSubtitle(th)) + '</small></div><div id="msglist" class="msglist">' + msgListHtml() + '</div>' + msgComposer(th) + '</div>';
+}
+function msgView(){
+  if(!SB.status().logged) return '<div class="stack"><section class="card"><h2>Messages</h2><p class="muted" style="margin:6px 0 0">Connectez-vous d\'abord : Paramètres › Compte en ligne.</p></section></div>';
+  if(!msgMe()) return '<div class="stack"><section class="card"><h2>Messages</h2><p class="muted" style="margin:6px 0 0">La messagerie est réservée aux licenciés. Touchez votre profil pour demander l\'accès.</p></section></div>';
+  if(ui.msgThread) return msgThreadView();
+  var list = msgThreads();
+  var out = '<div class="stack"><div class="clubhead"><h2>Messages</h2></div>';
+  if(msgIsStaffer()) out += '<button class="btn wide" data-act="msgDmOpen">Nouveau message privé</button>';
+  if(repCanSend()) out += '<div class="btnrow" style="margin:0"><button class="btn wide" data-act="repOpen">Signaler un problème</button>' + ((S.reports || []).length ? '<button class="btn wide" data-act="repList">Mes signalements</button>' : '') + '</div>';
+  if(msgIsAdmin()) out += '<button class="btn wide' + (repNew() ? ' primary' : '') + '" data-act="repList">Signalements' + (repNew() ? ' (' + repNew() + ' nouveau' + (repNew() > 1 ? 'x' : '') + ')' : '') + '</button>';
+  out += '<div class="msgths">' + list.map(function(th){
+    var l = th.last;
+    return '<button class="msgth' + (th.unread ? ' unread' : '') + '" data-act="msgOpen" data-sc="' + th.sc + '" data-rf="' + esc(th.rf) + '"><span class="mtt"><b>' + esc(msgTitle(th)) + '</b><small>' + esc(msgSubtitle(th)) + '</small>' +
+      '<span class="mts">' + (l ? esc((l.author === msgMe() ? 'Moi : ' : '') + l.body) : 'Aucun message') + '</span></span><span class="mtr">' + (l ? '<small>' + esc(msgTime(l.at)) + '</small>' : '') + (th.unread ? '<span class="mbadge">' + th.unread + '</span>' : '') + '</span></button>';
+  }).join('') + '</div></div>';
+  return out;
+}
+function msgEvSheet(sh){
+  var th = ui.msgThread, today = isoOf(new Date()), cl = th && th.sc === 'club' ? th.rf : (th && th.sc === 'team' ? msgTeamClub(th.rf) : '');
+  var l = calEntries().filter(function(e){
+    if(e.date < today) return false;
+    if(!cl) return true;
+    return clubOfEntrant(e.home) === cl || clubOfEntrant(e.away) === cl || (e.f && e.f.train && e.f.club === cl);
+  }).slice(0, 40);
+  return '<h2>Lier à un événement</h2>' + (l.length ? '<div class="stack" style="gap:8px;max-height:55vh;overflow:auto">' + l.map(function(e){
+    return '<button class="btn wide" data-act="msgEvPick" data-fid="' + esc(e.fid) + '">' + dotHtml(entryType(e)) + esc(msgEntryLabel(e)) + '</button>';
+  }).join('') + '</div>' : '<p class="muted">Aucun événement à venir.</p>') + '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+}
+function msgDmSheet(sh){
+  var me = msgMe(), seen = {}, rows = [];
+  (sh.rows || []).forEach(function(r){
+    if(r.mid === me) return;
+    var f = findMember(r.mid); if(!f) return;
+    var x = seen[r.mid];
+    if(!x){ x = seen[r.mid] = { mid:r.mid, name:memberName(f.m), club:f.club ? f.club.name : '', roles:[] }; rows.push(x); }
+    var lab = profLabel(r.role); if(x.roles.indexOf(lab) < 0) x.roles.push(lab);
+  });
+  rows.sort(function(a, b){ return a.name.localeCompare(b.name, 'fr'); });
+  return '<h2>Nouveau message privé</h2>' + (sh.rows === null ? '<p class="muted">Chargement…</p>' : (rows.length ? '<div class="stack" style="gap:8px;max-height:60vh;overflow:auto">' + rows.map(function(x){
+    return '<button class="btn wide" data-act="msgDmPick" data-mid="' + esc(x.mid) + '"><span>' + esc(x.name) + '<small style="display:block;color:var(--muted)">' + esc(x.roles.join(', ') + (x.club ? ' · ' + x.club : '')) + '</small></span></button>';
+  }).join('') + '</div>' : '<p class="muted">Aucun responsable disponible.</p>')) + '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+}
+/* ---------- Signalements de problème : responsables et fédération vers l'administrateur ---------- */
+var REP_PRIOS = [['basse', 'Basse'], ['normale', 'Normale'], ['haute', 'Haute'], ['urgente', 'Urgente']];
+var REP_AREAS = [['accueil', 'Accueil'], ['match', 'Match'], ['clubs', 'Clubs'], ['championnat', 'Championnat'], ['calendrier', 'Calendrier'], ['statistiques', 'Statistiques'], ['parametres', 'Paramètres'], ['messages', 'Messages'], ['comptes', 'Connexion et rôles'], ['autre', 'Autre']];
+var REP_STATES = [['nouveau', 'Nouveau'], ['encours', 'En cours'], ['resolu', 'Résolu']];
+function repLab(list, k){ var x = list.filter(function(y){ return y[0] === k; })[0]; return x ? x[1] : k; }
+function repNew(){ return (S.reports || []).filter(function(r){ return r.state === 'nouveau'; }).length; }
+function repCanSend(){ return !msgIsAdmin() && msgIsStaffer(); }
+function repSheet(sh){
+  var dr = sh.draft;
+  return '<h2>Signaler un problème</h2><p class="hint2" style="margin-top:4px">Votre signalement est envoyé à l\'administrateur.</p>' +
+    rsSelect('rp_p', 'Priorité', 'prio', REP_PRIOS, dr.prio) + rsSelect('rp_a', 'Où ?', 'area', REP_AREAS, dr.area, '— Choisir —') +
+    '<label class="f" for="rp_b">Expliquez le problème</label><textarea id="rp_b" rows="5" maxlength="3000" data-bind="rs" data-k="body" placeholder="Ce que vous faisiez, ce qui ne marche pas, ce que vous attendiez">' + esc(dr.body || '') + '</textarea>' +
+    sheetErr(sh) + btnRow('repSend', 'Envoyer');
+}
+function repListSheet(){
+  var adm = msgIsAdmin(), me = msgMe(), po = { urgente:0, haute:1, normale:2, basse:3 };
+  var l = (S.reports || []).filter(function(r){ return adm || r.author === me; }).slice().sort(function(a, b){
+    var x = (a.state === 'resolu' ? 1 : 0) - (b.state === 'resolu' ? 1 : 0);
+    return x || po[a.prio] - po[b.prio] || (a.at < b.at ? 1 : -1);
+  });
+  return '<h2>' + (adm ? 'Signalements' : 'Mes signalements') + '</h2>' + (l.length ? '<div class="stack" style="gap:10px;max-height:65vh;overflow:auto">' + l.map(function(r){
+    var f = findMember(r.author), who = f ? memberName(f.m) + (f.club ? ' · ' + f.club.name : '') : 'Un licencié';
+    return '<div class="repc ' + r.prio + (r.state === 'resolu' ? ' done' : '') + '"><div class="msgh"><span class="msgtag rp' + r.prio + '">' + esc(repLab(REP_PRIOS, r.prio)) + '</span><b>' + esc(repLab(REP_AREAS, r.area)) + '</b><small>' + esc(msgTime(r.at)) + '</small></div>' +
+      (adm ? '<small class="muted">' + esc(who) + '</small>' : '') + '<p style="margin:6px 0 0;overflow-wrap:anywhere">' + esc(r.body).replace(/\n/g, '<br>') + '</p>' +
+      (adm ? '<div class="msgbar" style="margin-top:8px">' + REP_STATES.map(function(x){ return '<button class="chip' + (r.state === x[0] ? ' on' : '') + '" data-act="repState" data-id="' + esc(r.id) + '" data-v="' + x[0] + '" aria-pressed="' + (r.state === x[0] ? 'true' : 'false') + '">' + x[1] + '</button>'; }).join('') + '<button class="msgdel" style="margin-left:auto" data-act="repDelAsk" data-id="' + esc(r.id) + '">Supprimer</button></div>'
+        : '<p class="muted" style="margin:6px 0 0;font-size:14px">État : ' + esc(r.p ? 'Envoi…' : repLab(REP_STATES, r.state)) + '</p>') + '</div>';
+  }).join('') + '</div>' : '<p class="muted">Aucun signalement.</p>') + '<div class="btnrow"><button class="btn wide" data-act="closeSheet">Fermer</button></div>';
+}
+function msgAfter(){
+  if(ui.tab === 'msg' && ui.msgThread){
+    var th = ui.msgThread, el = document.getElementById('msglist');
+    msgSeenMark(th);
+    if(el){
+      var near = (window.innerHeight + window.pageYOffset) >= document.body.scrollHeight - 160, h = msgListHtml();
+      if(el.innerHTML !== h){ el.innerHTML = h; if(near) window.scrollTo(0, document.body.scrollHeight); }
+    }
+    var b = document.querySelectorAll('.mbtn'); for(var i = 0; i < b.length; i++) b[i].outerHTML = msgBtnHtml();
+    return;
+  }
+  if(!(ui.sheet && (ui.sheet.draft || ui.sheet.rows))) render();
+}
+setInterval(function(){
+  try{
+    if(!SB.status().logged || document.visibilityState !== 'visible') return;
+    if(ui.tab === 'msg') SB.msgSync();
+  }catch(e){}
+}, 15000);
 
 /* ---------- Vue : données ---------- */
 function shortDate(m){
@@ -5406,6 +5769,12 @@ function sheetView(){
     var dc = curClub();
     inner = '<h2>Supprimer ' + esc(dc ? dc.name : 'ce club') + ' ?</h2><p class="hint2">Ses membres seront supprimés, ainsi que ses équipes.' + (dc ? eraseText(erasePack((dc.teams || []).map(function(x){ return x.id; }).concat([dc.id]))) : '') + '</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="delClubOk">Supprimer le club</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'report'){ inner = repSheet(sh);
+  } else if(sh.kind === 'replist'){ inner = repListSheet();
+  } else if(sh.kind === 'repdel'){ inner = '<h2>Supprimer ce signalement ?</h2><div class="btnrow"><button class="btn wide danger" data-act="repDelOk">Oui, supprimer</button><button class="btn wide" data-act="repList">Annuler</button></div>';
+  } else if(sh.kind === 'msgev'){ inner = msgEvSheet(sh);
+  } else if(sh.kind === 'msgdm'){ inner = msgDmSheet(sh);
+  } else if(sh.kind === 'msgdel'){ inner = '<h2>Supprimer ce message ?</h2><p class="hint2">Il disparaît pour tout le monde.</p><div class="btnrow"><button class="btn wide danger" data-act="msgDelOk">Oui, supprimer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'champlvl'){ inner = champLvlSheet(sh);
   } else if(sh.kind === 'delchamp'){
     var dch = curChamp();
@@ -5435,7 +5804,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
+  var own = ['sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -5475,7 +5844,7 @@ function render(){
     document.body.classList.remove('hasnav'); document.body.classList.remove('hasfab');
     return;
   }
-  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'settings' ? settingsView() : ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : (needsModePick() ? modePickView() : matchView()))) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : (ui.tab === 'backup' ? backupView() : dataView())))));
+  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'settings' ? settingsView() : ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : (needsModePick() ? modePickView() : matchView()))) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : (ui.tab === 'backup' ? backupView() : (ui.tab === 'msg' ? msgView() : dataView()))))));
   var warn = ui.warn ? '<div class="banner" role="alert">' + esc(ui.warn) + '</div>' : '';
   if(meTest()){ var tf = meInfo(); warn += '<div class="banner" role="status">Mode test : vous agissez comme ' + esc(tf ? memberName(tf.m) : '') + ' (' + esc(profLabel(profGet())) + ') <button class="mini" data-act="testOff">Quitter</button></div>'; }
   document.getElementById('app').innerHTML = header() + '<main>' + warn + main + menuBtn() + '</main>' + (navOn() ? navHtml() : '') + (ui.xchg ? '<div class="xshade" data-act="xCancel" aria-hidden="true"></div>' : '');
@@ -5484,7 +5853,7 @@ function render(){
   document.getElementById('sheet').innerHTML = ui.sheet ? sheetView() : '';
   fitNames();
   homePost();
-  fitNames();
+  if(ui.msgScroll){ ui.msgScroll = false; window.scrollTo(0, document.body.scrollHeight); }
   if(ui.focus){ var el = document.getElementById(ui.focus); if(el) el.focus(); ui.focus = null; }
   if(ui.calGo){
     var cg = ui.calGo; ui.calGo = null;
@@ -5797,6 +6166,51 @@ document.addEventListener('click', function(e){
     case 'matchAddGo': ui.sheet = null; if(d.v === 'play') newMatch(); else { ui.addRes = true; ui.msg = ''; render(); window.scrollTo(0,0); } break;
     case 'matchAddOpen': ui.sheet = { kind:'matchadd' }; render(); break;
     case 'champNewOpen': ui.sheet = { kind:'newchamp' }; ui.focus = 'newchamp'; render(); break;
+    case 'repOpen': ui.sheet = { kind:'report', err:'', draft:{ prio:'normale', area:'', body:'' } }; render(); break;
+    case 'repList': ui.sheet = { kind:'replist' }; render(); break;
+    case 'repSend': {
+      var q_d = sh.draft, q_b = String(q_d.body || '').trim();
+      if(!q_d.area){ sh.err = 'Choisissez où se situe le problème.'; render(); break; }
+      if(q_b.length < 3){ sh.err = 'Expliquez le problème.'; render(); break; }
+      S.reports.push({ id:uid(), author:msgMe(), prio:q_d.prio || 'normale', area:q_d.area, body:q_b.slice(0, 3000), state:'nouveau', at:new Date().toISOString(), p:1 });
+      save(); ui.sheet = { kind:'info', title:'Signalement envoyé', note:'L\'administrateur le recevra. Vous suivez son état dans « Mes signalements ».' }; render(); SB.msgSync(); break;
+    }
+    case 'repState': {
+      if(!msgIsAdmin()) break;
+      var q_r = S.reports.filter(function(x){ return x.id === d.id; })[0];
+      if(q_r){ q_r.state = d.v; S.sb.rq = (S.sb.rq || []).filter(function(y){ return !(y.id === d.id && y.op === 'state'); }); S.sb.rq.push({ id:d.id, op:'state', v:d.v }); save(); render(); SB.msgSync(); }
+      break;
+    }
+    case 'repDelAsk': ui.sheet = { kind:'repdel', id:d.id }; render(); break;
+    case 'repDelOk': {
+      var q_id = sh.id;
+      S.reports = S.reports.filter(function(x){ return x.id !== q_id; });
+      S.sb.rq = (S.sb.rq || []).filter(function(y){ return y.id !== q_id; }); S.sb.rq.push({ id:q_id, op:'del' });
+      ui.sheet = { kind:'replist' }; save(); render(); SB.msgSync(); break;
+    }
+    case 'msgOpenTab': ui.msgThread = null; ui.sheet = null; setTab('msg'); render(); if(SB.status().logged) SB.msgSync(); window.scrollTo(0, 0); break;
+    case 'msgOpen': ui.msgThread = { sc:d.sc, rf:d.rf || '' }; ui.msgDraft = ''; ui.msgAnn = false; ui.msgEntry = ''; msgSeenMark(ui.msgThread); save(); ui.msgScroll = true; render(); break;
+    case 'msgBack': ui.msgThread = null; render(); window.scrollTo(0, 0); break;
+    case 'msgAnnTog': ui.msgAnn = !ui.msgAnn; render(); break;
+    case 'msgEvOpen': ui.sheet = { kind:'msgev' }; render(); break;
+    case 'msgEvPick': ui.msgEntry = d.fid; ui.sheet = null; render(); break;
+    case 'msgEvClear': ui.msgEntry = ''; render(); break;
+    case 'msgSend': {
+      var q_th = ui.msgThread, q_el = document.getElementById('msgtxt'), q_txt = ((q_el ? q_el.value : ui.msgDraft) || '').trim();
+      if(!q_th || !q_txt || !msgCanWrite(q_th.sc, q_th.rf)) break;
+      var q_ann = q_th.sc === 'club' || q_th.sc === 'all' || (!!ui.msgAnn && msgCanMod(q_th.sc, q_th.rf));
+      S.msgs.push({ id:uid(), scope:q_th.sc, ref:q_th.rf, author:msgMe(), body:q_txt.slice(0, 2000), annonce:q_ann, entry:ui.msgEntry || '', at:new Date().toISOString(), p:1 });
+      ui.msgDraft = ''; ui.msgAnn = false; ui.msgEntry = ''; msgSeenMark(q_th); save(); ui.msgScroll = true; render(); SB.msgSync(); break;
+    }
+    case 'msgDelAsk': ui.sheet = { kind:'msgdel', id:d.id }; render(); break;
+    case 'msgDelOk': {
+      var q_id = sh.id, q_m = S.msgs.filter(function(x){ return x.id === q_id; })[0];
+      S.msgs = S.msgs.filter(function(x){ return x.id !== q_id; });
+      if(q_m && !q_m.p){ S.sb.md = S.sb.md || []; S.sb.md.push(q_id); }
+      ui.sheet = null; save(); render(); SB.msgSync(); break;
+    }
+    case 'msgDmOpen': ui.sheet = { kind:'msgdm', rows:null }; render(); SB.staff().then(function(r){ if(ui.sheet && ui.sheet.kind === 'msgdm'){ ui.sheet.rows = r; render(); } }); break;
+    case 'msgDmPick': ui.sheet = null; ui.msgThread = { sc:'dm', rf:msgDmKey(msgMe(), d.mid) }; ui.msgDraft = ''; ui.msgAnn = false; ui.msgEntry = ''; msgSeenMark(ui.msgThread); ui.msgScroll = true; render(); break;
     case 'champLvl': { var cll = champLvlList(+d.v); if(cll.length === 1 && +d.v) champPick(cll[0].id); else if(cll.length){ ui.sheet = { kind:'champlvl', lvl:+d.v }; render(); } break; }
     case 'champLvlPick': if(champById(d.cid)) champPick(d.cid); break;
     case 'champTab': ui.edit = false; ui.champTab = d.v; ui.msg = ''; render(); break;
@@ -6403,6 +6817,7 @@ document.addEventListener('input', function(e){
     if(res) res.innerHTML = findHtml(ft);
     return;
   }
+  if(ds.msgdraft != null){ ui.msgDraft = e.target.value; return; }
   if(ds.calq != null){
     ui.calQ = e.target.value;
     clearTimeout(calqT);
