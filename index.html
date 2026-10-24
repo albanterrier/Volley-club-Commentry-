@@ -1149,10 +1149,45 @@ var SB = (function(){
     S.requests = M.request.map(function(x){ return x.o; });
     S.sb = S.sb || {}; S.sb.ids = ids;
   }
+  /* Présences : file d'envoi S.sb.pq = [{e: événement, m: licencié, s: 'p' | 'a' | '' (retirer)}]. Les réponses en attente l'emportent sur le serveur. */
+  function presFromRows(rows){
+    var pm = {}, me = meGet();
+    S.sb.pq = S.sb.pq || [];
+    if(!S.sb.pp){
+      /* première synchronisation : les réponses déjà données sur cet appareil par la personne connectée sont envoyées au serveur */
+      Object.keys(S.pres || {}).forEach(function(e){ var v = S.pres[e][me]; if(me && v && !rows.some(function(r){ return r.entry_id === e && r.member_id === me; }) && !S.sb.pq.some(function(x){ return x.e === e && x.m === me; })) S.sb.pq.push({ e:e, m:me, s:v }); });
+      S.sb.pp = 1;
+    }
+    rows.forEach(function(r){ (pm[r.entry_id] = pm[r.entry_id] || {})[r.member_id] = r.status; });
+    S.sb.pq.forEach(function(x){ if(x.s){ (pm[x.e] = pm[x.e] || {})[x.m] = x.s; } else if(pm[x.e]) delete pm[x.e][x.m]; });
+    Object.keys(pm).forEach(function(e){ if(!Object.keys(pm[e]).length) delete pm[e]; });
+    S.pres = pm;
+  }
+  function pushPres(){
+    var q = (S.sb && S.sb.pq) || [];
+    if(!q.length) return Promise.resolve(false);
+    return ensure().then(function(s){
+      if(!s) return false;
+      var list = q.slice();
+      function one(i){
+        if(i >= list.length) return Promise.resolve();
+        var x = list[i], p = x.s
+          ? req('POST', '/rest/v1/presences?on_conflict=entry_id,member_id', { entry_id:x.e, member_id:x.m, status:x.s }, { Prefer:'resolution=merge-duplicates,return=minimal' })
+          : req('DELETE', '/rest/v1/presences?entry_id=eq.' + encodeURIComponent(x.e) + '&member_id=eq.' + encodeURIComponent(x.m), undefined, { Prefer:'return=minimal' });
+        return p.then(function(r){
+          if(!r.ok && (r.status === 401 || r.status >= 500)){ st.msg = 'Envoi interrompu, nouvel essai plus tard.'; return; }
+          if(!r.ok) st.msg = 'Le serveur a refusé une présence : ' + errTxt(r.json, r.status);
+          S.sb.pq = S.sb.pq.filter(function(y){ return !(y.e === x.e && y.m === x.m && y.s === x.s); });
+          return one(i + 1);
+        });
+      }
+      return one(0).then(function(){ save(); return true; });
+    }).catch(function(){ st.msg = 'Hors ligne : les changements seront envoyés au retour du réseau.'; return false; });
+  }
   function pull(){
     return ensure().then(function(s){
       if(!s) return false;
-      var T = [['settings', 'k'], ['clubs', 'id'], ['teams', 'id'], ['members', 'id'], ['member_private', 'member_id'], ['member_photos', 'member_id'], ['champs', 'id'], ['fixtures', 'id'], ['results', 'id'], ['agenda', 'id'], ['roles', 'id'], ['requests', 'id'], ['profiles', 'user_id']];
+      var T = [['settings', 'k'], ['clubs', 'id'], ['teams', 'id'], ['members', 'id'], ['member_private', 'member_id'], ['member_photos', 'member_id'], ['champs', 'id'], ['fixtures', 'id'], ['results', 'id'], ['agenda', 'id'], ['roles', 'id'], ['requests', 'id'], ['profiles', 'user_id'], ['presences', 'entry_id,member_id']];
       return Promise.all(T.map(function(t){ return all(t[0], t[1]); })).then(function(a){
         var R = { settings:a[0], clubs:a[1], teams:a[2], members:a[3], mp:a[4], mph:a[5], champs:a[6], fixtures:a[7], results:a[8], agenda:a[9], roles:a[10], requests:a[11] }, prof = a[12];
         merge(build(R));
@@ -1161,6 +1196,7 @@ var SB = (function(){
         if(typeof set.lic_fin === 'string') S.licFin = set.lic_fin;
         if(Array.isArray(set.seasons) && set.seasons.length){ S.seasons = set.seasons; if(!S.seasons.some(function(x){ return x.id === S.season; })) S.season = S.seasons[S.seasons.length - 1].id; }
         if(prof.length && prof[0].member_id && findMember(prof[0].member_id)) meSet(prof[0].member_id);
+        presFromRows(a[13] || []);
         S.sb.at = new Date().toISOString(); S.sb.email = s.email;
         DB.rebase(S);
         st.msg = ''; save(); return true;
@@ -1200,11 +1236,11 @@ var SB = (function(){
   function sync(){
     if(busy || !ses()) return Promise.resolve(false);
     busy = true;
-    return push().then(pull).then(function(r){ busy = false; notify(); return r; }, function(){ busy = false; });
+    return push().then(pushPres).then(pull).then(function(r){ busy = false; notify(); return r; }, function(){ busy = false; });
   }
   return {
-    status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length, busy:busy, msg:st.msg }; },
-    kick:function(){ if(!ses() || !S.sync.out.length) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
+    status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length + ((S.sb && S.sb.pq) ? S.sb.pq.length : 0), busy:busy, msg:st.msg }; },
+    kick:function(){ if(!ses() || !(S.sync.out.length || (S.sb && S.sb.pq && S.sb.pq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
     sync:sync,
     start:function(){
       if(!ses()) return;
@@ -6148,6 +6184,7 @@ document.addEventListener('click', function(e){
       if(!pe || !pm || !presCan(pe, isoOf(new Date()))) break;
       var pmap = S.pres[pe.fid] = S.pres[pe.fid] || {}, pcur = pmap[pm];
       if(!pcur) pmap[pm] = 'p'; else if(pcur === 'p') pmap[pm] = 'a'; else delete pmap[pm];
+      S.sb.pq = (S.sb.pq || []).filter(function(x){ return !(x.e === pe.fid && x.m === pm); }); S.sb.pq.push({ e:pe.fid, m:pm, s:pmap[pm] || '' });
       if(!Object.keys(pmap).length) delete S.pres[pe.fid];
       save(); render(); break;
     }
