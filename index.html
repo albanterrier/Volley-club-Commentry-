@@ -2641,7 +2641,7 @@ function favChampFirst(l){ var fv = favOf().champ; for(var i = 0; i < fv.length;
 /* ---------- Navigation : bouton « précédent » du téléphone ---------- */
 /* Dans un onglet, on a poussé une entrée d'historique : « précédent » la retire et renvoie au menu (match en pause).
    Sur le menu, il n'y a plus d'entrée à retirer : « précédent » quitte alors l'application. */
-var histDepth = 0, ignorePop = false;
+var histDepth = 0, ignorePop = false, ignoreHash = false;
 function pauseMatchClock(){ if(S.clock.running){ stopClock(); save(); } }
 /* Quitter l'espace Match : le match est mis en pause, et en y revenant on retrouve le choix « nouveau match / match existant » */
 function leaveMatchTab(){
@@ -2658,8 +2658,8 @@ function setTab(t){
     ui.tab = 'menu'; ui.sheet = null; ui.showSetup = false;
     pauseMatchClock();
     if(histDepth > 0){
-      histDepth = 0; ignorePop = true;
-      setTimeout(function(){ ignorePop = false; }, 600);
+      histDepth = 0; ignorePop = true; ignoreHash = true;
+      setTimeout(function(){ ignorePop = false; ignoreHash = false; }, 600);
       try{ history.back(); }catch(e){ ignorePop = false; }
     }
     return;
@@ -7122,6 +7122,7 @@ if(!hp0 && routeApply(location.hash)){
   if(fv && findTeam(fv) && !ui.fil.team) ui.fil.team = fv;
 }
 window.addEventListener('hashchange', function(){
+  if(ignoreHash){ ignoreHash = false; hashSync(); return; }   /* retour à l'accueil : l'ancienne adresse #/… ne doit pas rouvrir la page quittée */
   var hp = hashParse();
   if(!hp){ if(routeApply(location.hash)){ render(); window.scrollTo(0,0); } return; }
   hashApply(hp);
