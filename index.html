@@ -511,12 +511,17 @@ header.top{border-bottom:1px solid rgba(255,255,255,.08)}
 .day{background:none;border:1px solid transparent;border-radius:12px;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink);padding:2px 0;position:relative}
 .day small{font-size:12px;font-weight:700;letter-spacing:.03em;opacity:1;color:var(--muted)}
 .day b{font-family:var(--font-d);font-size:22px;line-height:1}
-.day i{width:6px;height:6px;border-radius:50%;background:transparent;display:block}
-.day.has i{background:var(--acc)}
+.day .dots{display:flex;gap:3px;height:7px;align-items:center}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex:0 0 7px}
+.dt{background:#35b26a}.da{background:#f0c235}.dc{background:#e5484d}.do{background:#8b97b3}
+.day.sel .dot{box-shadow:0 0 0 1.5px rgba(255,255,255,.85)}
+.mc-ctx .dot{margin-right:6px;vertical-align:1px}
+.chip .dot{margin-right:6px}
+.dowrow{display:flex;gap:4px;flex-wrap:nowrap}
+.dowrow .chip{flex:1 1 0;min-width:0;padding:6px 0}
 .day.today{border-color:var(--acc)}
 .day.sel{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
 .day.sel small{color:var(--acc-ink)}
-.day.sel.has i{background:var(--acc-ink)}
 .wkblock{display:flex;flex-direction:column;gap:10px}
 .wkh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:6px 2px 0}
 .wkh h3{margin:0;font-size:22px}
@@ -533,12 +538,28 @@ header.top{border-bottom:1px solid rgba(255,255,255,.08)}
 .mc-b{display:flex;gap:6px;flex-shrink:0}
 .mc-body{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
 .mc-team{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;min-width:0}
-.mc-team .nm{font-weight:600;font-size:15px;line-height:1.2;overflow-wrap:anywhere}
+.mc-team .nm{font-weight:600;font-size:18px;line-height:1.2;overflow-wrap:anywhere}
+.mc-mid.vs{font-size:15px;font-weight:700;color:var(--muted);min-width:34px}
 .mc-team.win .nm{font-weight:800}
 .mc-mid{text-align:center;font-family:var(--font-d);font-weight:800;font-size:30px;line-height:1;min-width:64px;white-space:nowrap}
 .mc-title{font-family:var(--font-d);font-weight:700;font-size:22px;line-height:1.1}
 .mc-foot{font-size:14px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 12px}
 .mc-sets{font-size:13px;color:var(--muted);text-align:center}
+.mc-foot.c{justify-content:center;text-align:center}
+.mc-top .mc-ctx{text-align:right}
+.mc-foot3{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
+.mc-foot3 .fl{justify-self:start}
+.mc-foot3 .fr{justify-self:end}
+.prs{min-height:36px;padding:0 12px;border-radius:999px;border:1.5px solid var(--line-ui);background:var(--bg);color:var(--muted);font-weight:700;font-size:13px;white-space:nowrap}
+.prs.ok{background:#2e9e5b;border-color:#2e9e5b;color:#fff}
+.prs.bad{background:#d64545;border-color:#d64545;color:#fff}
+.mc-att{font-size:13px;color:var(--muted);text-align:center}
+.mc-att b.ok{color:#35b26a}.mc-att b.bad{color:#e5484d}
+div.mc{cursor:pointer}
+.mc-foot3 .fm{min-width:0}
+.mc-foot.near{flex-direction:column;align-items:center;gap:2px}
+.mc-day{font-size:16px;font-weight:700;color:var(--ink)}
+.mc-time{font-family:var(--font-d);font-weight:800;font-size:30px;line-height:1;color:var(--ink)}
 .stripH span{display:flex}
 .mbtn{font-size:clamp(20px,6.4vw,28px)}
 .m-match{font-size:clamp(34px,11vw,46px)}
@@ -576,7 +597,8 @@ input[type=text],input[type=search],input[type=number],input[type=date],input[ty
   .hr .seasonbtn{font-size:13px;padding:0 8px}
   .ibtn{width:40px}
   .mc-mid{min-width:48px;font-size:26px}
-  .mc-team .nm{font-size:13px}
+  .mc-team .nm{font-size:15px}
+  .mc-mid.vs{min-width:28px;font-size:13px}
   .nav button{font-size:11px;letter-spacing:-.03em}
 }
 
@@ -746,7 +768,11 @@ header.top.hc{position:sticky}
 .favtitle b{font-size:18px;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .favtitle small{color:var(--muted)}
 .hsec{margin:14px 0 6px;font-size:15px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
-.slcnt{font-size:13px;font-weight:600}
+.hsep{border:0;border-top:1px solid var(--line);margin:14px 0 4px}
+.slcnt{margin:0;font-size:13px;font-weight:600;color:var(--muted);text-align:center}
+.mcbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px 4px 10px;margin-top:10px}
+.mcbox .mc{background:none;border:0;border-radius:0;padding:4px 2px}
+.mcbox .slbtn{flex:0 0 26px;width:26px}
 .hempty{margin:0 0 4px}
 .slider{display:flex;align-items:center;gap:4px}
 .slview{flex:1;min-width:0;touch-action:pan-y}
@@ -1293,13 +1319,14 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], pres:{}, sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
     prefs:{ schema:true, table:false, players:false, sheet:false }
   };
 }
 function migrate(s){
   var d = newState();
   s.clubs = s.clubs || []; s.champs = s.champs || [];
+  s.champs.forEach(function(c){ var pm = /^PH ([ABC])$/.exec(c.name || ''); if(pm) c.name = 'Promotion Honneur ' + pm[1]; });
   s.clubs.forEach(function(c){ if(c.members === undefined) c.members = []; if(!c.teams){ c.teams = [{ id:c.id, name:c.name, memberIds:c.members.map(function(m){ return m.id; }), squad:c.squad || null }]; delete c.squad; } if(!c.teams.some(function(t){ return t.id === c.id; })) c.teams.unshift({ id:c.id, name:c.name, memberIds:[], squad:null }); c.teams.forEach(function(t){ if(!t.memberIds) t.memberIds = []; }); });
   s.champs.forEach(function(c){
     c.fixtures = c.fixtures || [];
@@ -1327,6 +1354,7 @@ function migrate(s){
   if(!s.sanc) s.sanc = [{},{}];
   s.library.forEach(function(e){ if(e.mode === undefined){ e.mode = 'complet'; e.modeSet = true; } if(!e.sanc) e.sanc = [{},{}]; if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; if(e.titleAuto === undefined) e.titleAuto = false; if(!e.starters) e.starters = [[],[]]; if(!e.subPairs) e.subPairs = [[],[]]; });
   if(s.homeClub === undefined) s.homeClub = '';
+  if(!s.pres || typeof s.pres !== 'object') s.pres = {};
   if(s.adminId === undefined) s.adminId = '';
   if(!s.fav) s.fav = {};
   if(s.mode === undefined){ s.mode = 'complet'; s.modeSet = true; }
@@ -1631,6 +1659,7 @@ var RIGHTS = {
   licValidate:{ admin:1, pres:'club', rclub:'club' },
   seasonLic:{ admin:1, pres:'club' },
   evCreate:{ admin:1, fede:1, pres:'club', rclub:'club', requ:'team' },
+  trainCreate:{ admin:1, pres:'club', rclub:'club' },
   designate:{ admin:1, fede:1, pres:'club', rclub:'club' },
   compo:{ admin:1, requ:'team' },
   score:{ admin:1, compteur:'match' }, validate:{ admin:1, arbitre:'match' }, unlock:{ admin:1, fede:1 },
@@ -2005,7 +2034,7 @@ function dotsBtnHtml(){
 function tabSub(){
   if(ui.tab === 'clubs'){ var c = (ui.clubView === 'edit' || ui.clubView === 'team' || ui.clubView === 'logo' || ui.clubView === 'created') ? clubById(ui.clubSel) : null; return c ? c.name : ''; }
   if(ui.tab === 'champ'){ var ch = curChamp(); return ch ? ch.name : ''; }
-  if(ui.tab === 'cal' && ui.calView === 'create') return 'Nouvelle rencontre ou événement';
+  if(ui.tab === 'cal' && ui.calView === 'create') return ui.ev && ui.ev.kind === 'train' ? 'Nouvel entraînement' : (ui.ev && ui.ev.kind === 'event' ? 'Nouvel événement' : 'Nouvelle rencontre');
   if(ui.tab === 'backup') return 'Données';
   return '';
 }
@@ -2059,12 +2088,20 @@ var FAVKEY = 'volley-fav-v1';
 function favGet(){ return lsGet(FAVKEY); }
 function favSave(id){ lsSet(FAVKEY, id); }
 function clubOfEntrant(id){ var f = findTeam(id); return f ? f.c.id : ''; }
-function calFilterCount(){ return (ui.fil.team ? 1 : 0) + (ui.fil.club ? 1 : 0) + (ui.fil.champ ? 1 : 0); }
+function calFilterCount(){ return (ui.fil.team ? 1 : 0) + (ui.fil.club ? 1 : 0) + (ui.fil.champ ? 1 : 0) + (ui.calType ? 1 : 0) + (ui.calHome ? 1 : 0) + ((ui.calMode || 'all') !== 'all' ? 1 : 0); }
 function calAnyFilter(){ return calFilterCount() > 0 || !!(ui.calQ || '').trim(); }
+/* Référence pour « à domicile / à l'extérieur » : l'équipe filtrée, sinon le club filtré, sinon « mon équipe » */
+function homeRef(){ var f = ui.fil; return f.team ? { t:f.team } : (f.club ? { c:f.club } : (favGet() ? { t:favGet() } : null)); }
 function calKeep(e){
   var f = ui.fil;
+  if(ui.calHome){
+    var hr = homeRef(), pid = ui.calHome === 'd' ? e.home : e.away;
+    if(hr && !(pid && (hr.t ? pid === hr.t : clubOfEntrant(pid) === hr.c))) return false;
+    if(!hr && !e.home) return false;
+  }
   if(f.team && !(e.home === f.team || e.away === f.team)) return false;
-  if(f.club && !(e.home && clubOfEntrant(e.home) === f.club) && !(e.away && clubOfEntrant(e.away) === f.club)) return false;
+  if(ui.calType && entryType(e) !== ui.calType) return false;
+  if(f.club && !(e.home && clubOfEntrant(e.home) === f.club) && !(e.away && clubOfEntrant(e.away) === f.club) && !(e.f && e.f.train && e.f.club === f.club)) return false;
   if(f.champ && e.cid !== f.champ) return false;
   var q = norm(ui.calQ);
   if(q){
@@ -2161,6 +2198,9 @@ function calActiveHtml(){
   if(f.team){ var et = entrantObj(f.team); chips.push(filterChip('team', (fav === f.team ? '★ ' : '') + 'Équipe : ' + esc(et ? et.name : '?'))); }
   if(f.club){ var cb = clubById(f.club); chips.push(filterChip('club', 'Club : ' + esc(cb ? cb.name : '?'))); }
   if(f.champ){ var cc = champById(f.champ); chips.push(filterChip('champ', 'Championnat : ' + esc(cc ? cc.name : '?'))); }
+  if(ui.calHome) chips.push(filterChip('home', ui.calHome === 'd' ? 'À domicile' : 'À l\'extérieur'));
+  if(ui.calType) chips.push(filterChip('type', 'Type : ' + esc(TYPE_COL[ui.calType] || '')));
+  if((ui.calMode || 'all') !== 'all') chips.push(filterChip('mode', ui.calMode === 'up' ? 'À venir' : 'Terminés'));
   return '<div class="fchips">' + chips.join('') + '<button class="linkbtn" data-act="calReset">Tout effacer</button></div>';
 }
 function calFiltersHtml(){
@@ -2170,7 +2210,11 @@ function calFiltersHtml(){
     '<div id="calactive">' + calActiveHtml() + '</div>' +
     '<button class="btn wide" data-act="calFOpen" aria-expanded="' + (open ? 'true' : 'false') + '" style="margin-top:10px">Filtres' + (n ? ' (' + n + ')' : '') + ' <span aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>';
   if(open){
-    var ents = allEntrants();
+    var ents = allEntrants(), cm = ui.calMode || 'all';
+    out += group('Afficher', [['all', 'Tous'], ['up', 'À venir'], ['done', 'Terminés']].map(function(m){ return chip('calMode', { m:m[0] }, m[1], cm === m[0]); }).join('')) +
+      group('Domicile ou extérieur', [['', 'Tous'], ['d', 'À domicile'], ['e', 'À l\'extérieur']].map(function(m){ return chip('calHome', { h:m[0] }, m[1], (ui.calHome || '') === m[0]); }).join('')) +
+      (ui.calHome && !homeRef() ? '<p class="hint2">Choisissez une équipe ou un club ci-dessous (ou définissez « mon équipe ») pour savoir de qui on parle.</p>' : '') +
+      group('Type', [['', 'Tous'], ['c', dotHtml('c') + 'Championnat'], ['a', dotHtml('a') + 'Amical'], ['t', dotHtml('t') + 'Entraînement'], ['o', dotHtml('o') + 'Autre']].map(function(m){ return chip('calType', { t:m[0] }, m[1], (ui.calType || '') === m[0]); }).join(''));
     out += '<label class="f" for="fteam">Équipe</label><select id="fteam" data-bind="calf" data-k="team"><option value="">Toutes les équipes</option>' +
       ents.map(function(e){ return '<option value="' + e.id + '"' + (e.id === f.team ? ' selected' : '') + '>' + esc(entrantLabel(e)) + '</option>'; }).join('') + '</select>' +
       '<label class="f" for="fclub">Club</label><select id="fclub" data-bind="calf" data-k="club"><option value="">Tous les clubs</option>' +
@@ -2636,7 +2680,7 @@ function loadMatch(created){
 }
 function keepShared(){
   return { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(x){ return x.slice(); }), cfg:S.cfg,
-    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, licFin:S.licFin, sync:S.sync, sb:S.sb };
+    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, pres:S.pres, licFin:S.licFin, sync:S.sync, sb:S.sb };
 }
 function resetForNew(){
   stopClock(); archiveCurrent();
@@ -3110,10 +3154,48 @@ function calEntry(cid, fid){
   if(!a) return null;
   return { kind:a.kind === 'event' ? 'event' : 'amical', ch:null, f:a, cid:'', fid:fid, date:a.date, time:a.time || '', home:a.home, away:a.away, place:a.place || '', title:a.title || '', postponed:!!a.postponed };
 }
+/* Entraînements : entrées de l'agenda de type « événement » marquées train:1 (club, série de récurrence). Visibles seulement pour les membres du club (et l'administrateur). */
+var TYPE_COL = { t:'Entraînement', a:'Amical', c:'Championnat', o:'Autre' };
+function entryType(e){ return e.kind === 'fixture' ? 'c' : (e.kind === 'amical' ? 'a' : ((e.f && e.f.train) ? 't' : 'o')); }
+function dotHtml(t){ return '<i class="dot d' + t + '"></i>'; }
+function trainVisible(a){
+  if(availRoles() === null) return true;
+  var p = profGet();
+  if(p === 'visiteur') return false;
+  if(p === 'admin') return true;
+  var f = meInfo();
+  return !!f && !!a.club && f.club.id === a.club;
+}
+function dowOf(iso){ return (toDate(iso).getDay() + 6) % 7; }
+var DOW_LAB = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+function trainDates(ev){
+  var d0 = parseDate(ev.date);
+  if(!d0) return [];
+  if(ev.rec === 'none' || !ev.rec) return [d0];
+  var step = ev.rec === '2w' ? 2 : 1, ses = seasonOfDate(d0), until = parseDate(ev.until) || (ses ? ses.fin : d0);
+  if(ses && until > ses.fin) until = ses.fin;
+  var days = (ev.days && ev.days.length ? ev.days : [dowOf(d0)]).slice().sort(), ws = weekStart(d0), out = [], w, b, x;
+  for(w = 0; w < 200 && out.length < 200; w++){
+    b = toDate(ws); b.setDate(b.getDate() + 7 * step * w);
+    if(isoOf(b) > until) break;
+    days.forEach(function(dow){ x = toDate(isoOf(b)); x.setDate(x.getDate() + dow); var iso1 = isoOf(x); if(iso1 >= d0 && iso1 <= until && out.length < 200) out.push(iso1); });
+  }
+  return out;
+}
+/* Clubs pour lesquels on peut créer un entraînement : tous pour l'administrateur ; sinon ceux dont on est président ou responsable */
+function allowedClubs(){
+  if(availRoles() === null || profGet() === 'admin') return S.clubs;
+  var p = profGet(), ids = myRoles().filter(function(r){ return r.role === p && r.cid; }).map(function(r){ return r.cid; });
+  return S.clubs.filter(function(c){ return ids.indexOf(c.id) >= 0; });
+}
+function newEv(k){
+  var today = isoOf(new Date()), al = allowedClubs(), def = al.filter(function(c){ return c.id === S.homeClub; })[0] || al[0];
+  return { kind:k, title:'', date:today, time:'', place:'', target:'', a:'', b:'', homeIs:'', club:def ? def.id : '', trainName:'', rec:'none', days:[dowOf(today)], dowTouched:false, until:curSeason().fin };
+}
 function calEntries(){
   var out = [];
   champs().forEach(function(ch){ ch.fixtures.forEach(function(f){ if(pairActive(ch, f.home, f.away)) out.push(calEntry(ch.id, f.id)); }); });
-  S.agenda.forEach(function(a){ if(inSeason(a.date)) out.push(calEntry('', a.id)); });
+  S.agenda.forEach(function(a){ if(inSeason(a.date) && (!a.train || trainVisible(a))) out.push(calEntry('', a.id)); });
   return out.sort(function(a, b){ return (a.date + a.time).localeCompare(b.date + b.time); });
 }
 function entryResult(e){
@@ -3134,6 +3216,7 @@ function clearEntryResult(e){
 }
 function deleteEntry(e){
   S.roles = (S.roles || []).filter(function(x){ return x.ref !== e.fid; });
+  if(S.pres) delete S.pres[e.fid];
   if(e.kind === 'fixture') e.ch.fixtures = e.ch.fixtures.filter(function(f){ return f.id !== e.fid; });
   else S.agenda = S.agenda.filter(function(a){ return a.id !== e.fid; });
   save();
@@ -3365,7 +3448,7 @@ function icsText(list){
   var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Volley-Club Commentry//FR', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:Volley-Club Commentry'];
   list.filter(function(e){ return !e.postponed; }).forEach(function(e){
     var sum = e.kind === 'event' ? e.title : clubName(e.home) + ' – ' + clubName(e.away);
-    var desc = e.kind === 'fixture' ? e.ch.name : (e.kind === 'amical' ? 'Rencontre amicale' : 'Événement');
+    var desc = e.kind === 'fixture' ? e.ch.name : (e.kind === 'amical' ? 'Amical' : 'Événement');
     L.push('BEGIN:VEVENT', 'UID:' + e.fid + '@volley-commentry', 'DTSTAMP:' + now);
     if(/^\d{1,2}:\d{2}$/.test(e.time)){
       var p = e.time.split(':'), hh = ('0' + p[0]).slice(-2), mm = p[1], d0 = toDate(e.date), end = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate(), +p[0] + 2, +mm);
@@ -4228,27 +4311,87 @@ function clubsLogo(){
 /* ---------- Vue : championnat ---------- */
 function clubLine(id, px){ return logoHtml(id, px) + '<span class="nm">' + esc(clubName(id)) + '</span>'; }
 function entryLine(id, px){ return id ? logoHtml(id, px) + '<span class="nm">' + esc(clubName(id)) + '</span>' : ''; }
+/* ---------- Présences (24/10/2026) ----------
+   S.pres = { identifiantDeLEntrée : { identifiantDuLicencié : 'p' (présent) | 'a' (absent) } } ; pas de réponse = pas d'entrée.
+   Un licencié répond pour lui-même, pour les événements de son club ; les réponses ne sont visibles que par les membres du club concerné (et l'administrateur). */
+function presClubs(e){
+  if(e.kind === 'event') return e.f.train ? (e.f.club ? [e.f.club] : []) : null;
+  var a = [];
+  [e.home, e.away].forEach(function(id){ var c = id ? clubOfEntrant(id) : ''; if(c && a.indexOf(c) < 0) a.push(c); });
+  return a;
+}
+function myClubId(){ var f = meInfo(); return f ? f.club.id : ''; }
+function presVisible(e){
+  if(availRoles() === null) return true;
+  var p = profGet();
+  if(p === 'visiteur') return false;
+  if(p === 'admin') return true;
+  var pc = presClubs(e);
+  return !!meInfo() && (pc === null || pc.indexOf(myClubId()) >= 0);
+}
+function presCan(e, today){
+  if(!meInfo() || profGet() === 'visiteur' || e.postponed || entryResult(e) || e.date < today) return false;
+  var pc = presClubs(e);
+  return pc === null || pc.indexOf(myClubId()) >= 0;
+}
+function presBtn(e, today){
+  if(!presCan(e, today)) return '';
+  var st = (S.pres[e.fid] || {})[meGet()];
+  return '<button class="prs' + (st === 'p' ? ' ok' : (st === 'a' ? ' bad' : '')) + '" data-act="presTog" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" aria-label="Ma présence : ' + (st === 'p' ? 'présent' : (st === 'a' ? 'absent' : 'sans réponse')) + '">' + (st === 'p' ? 'Présent' : (st === 'a' ? 'Absent' : 'Présent ?')) + '</button>';
+}
+/* réponses visibles pour la personne : présents, absents, nombre sans réponse */
+function presInfo(e){
+  var pc = presClubs(e), allowed;
+  if(profGet() === 'admin' || availRoles() === null) allowed = pc;
+  else allowed = pc === null ? null : pc.filter(function(c){ return c === myClubId(); });
+  var map = S.pres[e.fid] || {}, out = { p:[], a:[], n:0 }, total = 0;
+  S.clubs.forEach(function(c){
+    if(allowed !== null && allowed.indexOf(c.id) < 0) return;
+    c.members.forEach(function(m){ total++; if(map[m.id] === 'p') out.p.push(m); else if(map[m.id] === 'a') out.a.push(m); });
+  });
+  out.n = total - out.p.length - out.a.length;
+  return out;
+}
+function presSum(e){
+  if(!presVisible(e) || !S.pres[e.fid]) return '';
+  var i = presInfo(e);
+  if(!i.p.length && !i.a.length) return '';
+  return '<span class="mc-att"><b class="ok">' + i.p.length + ' présent' + (i.p.length > 1 ? 's' : '') + '</b> · <b class="bad">' + i.a.length + ' absent' + (i.a.length > 1 ? 's' : '') + '</b></span>';
+}
+function presSheetHtml(e, today){
+  if(!presVisible(e) && !presCan(e, today)) return '';
+  var i = presInfo(e), names = function(l){ return l.map(function(m){ return esc(memberName(m)); }).join(', '); };
+  return '<h3 style="margin:16px 0 6px">Présences</h3>' + (presCan(e, today) ? '<div class="btnrow">' + presBtn(e, today) + '</div>' : '') +
+    (presVisible(e) ? '<p class="hint2"><b>Présents (' + i.p.length + ')</b>' + (i.p.length ? ' : ' + names(i.p) : '') + '</p><p class="hint2"><b>Absents (' + i.a.length + ')</b>' + (i.a.length ? ' : ' + names(i.a) : '') + '</p><p class="hint2">Sans réponse : ' + i.n + '</p>' : '');
+}
 function calRow(e, today, favArg){
   var res = entryResult(e), late = !res && !e.postponed && e.date < today, fav = favArg === undefined ? favGet() : favArg;
   var sel = ui.calDay && ui.calDay === e.date ? ' sel' : '';
   var attrs = ' data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '"';
   var when = '<span>' + (e.postponed ? '<s>' : '') + esc(fmtDay(e.date)) + (e.time ? ' · ' + esc(e.time) : '') + (e.postponed ? '</s>' : '') + '</span>';
   if(e.kind === 'event'){
-    return '<button class="mc' + sel + '"' + attrs + '><span class="mc-top"><span class="mc-ctx">Événement</span><span class="mc-b">' + (e.date < today ? '<span class="tag">Passé</span>' : '<span class="tag up">À venir</span>') + '</span></span>' +
-      '<span class="mc-title">' + esc(e.title) + '</span><span class="mc-foot">' + when + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span></button>';
+    var efoot = '<span class="mc-foot">' + when + (e.f.train && e.title !== 'Entraînement' && clubById(e.f.club) ? '<span>' + esc(clubById(e.f.club).name) + '</span>' : '') + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span>', epb = presBtn(e, today);
+    if(epb) efoot = '<span class="mc-foot3"><span class="fl"></span><span class="fm">' + efoot + '</span><span class="fr">' + epb + '</span></span>';
+    return '<div class="mc' + sel + '" role="button" tabindex="0"' + attrs + '><span class="mc-top"><span class="mc-b">' + (e.date < today ? '<span class="tag">Passé</span>' : '<span class="tag up">À venir</span>') + '</span><span class="mc-ctx">' + dotHtml(entryType(e)) + (e.f.train ? 'Entraînement' : 'Événement') + '</span></span>' +
+      '<span class="mc-title">' + esc(e.f.train && e.title === 'Entraînement' ? ((clubById(e.f.club) || {}).name || e.title) : e.title) + '</span>' + efoot + presSum(e) + '</div>';
   }
-  var ctx = e.kind === 'fixture' ? e.ch.name : 'Rencontre amicale', mine = fav && (e.home === fav || e.away === fav), b = '';
-  if(mine) b += '<span class="tag">' + (e.home === fav ? 'Domicile' : 'Extérieur') + '</span>';
+  var ctx = e.kind === 'fixture' ? e.ch.name : 'Amical', mine = fav && (e.home === fav || e.away === fav), b = '', bm = mine ? '<span class="tag">' + (e.home === fav ? 'Domicile' : 'Extérieur') + '</span>' : '';
   if(res){
     var fw = (e.home === fav) === (res.hs > res.as);
     b += mine ? '<span class="tag ' + (fw ? 'ok' : 'bad') + '">' + (fw ? 'Victoire' : 'Défaite') + '</span>' : '<span class="tag ok">' + (res.source === 'live' ? 'Joué' : 'Saisi') + '</span>';
   } else b += e.postponed ? '<span class="tag bad">Reporté</span>' : (late ? '<span class="tag bad">À renseigner</span>' : '<span class="tag up">À venir</span>');
   var hw = res && res.hs > res.as, aw = res && res.as > res.hs;
+  var rel = !res && !e.postponed && today ? Math.round((new Date(e.date + 'T12:00:00') - new Date(today + 'T12:00:00')) / 86400000) : 9, foot;
+  if(rel === 0 || rel === 1){
+    foot = '<span class="mc-foot c near"><span class="mc-day">' + (rel ? 'Demain' : 'Aujourd\'hui') + '</span>' + (e.time ? '<span class="mc-time">' + esc(e.time) + '</span>' : '') + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span>';
+  } else foot = '<span class="mc-foot c">' + when + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span>';
+  var mpb = presBtn(e, today);
+  if(bm || mpb) foot = '<span class="mc-foot3"><span class="fl">' + bm + '</span><span class="fm">' + foot + '</span><span class="fr">' + mpb + '</span></span>';
   function team(id, win){ return '<span class="mc-team' + (win ? ' win' : '') + '">' + (id ? logoHtml(id, 44) + '<span class="nm">' + esc(clubName(id)) + '</span>' : '') + '</span>'; }
-  return '<button class="mc' + sel + '"' + attrs + '><span class="mc-top"><span class="mc-ctx">' + esc(ctx) + '</span><span class="mc-b">' + b + '</span></span>' +
-    '<span class="mc-body">' + team(e.home, hw) + '<span class="mc-mid">' + (res ? res.hs + ' – ' + res.as : (e.time ? esc(e.time) : 'VS')) + '</span>' + team(e.away, aw) + '</span>' +
+  return '<div class="mc' + sel + '" role="button" tabindex="0"' + attrs + '><span class="mc-top"><span class="mc-b">' + b + '</span><span class="mc-ctx">' + dotHtml(entryType(e)) + esc(ctx) + '</span></span>' +
+    '<span class="mc-body">' + team(e.home, hw) + (res ? '<span class="mc-mid">' + res.hs + ' – ' + res.as + '</span>' : '<span class="mc-mid vs">VS</span>') + team(e.away, aw) + '</span>' +
     (res && res.sets && res.sets.length ? '<span class="mc-sets">' + res.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(' · ') + '</span>' : '') +
-    '<span class="mc-foot">' + when + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span></button>';
+    foot + presSum(e) + '</div>';
 }
 function calModeKeep(e, today){
   var m = ui.calMode || 'all';
@@ -4262,17 +4405,19 @@ function weekRel(w, thisWeek){
   return d === 0 ? 'Cette semaine' : (d === 1 ? 'Semaine prochaine' : (d === -1 ? 'Semaine dernière' : ''));
 }
 function calStripHtml(){
-  var today = isoOf(new Date()), base = ui.calDay || today, ws = weekStart(base), cnt = {};
-  calEntries().filter(calKeep).filter(function(e){ return calModeKeep(e, today); }).forEach(function(e){ cnt[e.date] = (cnt[e.date] || 0) + 1; });
+  var today = isoOf(new Date()), base = ui.calDay || today, ws = weekStart(base), cnt = {}, typ = {};
+  calEntries().filter(calKeep).filter(function(e){ return calModeKeep(e, today); }).forEach(function(e){ cnt[e.date] = (cnt[e.date] || 0) + 1; (typ[e.date] = typ[e.date] || {})[entryType(e)] = 1; });
   var days = '', dt = toDate(ws), k;
   for(k = 0; k < 7; k++){
     var iso1 = isoOf(dt), wd = dt.toLocaleDateString('fr-FR', { weekday:'short' }).replace('.', '').toUpperCase();
-    days += '<button class="day' + (cnt[iso1] ? ' has' : '') + (iso1 === today ? ' today' : '') + (ui.calDay === iso1 ? ' sel' : '') + '" data-act="calDay" data-d="' + iso1 + '" aria-label="' + esc(dt.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })) + (cnt[iso1] ? ', ' + cnt[iso1] + ' rencontre' + (cnt[iso1] > 1 ? 's' : '') : '') + '"><small>' + wd + '</small><b>' + dt.getDate() + '</b><i></i></button>';
+    days += '<button class="day' + (cnt[iso1] ? ' has' : '') + (iso1 === today ? ' today' : '') + (ui.calDay === iso1 ? ' sel' : '') + '" data-act="calDay" data-d="' + iso1 + '" aria-label="' + esc(dt.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })) + (cnt[iso1] ? ', ' + cnt[iso1] + ' rencontre' + (cnt[iso1] > 1 ? 's' : '') : '') + '"><small>' + wd + '</small><b>' + dt.getDate() + '</b><span class="dots">' + ['t', 'a', 'c', 'o'].filter(function(t){ return typ[iso1] && typ[iso1][t]; }).map(dotHtml).join('') + '</span></button>';
     dt.setDate(dt.getDate() + 1);
   }
   var arrow = function(n, p, lab){ return '<button class="ibtn" data-act="calWeek" data-n="' + n + '" aria-label="' + lab + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + p + '"/></svg></button>'; };
   return '<section class="card strip" id="calstrip"><div class="stripH"><b>' + esc(toDate(base).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })) + '</b><span>' + arrow(-1, 'M15 5l-7 7 7 7', 'Semaine précédente') + arrow(1, 'M9 5l7 7-7 7', 'Semaine suivante') + '</span></div><div class="days">' + days + '</div></section>';
 }
+/* Boutons « Par semaine / Par jour » retirés du calendrier (24/10/2026) : passer GRP_BTN à true et rappeler groupChips() dans calendarView pour les remettre */
+var GRP_BTN = false;
 function groupChips(){
   var g = S.prefs.groupBy === 'day' ? 'day' : 'week';
   return '<div class="chips modes" role="group" aria-label="Regrouper">' + [['week', 'Par semaine'], ['day', 'Par jour']].map(function(m){ return chip('grpBy', { g:m[0] }, m[1], g === m[0]); }).join('') + '</div>';
@@ -4289,7 +4434,7 @@ function calListHtml(){
   var out = '', all = calEntries(), today = isoOf(new Date()), mode = ui.calMode || 'all';
   var filtered = all.filter(calKeep);
   var shown = filtered.filter(function(e){ return calModeKeep(e, today); });
-  var weeks = {}, meta = {}, order = [], thisWeek = weekStart(today), byDay = S.prefs.groupBy === 'day';
+  var weeks = {}, meta = {}, order = [], thisWeek = weekStart(today), byDay = GRP_BTN && S.prefs.groupBy === 'day';
   shown.forEach(function(e){
     var w = weekStart(e.date), k = byDay ? w + '|' + (e.cid || '~') : w;
     if(!weeks[k]){ weeks[k] = []; order.push(k); meta[k] = { w:w, ch:byDay ? e.ch : null }; }
@@ -4332,9 +4477,6 @@ function calListHtml(){
 function calendarView(){
   if(ui.calView === 'create') return eventForm();
   var out = '<div class="stack">';
-  var mode = ui.calMode || 'all';
-  out += '<div class="chips modes" role="group" aria-label="Afficher">' + [['all', 'Tous'], ['up', 'À venir'], ['done', 'Terminés']].map(function(m){ return chip('calMode', { m:m[0] }, m[1], mode === m[0]); }).join('') + '</div>';
-  out += groupChips();
   out += calStripHtml();
   out += calFiltersHtml();
   out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
@@ -4350,10 +4492,12 @@ function homePicker(list, st, bindName, chipAct){
 }
 function eventForm(){
   var ev = ui.ev, isMatch = ev.kind === 'match', out = '<div class="stack">';
-  out += '<section class="card"><h2>Créer un événement</h2>' +
-    group('Type', chip('evKind', { k:'match' }, 'Rencontre', isMatch) + chip('evKind', { k:'event' }, 'Autre événement', !isMatch)) +
-    '<div class="row2"><div><label class="f" for="evdate">Date</label><input type="date" id="evdate" data-bind="evf" data-k="date" value="' + esc(ev.date) + '"></div>' +
-    '<div><label class="f" for="evtime">Heure (facultatif)</label><input type="time" id="evtime" data-bind="evf" data-k="time" value="' + esc(ev.time) + '"></div></div>';
+  var isTrain = ev.kind === 'train';
+  out += '<section class="card"><h2>' + (isTrain ? 'Créer un entraînement' : (isMatch ? 'Créer une rencontre' : 'Créer un événement')) + '</h2>' +
+    (isTrain && allowedClubs().length > 1 ? '<label class="f" for="evclub">Club</label><select id="evclub" data-bind="evf" data-k="club"><option value="">— Choisir —</option>' + allowedClubs().map(function(c){ return '<option value="' + c.id + '"' + (c.id === ev.club ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' : '') +
+    (isTrain ? '<label class="f" for="evtname">Nom (facultatif)</label><input type="text" id="evtname" data-bind="evf" data-k="trainName" value="' + esc(ev.trainName || '') + '" placeholder="Entraînement" autocomplete="off">' : '') +
+    '<label class="f" for="evdate">' + (isTrain && ev.rec !== 'none' ? 'Date du premier entraînement' : 'Date') + '</label><input type="date" id="evdate" data-bind="evf" data-k="date" value="' + esc(ev.date) + '">' +
+    '<label class="f" for="evtime">Heure (facultatif)</label><input type="time" id="evtime" data-bind="evf" data-k="time" value="' + esc(ev.time) + '">';
   if(isMatch){
     var ch = champById(ev.target), list = ch ? entrantsOf(ch.clubIds) : allEntrants();
     out += group('Rattacher à', chip('evTarget', { t:'amical' }, 'Rencontre amicale', !ev.target) + champs().map(function(c){ return chip('evTarget', { t:c.id }, esc(c.name), ev.target === c.id); }).join(''));
@@ -4362,11 +4506,19 @@ function eventForm(){
     } else {
       out += homePicker(list, ev, 'evf', 'evHome');
     }
+  } else if(isTrain){
+    out += '<label class="f" style="display:flex;gap:10px;align-items:center;margin-top:14px"><input type="checkbox" data-bind="evrec"' + (ev.rec && ev.rec !== 'none' ? ' checked' : '') + '> Répéter toutes les semaines</label>';
+    if(ev.rec && ev.rec !== 'none'){
+      var ses0 = seasonOfDate(parseDate(ev.date) || ''), nTr = trainDates(ev).length;
+      out += '<div class="group"><p>Jours de la semaine</p><div class="dowrow">' + DOW_LAB.map(function(l, i){ return chip('evDow', { d:i }, l, ev.days.indexOf(i) >= 0); }).join('') + '</div></div>' +
+        '<label class="f" for="evuntil">Jusqu\'au</label><input type="date" id="evuntil" data-bind="evf" data-k="until" value="' + esc(ev.until) + '"' + (ses0 ? ' max="' + ses0.fin + '"' : '') + '>' +
+        '<p class="hint2">' + nTr + ' entraînement' + (nTr > 1 ? 's seront créés' : ' sera créé') + (ses0 ? ' (jusqu\'à la fin de la saison ' + esc(ses0.label) + ' au plus tard)' : '') + '.</p>';
+    }
   } else {
     out += '<label class="f" for="evtitle">Titre</label><input type="text" id="evtitle" data-bind="evf" data-k="title" value="' + esc(ev.title) + '" placeholder="Ex. Entraînement, réunion, tournoi" autocomplete="off">';
   }
   out += '<label class="f" for="evplace">Lieu (facultatif)</label><input type="text" id="evplace" data-bind="evf" data-k="place" value="' + esc(ev.place) + '" placeholder="Ex. Gymnase municipal" autocomplete="off">' +
-    '<div class="btnrow"><button class="btn wide primary" data-act="evSave">Créer l\'événement</button></div></section></div>';
+    '<div class="btnrow"><button class="btn wide primary" data-act="evSave">' + (isTrain ? (ev.rec !== 'none' ? 'Créer les entraînements' : 'Créer l\'entraînement') : 'Créer l\'événement') + '</button></div></section></div>';
   return out;
 }
 
@@ -4491,11 +4643,11 @@ function liveFor(ids, ch){
 }
 function liveHtml(list){
   if(!list.length) return '';
-  return '<h3 class="hsec">En cours</h3>' + list.map(function(it){
+  return list.map(function(it){
     var m = it.m, sm = matchSummary(m);
     function team(i){ var id = m.teams[i].clubId; return '<span class="mc-team">' + (id ? logoHtml(id, 44) : '') + '<span class="nm">' + esc(tnOf(m, i)) + '</span></span>'; }
     var fe = m.fixtureRef ? calEntry(m.fixtureRef.cid, m.fixtureRef.fid) : null;
-    return '<button class="mc live" data-act="resumeMatch" data-mid="' + esc(m.created) + '"><span class="mc-top"><span class="mc-ctx">' + esc(fe && fe.ch ? fe.ch.name : 'Match en direct') + '</span><span class="mc-b"><span class="tag live">' + liveDot() + 'En cours</span></span></span>' +
+    return '<button class="mc live" data-act="resumeMatch" data-mid="' + esc(m.created) + '"><span class="mc-top"><span class="mc-b"><span class="tag live">' + liveDot() + 'En cours</span></span><span class="mc-ctx">' + esc(fe && fe.ch ? fe.ch.name : 'Match en direct') + '</span></span>' +
       '<span class="mc-body">' + team(0) + '<span class="mc-mid">' + sm.w[0] + ' – ' + sm.w[1] + '</span>' + team(1) + '</span>' +
       '<span class="mc-sets">Set ' + sm.setNo + ' · ' + sm.cur[0] + ' – ' + sm.cur[1] + '</span><span class="mc-foot"><span>Reprendre la saisie</span></span></button>';
   }).join('');
@@ -4511,13 +4663,13 @@ function slArrow(key, n, dir, loop){
   return '<button class="slbtn" data-act="slide" data-key="' + esc(key) + '" data-n="' + n + '" data-dir="' + dir + '"' + (loop ? ' data-loop="1"' : '') + ' aria-label="' + (dir < 0 ? 'Précédent' : 'Suivant') + '">' + (dir < 0 ? '‹' : '›') + '</button>';
 }
 function matchSlider(key, ents, start, today, favId, label){
-  if(!ents.length) return '<h3 class="hsec">' + label + '</h3><p class="muted hempty">' + (start === 'last' ? 'Aucun match passé.' : 'Aucun match à venir.') + '</p>';
+  if(!ents.length) return '<p class="muted hempty">' + (start === 'last' ? 'Aucun match passé.' : 'Aucun match à venir.') + '</p>';
   var n = ents.length, i = slideState(key, n, start), e = ents[i];
   var play = (!entryResult(e) && e.kind !== 'event' && can('score', { ref:e.fid }) && e.home && e.away) ? '<button class="btn wide primary homeplay" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Saisir ce match</button>' : '';
-  return '<h3 class="hsec">' + label + (n > 1 ? ' <span class="slcnt">' + (i + 1) + ' / ' + n + '</span>' : '') + '</h3>' +
+  return '<div class="mcbox">' + (n > 1 ? '<p class="slcnt">' + (i + 1) + ' / ' + n + '</p>' : '') +
     '<div class="slider" data-sl="' + esc(key) + '">' + (n > 1 ? slArrow(key, n, -1) : '<span class="slbtn ph"></span>') +
-    '<div class="slview"><p class="rel">' + esc(relDay(e.date, today)) + (e.time && e.date >= today ? ' · ' + esc(e.time) : '') + '</p>' + calRow(e, today, favId) + play + '</div>' +
-    (n > 1 ? slArrow(key, n, 1) : '<span class="slbtn ph"></span>') + '</div>';
+    '<div class="slview">' + calRow(e, today, favId) + '</div>' +
+    (n > 1 ? slArrow(key, n, 1) : '<span class="slbtn ph"></span>') + '</div></div>' + play;
 }
 /* Tableau de classement (maquette du 23/10/2026) : 1er en vert, dernier en rouge, équipes favorites en orange */
 function standHl(r, hi){ return (!!hi && r.id === hi) || isFav('team', r.id) || isFav('club', clubOfEntrant(r.id)); }
@@ -4544,20 +4696,21 @@ function standingsHome(ch, hi){
 function favHead(kind, id, title, sub, logoId){
   return '<div class="favhd">' + (logoId ? logoHtml(logoId, 40) : '') + '<button class="favtitle" data-act="favGo" data-kind="' + kind + '" data-id="' + esc(id) + '"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></button>' + favStar(kind, id) + '</div>';
 }
+/* Séparation entre les séries de matchs (en cours, à venir, passés) : un trait entre chaque partie non vide */
+function sepJoin(parts){ return parts.filter(function(x){ return !!x; }).join('<hr class="hsep">'); }
 function champBlock(ch, today){
   var ents = calEntries().filter(function(e){ return e.kind === 'fixture' && e.cid === ch.id; });
   var past = ents.filter(function(e){ return isPastEntry(e, today); }), up = ents.filter(function(e){ return !isPastEntry(e, today); });
   return '<section class="card favblock">' + favHead('champ', ch.id, ch.name, 'Championnat · saison ' + curSeason().label, '') +
-    liveHtml(liveFor([], ch)) + standingsHome(ch, '') +
-    matchSlider('c:' + ch.id + ':p', past, 'last', today, '', 'Match passé') + matchSlider('c:' + ch.id + ':u', up, 'first', today, '', 'Match à venir') + '</section>';
+    sepJoin([liveHtml(liveFor([], ch)), standingsHome(ch, ''), matchSlider('c:' + ch.id + ':p', past, 'last', today, '', 'Match passé'), matchSlider('c:' + ch.id + ':u', up, 'first', today, '', 'Match à venir')]) + '</section>';
 }
 function teamInner(tid, today, keyp){
   var ch = champOfTeam(tid);
   var ents = calEntries().filter(function(e){ return e.kind !== 'event' && (e.home === tid || e.away === tid); });
   var past = ents.filter(function(e){ return isPastEntry(e, today); }), up = ents.filter(function(e){ return !isPastEntry(e, today); });
-  return liveHtml(liveFor([tid], null)) +
-    matchSlider(keyp + ':u', up, 'first', today, tid, 'Match à venir') + matchSlider(keyp + ':p', past, 'last', today, tid, 'Match passé') +
-    (ch ? '<p class="hchname">' + esc(ch.name) + '</p>' + standingsHome(ch, tid) : '<p class="muted hempty">Cette équipe n\'est dans aucun championnat cette saison.</p>');
+  return sepJoin([liveHtml(liveFor([tid], null)),
+    matchSlider(keyp + ':u', up, 'first', today, tid, 'Match à venir'), matchSlider(keyp + ':p', past, 'last', today, tid, 'Match passé'),
+    (ch ? '<p class="hchname">' + esc(ch.name) + '</p>' + standingsHome(ch, tid) : '<p class="muted hempty">Cette équipe n\'est dans aucun championnat cette saison.</p>')]);
 }
 function teamBlock(tid, today){
   var f = findTeam(tid);
@@ -4972,6 +5125,8 @@ function sheetView(){
       inner = '<h2>Aucune rencontre à venir</h2><p class="hint2">Aucune rencontre à venir ' + rpair + ' (domicile – extérieur) n\'est prévue dans ' + rname + '. Les rencontres d\'un championnat sont données d\'avance : on n\'en ajoute pas.</p>' +
         '<div class="btnrow"><button class="btn wide primary" data-act="resdupAmical">En faire une rencontre amicale</button><button class="btn wide" data-act="closeSheet">Annuler la saisie</button></div>';
     }
+  } else if(sh.kind === 'evpick'){
+    inner = '<h2>Que voulez-vous créer ?</h2><div class="btnrow"><button class="btn wide primary" data-act="evPick" data-k="match">Une rencontre</button>' + (can('trainCreate') ? '<button class="btn wide" data-act="evPick" data-k="train">' + dotHtml('t') + 'Un entraînement</button>' : '') + '<button class="btn wide" data-act="evPick" data-k="event">Autre (réunion, tournoi…)</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'newchamp'){
     inner = '<h2>Nouveau championnat</h2><p class="hint2" style="margin-top:4px">Saison ' + esc(curSeason().label) + '</p><label class="f" for="newchamp">Nom du championnat</label><input type="text" id="newchamp" placeholder="Ex. Départementale" data-enter="champ" autocomplete="off"><div class="btnrow"><button class="btn wide primary" data-act="addChamp">Créer</button></div>';
   } else if(sh.kind === 'clrres'){
@@ -4983,8 +5138,9 @@ function sheetView(){
     var dfe = calEntry(sh.cid, sh.fid), dfr = dfe && entryResult(dfe);
     if(!dfe){ inner = '<h2>Événement introuvable</h2>'; }
     else if(dfe.kind === 'event'){
-      inner = '<h2>Supprimer l\'événement « ' + esc(dfe.title) + ' » ?</h2><p class="hint2">' + esc(fmtDay(dfe.date)) + (dfe.time ? ' à ' + esc(dfe.time) : '') + '. Il disparaîtra du calendrier.</p>' +
-        '<div class="btnrow"><button class="btn wide danger" data-act="fixDel">Supprimer l\'événement</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+      var nSer = dfe.f.ser ? S.agenda.filter(function(a3){ return a3.ser === dfe.f.ser && a3.date > dfe.date; }).length : 0;
+      inner = '<h2>Supprimer ' + (dfe.f.train ? 'cet entraînement' : 'l\'événement « ' + esc(dfe.title) + ' »') + ' ?</h2><p class="hint2">' + esc(fmtDay(dfe.date)) + (dfe.time ? ' à ' + esc(dfe.time) : '') + '. Il disparaîtra du calendrier.</p>' +
+        '<div class="btnrow"><button class="btn wide danger" data-act="fixDel">Supprimer ' + (dfe.f.train ? 'cet entraînement' : 'l\'événement') + '</button>' + (nSer ? '<button class="btn wide danger" data-act="fixDelSer">Supprimer celui-ci et les ' + nSer + ' suivant' + (nSer > 1 ? 's' : '') + ' de la série</button>' : '') + '<button class="btn wide" data-act="closeSheet">Annuler</button></div>';
     } else {
       inner = '<h2>Supprimer cette rencontre du calendrier ?</h2><p class="hint2" style="font-size:18px">' + esc(clubName(dfe.home)) + ' – ' + esc(clubName(dfe.away)) + '</p><p class="hint2" style="margin-top:0">' + esc(fmtDay(dfe.date)) + (dfe.time ? ' à ' + esc(dfe.time) : '') + '</p>' +
         (dfr ? '<p class="hint2">' + (dfe.kind === 'fixture' ? 'Son résultat (' + dfr.hs + ' – ' + dfr.as + ') reste dans le classement du championnat ; il se supprime depuis l\'onglet Résultats.' : 'Son résultat (' + dfr.hs + ' – ' + dfr.as + ') sera supprimé aussi.') + '</p>' : '') +
@@ -5062,15 +5218,15 @@ function sheetView(){
   } else if(sh.kind === 'fixture'){
     var fe = calEntry(sh.cid, sh.fid);
     var fDate = !!fe && fe.kind !== 'event' && (can('matchDate', { cid:clubOfEntrant(fe.home) }) || (fe.kind === 'amical' && can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home })));
-    var fEd = !!fe && (fe.kind === 'fixture' ? can('champEdit') : (fe.kind === 'event' ? can('evCreate') : (can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home }) || can('evCreate', { cid:clubOfEntrant(fe.away), tid:fe.away }))));
+    var fEd = !!fe && (fe.kind === 'fixture' ? can('champEdit') : (fe.kind === 'event' ? (fe.f.train ? can('trainCreate', { cid:fe.f.club }) : can('evCreate')) : (can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home }) || can('evCreate', { cid:clubOfEntrant(fe.away), tid:fe.away }))));
     var fLock = !!fe && fe.kind !== 'event' && fe.f.locked ? fe.f.locked : null;
     if(fLock){ fDate = false; fEd = false; }
     if(!fe){ inner = '<h2>Événement introuvable</h2>'; }
     else if(fe.kind === 'event'){
-      inner = '<h2>' + esc(fe.title) + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' +
-        (fEd ? '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>' : '');
+      inner = '<h2>' + esc(fe.title) + (fe.f.train && clubById(fe.f.club) ? ' · ' + esc(clubById(fe.f.club).name) : '') + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' +
+        presSheetHtml(fe, isoOf(new Date())) + (fEd ? '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>' : '');
     } else {
-      var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Rencontre amicale';
+      var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Amical';
       inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' + formHtml(fe);
       if(fm){
         inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
@@ -5082,7 +5238,7 @@ function sheetView(){
         inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
           '<div class="btnrow">' + (can('score', { ref:fe.fid }) ? '<button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button>' : '') + (fDate ? '<button class="btn wide" data-act="fixPost">Reporter ce match</button>' : '') + '</div>' + (fDate ? '<div class="row2"><div><label class="f" for="fnewd">Date</label><input type="date" id="fnewd" value="' + esc(fe.date) + '"></div><div><label class="f" for="fnewt">Heure</label><input type="time" id="fnewt" value="' + esc(fe.time || '') + '"></div></div><div class="btnrow"><button class="btn wide" data-act="fixDate">Modifier la date et l\'heure</button></div>' : '');
       }
-      inner += officialsHtml(fe, fm, fLock);
+      inner += presSheetHtml(fe, isoOf(new Date())) + officialsHtml(fe, fm, fLock);
       (function(){ var w = DB.who(fe.f), l = []; if(w.created) l.push('Ajouté le ' + fmtDay(w.created.at.slice(0, 10)) + (w.created.by ? ' par ' + w.created.by : '')); if(w.updated) l.push('modifié le ' + fmtDay(w.updated.at.slice(0, 10)) + (w.updated.by ? ' par ' + w.updated.by : '')); if(l.length) inner += '<p class="hint2" style="margin-top:12px">' + esc(l.join(' · ')) + '</p>'; })();
       if(fEd) inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
         RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
@@ -5177,7 +5333,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
+  var own = ['sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -5228,7 +5384,7 @@ function render(){
   navSave();
 }
 /* Page courante conservée en cas d'actualisation (sessionStorage : propre à l'onglet / à la session) */
-var NAV_KEYS = ['tab','clubView','clubSel','teamSel','clubTab','champSel','champTab','calView','dataView','dataTeam','dataMatch','dataFrom','dataPlayer','resume','addRes','showSetup','prepTeam','calMode','fil','calQ','calFOpen','favDone','clq'];
+var NAV_KEYS = ['tab','clubView','clubSel','teamSel','clubTab','champSel','champTab','calView','dataView','dataTeam','dataMatch','dataFrom','dataPlayer','resume','addRes','showSetup','prepTeam','calMode','calType','calHome','fil','calQ','calFOpen','favDone','clq'];
 function navSave(){
   try{
     var o = {}; NAV_KEYS.forEach(function(k){ if(ui[k] !== undefined) o[k] = ui[k]; });
@@ -5304,7 +5460,13 @@ function createClub(){
 function saveEvent(){
   var ev = ui.ev, date = parseDate(ev.date), time = parseTime(ev.time), place = (ev.place || '').trim();
   if(!date){ badField('evdate', 'Choisissez une date.'); return; }
-  if(ev.kind === 'event'){
+  if(ev.kind === 'train'){
+    if(allowedClubs().length === 1) ev.club = allowedClubs()[0].id;
+    if(!ev.club || !clubById(ev.club) || !allowedClubs().some(function(c){ return c.id === ev.club; })){ badField('evclub', 'Choisissez le club.'); return; }
+    var tds = trainDates(ev), ser = tds.length > 1 ? uid() : '', tname = (ev.trainName || '').trim() || 'Entraînement';
+    tds.forEach(function(td){ S.agenda.push({ id:uid(), kind:'event', title:tname, train:1, club:ev.club, ser:ser, date:td, time:time, place:place }); });
+    ui.msg = tds.length > 1 ? tds.length + ' entraînements créés.' : 'Entraînement créé.';
+  } else if(ev.kind === 'event'){
     var title = (ev.title || '').trim();
     if(!title){ badField('evtitle', 'Saisissez un titre.'); return; }
     S.agenda.push({ id:uid(), kind:'event', title:title, date:date, time:time, place:place });
@@ -5546,8 +5708,10 @@ document.addEventListener('click', function(e){
     case 'clock': toggleClock(); break;
     case 'swap': S.swap = !S.swap; save(); render(); break;
     case 'calFOpen': ui.calFOpen = !ui.calFOpen; render(); break;
-    case 'calClear': ui.fil[d.k] = ''; render(); break;
-    case 'calReset': ui.fil = { team:'', club:'', champ:'' }; ui.calQ = ''; render(); break;
+    case 'calClear': if(d.k === 'type') ui.calType = ''; else if(d.k === 'home') ui.calHome = ''; else if(d.k === 'mode') ui.calMode = 'all'; else ui.fil[d.k] = ''; render(); break;
+    case 'calReset': ui.fil = { team:'', club:'', champ:'' }; ui.calQ = ''; ui.calType = ''; ui.calHome = ''; ui.calMode = 'all'; render(); break;
+    case 'calHome': ui.calHome = d.h; render(); break;
+    case 'calType': ui.calType = d.t; render(); break;
     case 'favSet': if(ui.fil.team){ favSave(ui.fil.team); } render(); break;
     case 'favClear': favSave(''); render(); break;
     case 'favApply': if(favGet()){ ui.fil.team = favGet(); } render(); break;
@@ -5979,7 +6143,23 @@ document.addEventListener('click', function(e){
       if(re3 && !re3.f.locked) deleteEntry(re3);
       ui.sheet = null; render(); break;
     }
-    case 'calCreate': ui.calView = 'create'; ui.ev = { kind:'match', title:'', date:isoOf(new Date()), time:'', place:'', target:'', a:'', b:'', homeIs:'' }; ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'presTog': {
+      var pe = calEntry(d.cid, d.fid), pm = meGet();
+      if(!pe || !pm || !presCan(pe, isoOf(new Date()))) break;
+      var pmap = S.pres[pe.fid] = S.pres[pe.fid] || {}, pcur = pmap[pm];
+      if(!pcur) pmap[pm] = 'p'; else if(pcur === 'p') pmap[pm] = 'a'; else delete pmap[pm];
+      if(!Object.keys(pmap).length) delete S.pres[pe.fid];
+      save(); render(); break;
+    }
+    case 'calCreate': ui.sheet = { kind:'evpick' }; render(); break;
+    case 'evPick': ui.sheet = null; ui.calView = 'create'; ui.ev = newEv(d.k); ui.msg = ''; render(); window.scrollTo(0,0); break;
+    case 'evRec': ui.ev.rec = d.r; ui.msg = ''; render(); break;
+    case 'evDow': { var dw = +d.d, ix = ui.ev.days.indexOf(dw); if(ix >= 0){ if(ui.ev.days.length > 1) ui.ev.days.splice(ix, 1); } else ui.ev.days.push(dw); ui.ev.dowTouched = true; render(); break; }
+    case 'fixDelSer': {
+      var re4 = calEntry(sh.cid, sh.fid);
+      if(re4 && re4.f.ser){ var sr = re4.f.ser, sd = re4.date; S.agenda.filter(function(a2){ return a2.ser === sr && a2.date >= sd; }).forEach(function(a2){ delete S.pres[a2.id]; }); S.agenda = S.agenda.filter(function(a2){ return !(a2.ser === sr && a2.date >= sd); }); save(); }
+      ui.sheet = null; render(); break;
+    }
     case 'calBack': ui.calView = 'list'; ui.ev = null; ui.msg = ''; render(); window.scrollTo(0,0); break;
     case 'evKind': ui.ev.kind = d.k; ui.msg = ''; render(); break;
     case 'evTarget': ui.ev.target = d.t === 'amical' ? '' : d.t; ui.ev.a = ''; ui.ev.b = ''; ui.ev.homeIs = ''; ui.msg = ''; render(); break;
@@ -6168,7 +6348,15 @@ document.addEventListener('input', function(e){
   else if(bind === 'licfin'){ if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ S.licFin = v.slice(5); save(); SB.setting('lic_fin', S.licFin); } return; }
   else if(bind === 'emf'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
   else if(bind === 'ncname'){ ui.newClub.name = v; return; }
-  else if(bind === 'evf'){ if(ui.ev){ ui.ev[ds.k] = v; if(ds.k === 'a' || ds.k === 'b') render(); } return; }
+  else if(bind === 'evrec'){ if(ui.ev){ ui.ev.rec = e.target.checked ? '1w' : 'none'; render(); } return; }
+  else if(bind === 'evf'){
+    if(ui.ev){
+      ui.ev[ds.k] = v;
+      if(ds.k === 'date' && ui.ev.kind === 'train' && !ui.ev.dowTouched){ var pd = parseDate(v); if(pd) ui.ev.days = [dowOf(pd)]; }
+      if(ds.k === 'a' || ds.k === 'b' || (ui.ev.kind === 'train' && ui.ev.rec !== 'none' && (ds.k === 'date' || ds.k === 'until'))) render();
+    }
+    return;
+  }
   else if(bind === 'mmf'){ ui.mm[ds.k] = v; if(ds.k === 'a' || ds.k === 'b') render(); return; }
   else if(bind === 'mchamp'){
     S.matchChamp = v;
@@ -6252,6 +6440,7 @@ document.addEventListener('keydown', function(e){
   else if(en === 'teamcreate'){ var tb = document.createElement('button'); tb.setAttribute('data-act', 'teamCreate'); tb.style.display = 'none'; document.body.appendChild(tb); tb.click(); document.body.removeChild(tb); }
   else if(en === 'champ') addChamp();
 });
+document.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key === ' ') && e.target && e.target.classList && e.target.classList.contains('mc') && e.target.getAttribute('role') === 'button'){ e.preventDefault(); e.target.click(); } });
 document.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key === ' ') && e.target && e.target.classList && e.target.classList.contains('favstar')){ e.preventDefault(); e.target.click(); } });
 (function(){
   var sx = 0, sy = 0, sv = null;
