@@ -1403,6 +1403,8 @@ var SB = (function(){
   return {
     status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length + ((S.sb && S.sb.pq) ? S.sb.pq.length : 0), busy:busy, msg:st.msg }; },
     kick:function(){ if(!ses() || !(S.sync.out.length || (S.sb && S.sb.pq && S.sb.pq.length) || (S.sb && S.sb.md && S.sb.md.length) || (S.msgs || []).some(function(m){ return m.p; }) || (S.reports || []).some(function(m){ return m.p; }) || (S.sb && S.sb.rq && S.sb.rq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
+    pushRegister:function(ep, p256, auth, prefs){ return req('POST', '/rest/v1/rpc/v2c_push_register', { p_endpoint:ep, p_p256dh:p256, p_auth:auth, p_prefs:prefs || {} }); },
+    pushUnregister:function(ep){ return req('POST', '/rest/v1/rpc/v2c_push_unregister', { p_endpoint:ep }); },
     sync:sync, msgSync:msgSync, staff:staff,
     start:function(){
       if(!ses()) return;
@@ -1466,6 +1468,78 @@ function sbClaimSheet(sh){
     rsSelect('sc_m', 'Vous', 'mid', memberItems(mc), dr.mid, mc ? '— Choisir —' : 'Choisissez d\'abord le club') +
     rsField('sc_code', 'Code de première connexion', 'code', dr.code) + sheetErr(sh) +
     '<div class="btnrow"><button class="btn wide primary" data-act="sbClaimOk"' + (dr.busy ? ' disabled' : '') + '>Valider</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+}
+/* ---------- Notifications (web push) ---------- */
+var PUSH_PUBKEY = 'BBcnEdBYdwMdb5_XYfuU_E7i2UWAR7lW4f1XHpV3GsS8t2AjMFLSf27Dlp9d4JrCUSKM1RnoNx2SKQ0cYGONxmw';
+var PUSH = (function(){
+  var KEYP = 'volley-push-v1', st = { sub:false, busy:false, msg:'', ready:false };
+  function prefs(){ var o = DB.dev.getJson(KEYP); return (o && typeof o === 'object') ? o : { team:true }; }
+  function setPrefs(o){ DB.dev.set(KEYP, JSON.stringify(o)); }
+  function supported(){ return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+  function ios(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function standalone(){ return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+  function key(s){ var p = '='.repeat((4 - s.length % 4) % 4), b = (s + p).replace(/-/g, '+').replace(/_/g, '/'), r = atob(b), a = new Uint8Array(r.length); for(var i = 0; i < r.length; i++) a[i] = r.charCodeAt(i); return a; }
+  function reg(){ return navigator.serviceWorker.ready; }
+  function current(){ return reg().then(function(r){ return r.pushManager.getSubscription(); }); }
+  function send(sub){ var j = sub.toJSON(); return SB.pushRegister(j.endpoint, j.keys.p256dh, j.keys.auth, prefs()); }
+  function paint(){ try{ if(ui.tab === 'settings' && !(ui.sheet && ui.sheet.draft)) render(); }catch(e){} }
+  function done(m){ st.busy = false; if(m !== undefined) st.msg = m; paint(); }
+  function refresh(){
+    if(!supported()){ st.ready = true; return Promise.resolve(); }
+    return current().then(function(sub){
+      st.sub = !!sub; st.ready = true;
+      if(sub && Notification.permission === 'granted' && SB.status().logged) send(sub).catch(function(){});
+    }).catch(function(){ st.ready = true; }).then(function(){ paint(); });
+  }
+  function enable(){
+    if(st.busy) return;
+    if(!SB.status().logged){ done('Connectez-vous d\'abord (carte « Compte en ligne » ci-dessus).'); return; }
+    st.busy = true; st.msg = ''; paint();
+    Notification.requestPermission().then(function(p){
+      if(p !== 'granted'){ done(p === 'denied' ? 'Notifications refusées. Autorisez-les dans les réglages de votre navigateur ou de votre téléphone pour ce site, puis réessayez.' : 'Autorisation non donnée.'); return; }
+      return reg().then(function(r){ return r.pushManager.getSubscription().then(function(s){ return s || r.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:key(PUSH_PUBKEY) }); }); })
+        .then(function(sub){ return send(sub).then(function(res){ if(!res.ok) throw new Error('serveur'); st.sub = true; done('Notifications activées sur cet appareil.'); }); });
+    }).catch(function(){ done('Activation impossible pour le moment (connexion ou serveur). Réessayez plus tard.'); });
+  }
+  function disable(){
+    if(st.busy) return;
+    st.busy = true; paint();
+    current().then(function(sub){
+      if(!sub){ st.sub = false; done('Notifications désactivées.'); return; }
+      var ep = sub.endpoint;
+      return sub.unsubscribe().then(function(){ st.sub = false; return SB.pushUnregister(ep).catch(function(){}); }).then(function(){ done('Notifications désactivées sur cet appareil.'); });
+    }).catch(function(){ done('Désactivation impossible pour le moment.'); });
+  }
+  function setTeam(v){
+    var o = prefs(); o.team = !!v; setPrefs(o); paint();
+    if(st.sub) current().then(function(sub){ if(sub) send(sub).catch(function(){}); }).catch(function(){});
+  }
+  function test(){
+    reg().then(function(r){ return r.showNotification('Volley-Club Commentry', { body:'Ceci est une notification de test.', icon:'./icon-192.png', tag:'test', data:{ url:'./#/messages' } }); })
+      .then(function(){ done('Test envoyé : une notification doit apparaître.'); }, function(){ done('Le test a échoué : notifications non autorisées ?'); });
+  }
+  return { st:st, prefs:prefs, supported:supported, ios:ios, standalone:standalone, refresh:refresh, enable:enable, disable:disable, setTeam:setTeam, test:test };
+})();
+function pushCardHtml(){
+  var s = PUSH.st, out = '<section class="card"><h2>Notifications</h2>';
+  if(!PUSH.supported()){
+    if(PUSH.ios() && !PUSH.standalone()) return out + '<p class="muted" style="margin:6px 0 0">Sur iPhone et iPad, les notifications ne fonctionnent que depuis l\'application ajoutée à l\'écran d\'accueil : dans Safari, touchez « Partager » puis « Sur l\'écran d\'accueil », ouvrez l\'application depuis cette icône et revenez ici. (iOS 16.4 ou plus récent.)</p></section>';
+    return out + '<p class="muted" style="margin:6px 0 0">Ce navigateur ne gère pas les notifications. Essayez Chrome, Edge, Firefox ou Safari récent.</p></section>';
+  }
+  var denied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
+  out += '<p class="muted" style="margin:6px 0 0">Recevez une alerte sur cet appareil pour les messages privés, les annonces et, pour l\'administrateur, les signalements.</p>';
+  if(s.msg) out += '<p class="hint2">' + esc(s.msg) + '</p>';
+  if(denied && !s.sub) out += '<p class="hint2" style="color:var(--danger)">Les notifications sont bloquées pour ce site : autorisez-les dans les réglages du navigateur ou du téléphone.</p>';
+  out += '<div class="btnrow">';
+  if(s.sub){
+    var tm = PUSH.prefs().team !== false;
+    out += '<button class="btn wide" data-act="pushTeam" aria-pressed="' + tm + '">' + (tm ? '✓ ' : '') + 'Alertes des fils d\'équipe</button>' +
+      '<button class="btn wide" data-act="pushTest">Envoyer un test</button>' +
+      '<button class="btn wide" data-act="pushOff"' + (s.busy ? ' disabled' : '') + '>Désactiver sur cet appareil</button>';
+  } else out += '<button class="btn wide primary" data-act="pushOn"' + (s.busy || denied ? ' disabled' : '') + '>' + (s.busy ? 'Activation…' : 'Activer les notifications') + '</button>';
+  out += '</div>';
+  if(s.sub) out += '<p class="hint2">Les messages privés et les annonces vous alertent toujours ; vous pouvez couper seulement les messages ordinaires des fils d\'équipe.</p>';
+  return out + '</section>';
 }
 function sbCardHtml(){
   var s = SB.status(), out = '<section class="card"><h2>Compte en ligne</h2>';
@@ -2260,6 +2334,7 @@ function settingsView(){
     '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, données officielles, cohérence…</button></div></section>';
   if(can('licFin')) out += '<section class="card"><h2>Fin de saison des licences</h2><p class="muted" style="margin:6px 0 0">Chaque année à cette date, le président peut démarrer une nouvelle saison de licences.</p><label class="f" for="licfin">Date de fin de saison</label><input type="date" id="licfin" data-bind="licfin" value="2000-' + esc(S.licFin || '07-15') + '"></section>';
   out += sbCardHtml();
+  out += pushCardHtml();
   out += '<section class="card"><h2>Apparence</h2><div class="chips modes" style="margin-top:10px">' +
     chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
     '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
@@ -2354,12 +2429,13 @@ function routeHash(){
   return h;
 }
 function routeApply(hs){
-  var m = (hs || '').match(/^#\/(match|clubs|championnat|statistiques|parametres|sauvegarde)((?:\/[^\/?#]*)*)$/);
+  var m = (hs || '').match(/^#\/(match|clubs|championnat|statistiques|parametres|sauvegarde|messages)((?:\/[^\/?#]*)*)$/);
   if(!m) return false;
-  var tab = { match:'match', clubs:'clubs', championnat:'champ', statistiques:'data', parametres:'settings', sauvegarde:'backup' }[m[1]];
+  var tab = { match:'match', clubs:'clubs', championnat:'champ', statistiques:'data', parametres:'settings', sauvegarde:'backup', messages:'msg' }[m[1]];
   var seg = m[2].split('/').filter(Boolean).map(function(x){ try{ return decodeURIComponent(x); }catch(e){ return x; } });
   if(ui.tab !== tab) setTab(tab);
   ui.sheet = null; ui.edit = false; ui.msg = '';
+  if(tab === 'msg'){ ui.msgThread = null; try{ if(SB.status().logged) SB.msgSync(); }catch(e){} }
   if(tab === 'clubs'){
     ui.clubView = 'list';
     if(seg[0] === 'nouveau') ui.clubView = 'create';
@@ -6604,6 +6680,10 @@ document.addEventListener('click', function(e){
     }
     case 'sbSync': SB.sync().then(function(){ render(); }); render(); break;
     case 'sbOut': SB.logout(); render(); break;
+    case 'pushOn': PUSH.enable(); break;
+    case 'pushOff': PUSH.disable(); break;
+    case 'pushTeam': PUSH.setTeam(PUSH.prefs().team === false); break;
+    case 'pushTest': PUSH.test(); break;
     case 'sbClaimOpen': ui.sheet = { kind:'sbclaim', draft:{ mcid:'', mid:'', code:'' }, err:'' }; render(); break;
     case 'sbClaimOk': {
       if(!sh.draft.mid){ sh.err = 'Choisissez votre nom dans la liste.'; render(); break; }
@@ -7048,8 +7128,15 @@ window.addEventListener('hashchange', function(){
   if(ui.tab !== 'cal') setTab('cal');
   ui.calView = 'list'; ui.calJump = true; render();
 });
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('message', function(ev){
+    var d = ev.data;
+    if(d && d.type === 'open'){ ui.msgThread = null; ui.sheet = null; setTab('msg'); render(); try{ if(SB.status().logged) SB.msgSync(); }catch(e){} window.scrollTo(0, 0); }
+  });
+}
 render();
 if(navY){ window.scrollTo(0, navY); }
+PUSH.refresh();
 window.addEventListener('scroll', function(){ if(ui.tab !== 'menu') navSave(); }, { passive:true });
 if(FRESH && location.protocol !== 'file:'){ fetchDemo(function(ok){ if(ok){ render(); } }); }
 SB.start();
