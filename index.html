@@ -1068,11 +1068,12 @@ var SB = (function(){
     if(c === 'fixture') return [['fixtures', { id:o.id, champ_id:pid, home:o.home, away:o.away, date:o.date || null, time:o.time || '', place:o.place || '', postponed:!!o.postponed, match_id:o.matchId || null, locked:o.locked || null, compo:o.compo || {}, data:strip(o, ['id', 'home', 'away', 'date', 'time', 'place', 'postponed', 'matchId', 'locked', 'compo']) }]];
     if(c === 'result') return [['results', { id:o.id, champ_id:pid, fid:o.fid || null, home:o.home, away:o.away, home_sets:o.hs, away_sets:o['as'], data:strip(o, ['id', 'home', 'away', 'hs', 'as', 'fid']) }]];
     if(c === 'agenda') return [['agenda', { id:o.id, kind:o.kind === 'event' ? 'event' : 'amical', title:o.title || '', home:o.home || null, away:o.away || null, date:o.date || null, time:o.time || '', place:o.place || '', postponed:!!o.postponed, result:o.result || null, locked:o.locked || null, compo:o.compo || {}, data:strip(o, ['id', 'kind', 'title', 'home', 'away', 'date', 'time', 'place', 'postponed', 'result', 'locked', 'compo']) }]];
+    if(c === 'request') return [['requests', { id:o.id, dev:o.dev || '', prenom:o.prenom, nom:o.nom, licence:o.licence, cid:o.cid, age:o.age == null ? null : o.age, data:{ age:o.age == null ? null : o.age, date:o.date || '' } }]];
     if(c === 'role') return [['roles', { id:o.id, mid:o.mid, role:o.role, cid:o.cid || null, tid:o.tid || null, ref:o.ref || null, state:o.state || 'actif', code:o.code || null, exp:o.exp || null, data:{ by:o.by || '', date:o.date || '' } }]];
     return [];
   }
-  var TABLE = { club:'clubs', team:'teams', member:'members', champ:'champs', fixture:'fixtures', result:'results', agenda:'agenda', role:'roles' };
-  var ORDER = ['club', 'team', 'member', 'champ', 'fixture', 'result', 'agenda', 'role'];
+  var TABLE = { club:'clubs', team:'teams', member:'members', champ:'champs', fixture:'fixtures', result:'results', agenda:'agenda', role:'roles', request:'requests' };
+  var ORDER = ['club', 'team', 'member', 'champ', 'fixture', 'result', 'agenda', 'role', 'request'];
   /* lignes de la base -> local */
   function build(R){
     var L = { club:[], team:[], member:[], champ:[], fixture:[], result:[], agenda:[], role:[], request:[] }, mp = {}, mph = {};
@@ -1213,6 +1214,7 @@ var SB = (function(){
       function one(i){
         if(i >= list.length || stop) return Promise.resolve();
         var x = list[i], p;
+        if(x.c === 'request' && x.op !== 'add'){ done(x); return one(i + 1); }
         if(x.op === 'del') p = req('DELETE', '/rest/v1/' + TABLE[x.c] + '?id=eq.' + encodeURIComponent(x.id), undefined, { Prefer:'return=minimal' }).then(function(r){ return [r]; });
         else {
           var h = DB.find(x.c, x.id);
@@ -1220,6 +1222,7 @@ var SB = (function(){
           var parent = null; DB.walk(S, function(c, o, arr, par){ if(c === x.c && o === h.o) parent = par; });
           var rows = rowsOf(x.c, h.o, parent), res = [];
           p = rows.reduce(function(chain, rw){
+            if(rw[0] === 'requests') return chain.then(function(){ return req('POST', '/rest/v1/requests', rw[1], { Prefer:'return=minimal' }).then(function(r){ if(r.status === 409) r.ok = true; res.push(r); }); });
             return chain.then(function(){ return req('POST', '/rest/v1/' + rw[0] + '?on_conflict=' + (rw[0] === 'member_private' || rw[0] === 'member_photos' ? 'member_id' : 'id'), rw[1], { Prefer:'resolution=merge-duplicates,return=minimal' }).then(function(r){ res.push(r); }); });
           }, Promise.resolve()).then(function(){ return res; });
         }
@@ -1262,6 +1265,20 @@ var SB = (function(){
     },
     claim:function(member, code){
       return req('POST', '/rest/v1/rpc/v2c_claim_admin', { p_member:member, p_code:String(code).trim() }).then(function(r){
+        if(!r.ok) return { ok:false, msg:errTxt(r.json, 'Refusé') };
+        return pull().then(function(){ return { ok:true }; });
+      }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
+    },
+    /* Utiliser un code d'invitation / traiter une demande : le serveur fait le travail (droits vérifiés par lui), puis on relit les données */
+    redeem:function(code){
+      return req('POST', '/rest/v1/rpc/v2c_redeem_invite', { p_code:String(code).trim() }).then(function(r){
+        if(!r.ok) return { ok:false, msg:errTxt(r.json, 'Refusé') };
+        var role = r.json && r.json.role;
+        return pull().then(function(){ return { ok:true, role:role }; });
+      }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
+    },
+    answer:function(id, accept){
+      return req('POST', '/rest/v1/rpc/v2c_answer_request', { p_id:id, p_accept:!!accept }).then(function(r){
         if(!r.ok) return { ok:false, msg:errTxt(r.json, 'Refusé') };
         return pull().then(function(){ return { ok:true }; });
       }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
@@ -1978,14 +1995,14 @@ function roleDelSheet(sh){
     '<div class="btnrow"><button class="btn wide danger" data-act="roleDelOk">Oui, retirer</button><button class="btn wide" data-act="rolesOpen">Annuler</button></div>';
 }
 function invCodeSheet(sh){
-  return '<h2>J\'ai un code d\'invitation</h2><p class="hint2" style="margin-top:4px">Saisissez le code reçu de la personne qui vous a nommé.</p>' + rsField('ic_code', 'Code', 'code', sh.draft.code) + sheetErr(sh) + btnRow('invCodeOk', 'Valider le code');
+  return '<h2>J\'ai un code d\'invitation</h2><p class="hint2" style="margin-top:4px">Saisissez le code reçu de la personne qui vous a nommé.</p>' + rsField('ic_code', 'Code', 'code', sh.draft.code) + (SB.status().logged ? '' : '<p class="hint2">Pour utiliser un code, connectez-vous d\'abord : Paramètres › Compte en ligne.</p>') + (sh.busy ? '<p class="hint2">Vérification…</p>' : '') + sheetErr(sh) + btnRow('invCodeOk', 'Valider le code');
 }
 function requestSheet(sh){
   var dr = sh.draft;
   return '<h2>Demander à être licencié</h2><p class="hint2" style="margin-top:4px">Le président ou le responsable de votre club vérifie votre fiche. Votre date de naissance sert à cette vérification et n\'est pas conservée.</p>' +
     '<div class="row2"><div>' + rsField('rq_pre', 'Prénom', 'prenom', dr.prenom) + '</div><div>' + rsField('rq_nom', 'Nom', 'nom', dr.nom) + '</div></div>' +
     rsField('rq_nai', 'Date de naissance', 'naiss', dr.naiss, 'date') + rsField('rq_lic', 'Numéro de licence', 'licence', dr.licence) +
-    rsSelect('rq_cid', 'Club', 'cid', clubItems(S.clubs), dr.cid, '— Choisir —') + sheetErr(sh) + btnRow('requestOk', 'Envoyer la demande');
+    rsSelect('rq_cid', 'Club', 'cid', clubItems(S.clubs), dr.cid, '— Choisir —') + (SB.status().logged ? '' : '<p class="hint2">Pour que votre demande arrive au club, connectez-vous d\'abord : Paramètres › Compte en ligne. Elle sera alors envoyée automatiquement.</p>') + sheetErr(sh) + btnRow('requestOk', 'Envoyer la demande');
 }
 function requestsSheet(){
   var l = pendingRequests(), out = '<h2>Demandes à traiter (' + l.length + ')</h2>';
@@ -2031,7 +2048,7 @@ function profSheetHtml0(){
   }
   if(!f){
     out += '<div class="profid">' + avatar('', 64, 'Visiteur') + '<div><b>Visiteur</b><br><span class="muted">Consultation</span></div></div>';
-    var mine = (S.requests || []).filter(function(r){ return r.dev === devId(); }).slice(-1)[0];
+    var mine = (S.requests || []).filter(function(r){ return SB.status().logged || r.dev === devId(); }).slice(-1)[0];
     if(mine && mine.state === 'attente') out += '<p class="hint2" style="margin-top:14px">Votre demande du ' + esc(fmtDay(mine.date)) + ' est en attente de validation.</p>';
     else if(mine && mine.state === 'acceptee') out += '<p class="hint2" style="margin-top:14px">Votre demande est acceptée.</p><div class="btnrow"><button class="btn wide primary" data-act="reqActivate" data-id="' + mine.id + '">Activer mon accès</button></div>';
     else {
@@ -5773,7 +5790,7 @@ document.addEventListener('click', function(e){
       if(S.fav && S.fav['_'] && !S.fav[q_mem.id]) S.fav[q_mem.id] = S.fav['_'];
       meSet(q_mem.id); ui.sheet = null; save(); render(); break;
     }
-    case 'rolesOpen': ui.sheet = { kind:'roles' }; render(); break;
+    case 'rolesOpen': ui.sheet = { kind:'roles' }; render(); if(SB.status().logged) SB.sync(); break;
     case 'roleAddOpen': ui.sheet = { kind:'roleAdd', err:'', draft:{ mcid:'', mid:'', role:'', cid:'', tid:'' } }; render(); break;
     case 'roleAttrOk': case 'roleInvOk': {
       var q_r = sh.draft, q_err = '', q_f = q_r.mid ? findMember(q_r.mid) : null, q_scoped = q_r.role === 'pres' || q_r.role === 'rclub' || q_r.role === 'requ';
@@ -5787,7 +5804,7 @@ document.addEventListener('click', function(e){
       var q_row = { id:uid(), mid:q_r.mid, role:q_r.role, cid:q_scoped ? q_r.cid : '', tid:q_r.role === 'requ' ? q_r.tid : '', by:meGet(), date:stamp(), state:act === 'roleInvOk' ? 'invite' : 'actif' };
       if(act === 'roleInvOk'){ q_row.code = newCode(); var q_x = new Date(); q_x.setDate(q_x.getDate() + 7); q_row.exp = isoOf(q_x); }
       DB.add('role', q_row); save();
-      if(act === 'roleInvOk') ui.sheet = { kind:'text', title:'Invitation créée', note:'Envoyez ce message à la personne. Le code est valable jusqu\'au ' + fmtDay(q_row.exp) + '.', text:'Invitation Volley-Club Commentry : ' + profLabel(q_row.role) + (scopeTxt(q_row) ? ' · ' + scopeTxt(q_row) : '') + ' pour ' + memberName(q_f.m) + '.\nCode : ' + q_row.code + '\nDans l\'application, touchez votre profil puis « J\'ai un code d\'invitation ».', canShare:!!navigator.share };
+      if(act === 'roleInvOk') ui.sheet = { kind:'text', title:'Invitation créée', note:'Envoyez ce message à la personne. Le code est valable jusqu\'au ' + fmtDay(q_row.exp).replace(/\.$/, '') + '.', text:'Invitation Volley-Club Commentry : ' + profLabel(q_row.role) + (scopeTxt(q_row) ? ' · ' + scopeTxt(q_row) : '') + ' pour ' + memberName(q_f.m) + '.\nCode : ' + q_row.code + '\nDans l\'application, touchez votre profil puis « J\'ai un code d\'invitation ».', canShare:!!navigator.share };
       else ui.sheet = { kind:'roles' };
       render(); break;
     }
@@ -5796,8 +5813,18 @@ document.addEventListener('click', function(e){
     case 'invCodeOpen': ui.sheet = { kind:'invcode', err:'', draft:{ code:'' } }; render(); break;
     case 'invCodeOk': {
       var q_code = String(sh.draft.code || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), q_today = isoOf(new Date());
+      if(SB.status().logged){
+        if(!q_code){ sh.err = 'Saisissez le code.'; render(); break; }
+        sh.err = ''; sh.busy = true; render();
+        SB.redeem(q_code).then(function(r2){
+          if(!r2.ok){ sh.busy = false; sh.err = r2.msg; render(); return; }
+          ui.sheet = { kind:'info', title:'Invitation acceptée', note:'Votre rôle « ' + (r2.role ? profLabel(r2.role) : '') + ' » est activé. Touchez votre profil pour le choisir.' };
+          render();
+        });
+        break;
+      }
       var q_inv = q_code ? (S.roles || []).filter(function(x){ return x.state === 'invite' && x.code === q_code; })[0] : null;
-      if(!q_inv){ sh.err = 'Code inconnu.'; render(); break; }
+      if(!q_inv){ sh.err = 'Code inconnu. Si vous avez reçu une invitation, connectez-vous d\'abord (Paramètres › Compte en ligne), puis saisissez le code.'; render(); break; }
       if(q_inv.exp < q_today){ sh.err = 'Ce code a expiré. Demandez une nouvelle invitation.'; render(); break; }
       var q_me = meReal(), q_who = findMember(q_inv.mid);
       if(q_me && q_me !== q_inv.mid && q_me !== S.adminId){ sh.err = 'Cet appareil est déjà utilisé par une autre personne.'; render(); break; }
@@ -5821,9 +5848,16 @@ document.addEventListener('click', function(e){
       save(); ui.sheet = { kind:'info', title:'Demande envoyée', note:'Le président ou le responsable de ' + (q_cl ? q_cl.name : 'votre club') + ' va la traiter. Revenez dans votre profil pour activer votre accès.' };
       render(); break;
     }
-    case 'reqOpen': ui.sheet = { kind:'requests' }; render(); break;
+    case 'reqOpen': ui.sheet = { kind:'requests' }; render(); if(SB.status().logged) SB.sync(); break;
     case 'reqAcc': case 'reqRef': {
       var q_rq = (S.requests || []).filter(function(x){ return x.id === d.id; })[0];
+      if(q_rq && SB.status().logged && can('licValidate', { cid:q_rq.cid })){
+        SB.answer(q_rq.id, act === 'reqAcc').then(function(r2){
+          if(!r2.ok) ui.sheet = { kind:'info', title:'Demande non traitée', note:r2.msg };
+          render();
+        });
+        break;
+      }
       if(q_rq && can('licValidate', { cid:q_rq.cid })){
         if(act === 'reqRef') q_rq.state = 'refusee';
         else {
