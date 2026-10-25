@@ -1920,6 +1920,7 @@ var PROFKEY = 'volley-profile-v1', MEKEY = 'volley-me-v1', TESTKEY = 'volley-tes
 var ROLES = [['admin', 'Administrateur'], ['fede', 'Gestionnaire fédération'], ['pres', 'Président de club'], ['rclub', 'Responsable de club'], ['requ', 'Responsable d\'équipe'], ['arbitre', 'Arbitre'], ['compteur', 'Compteur'], ['capitaine', 'Capitaine'], ['licencie', 'Licencié'], ['visiteur', 'Visiteur']];
 var PROFS = ROLES;
 function lsGet(k){ return DB.dev.get(k) || ''; }
+function memHide(){ return lsGet('volley-memhide-v1') === '1'; }
 function lsSet(k, v){ try{ if(v) DB.dev.set(k, v); else DB.dev.del(k); }catch(e){} }
 function devId(){ var v = lsGet(DEVKEY); if(!v){ v = 'd' + Math.random().toString(36).slice(2, 10); lsSet(DEVKEY, v); } return v; }
 function adminInfo(){ return S.adminId ? findMember(S.adminId) : null; }
@@ -4498,11 +4499,12 @@ function teamCard(t){
       ((matchStarted() || compoLock(t)) ? '' : '<button class="del" data-act="delP" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Retirer ' + esc(p.name || p.num) + '">' + xIcon(24) + '</button>') + '</li>';
   }).join('');
   var role = t ? 'Adversaire' : 'Notre équipe', nm = tn(t);
-  return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(role) + (nm && nm !== role ? ' <span class="tnm">· ' + esc(nm) + '</span>' : '') + '</h2><p class="muted" style="margin:4px 0 0">' + (t ? 'Équipe à l\'extérieur' : 'Équipe à domicile') + (team.clubId ? ' · ' + esc(clubName(team.clubId)) : '') + '</p>' +
+  return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(role) + (nm && nm !== role ? ' <span class="tnm">· ' + esc(nm) + '</span>' : '') + ' <span class="tnm">· ' + (t ? 'Extérieur' : 'Domicile') + '</span></h2>' +
+    (team.clubId && clubName(team.clubId) !== nm ? '<p class="muted" style="margin:4px 0 0">' + esc(clubName(team.clubId)) + '</p>' : '') +
     (compoLock(t) ? '<p class="hint2">La composition est fixée par le responsable d\'équipe.</p>' : '') +
-    '<div class="memhead"><h3 style="margin:0"><button class="linkbtn" data-act="memToggle" aria-expanded="' + (ui.memHide ? 'false' : 'true') + '" style="font:inherit;color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px">Membres de l\'équipe <span aria-hidden="true">' + (ui.memHide ? '▾' : '▴') + '</span></button></h3>' + (compoLock(t) ? '' : '<button class="addbtn" data-act="addPlayerOpen" data-team="' + t + '" aria-label="Ajouter un joueur" title="Ajouter un joueur"><span class="ico-plus" aria-hidden="true"></span></button>') + '</div>' +
+    '<div class="memhead"><h3 style="margin:0"><button class="linkbtn" data-act="memToggle" aria-expanded="' + (memHide() ? 'false' : 'true') + '" style="font:inherit;color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px">Membres de l\'équipe <span aria-hidden="true">' + (memHide() ? '▾' : '▴') + '</span></button></h3>' + (compoLock(t) ? '' : '<button class="addbtn" data-act="addPlayerOpen" data-team="' + t + '" aria-label="Ajouter un joueur" title="Ajouter un joueur"><span class="ico-plus" aria-hidden="true"></span></button>') + '</div>' +
     (matchStarted() ? '<p class="hint2">Le match a commencé : les joueurs ne peuvent plus être retirés de la feuille.</p>' : '') +
-    (ui.memHide ? '' : '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
+    (memHide() ? '' : '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
     '<p class="numerr" data-numerr="' + t + '" role="alert" style="display:none"></p>' +
     '<ul class="plist">' + list + '</ul>') +
     compositionHtml(t) + captainHtml(t) + '</section>';
@@ -7060,7 +7062,7 @@ document.addEventListener('click', function(e){
     case 'evHome': ui.ev.homeIs = d.s; ui.msg = ''; render(); break;
     case 'mmHome': ui.mm.homeIs = d.s; ui.msg = ''; render(); break;
     case 'prepTeam': ui.prepTeam = t; ui.planSet = 1; render(); window.scrollTo(0,0); break;
-    case 'memToggle': ui.memHide = !ui.memHide; render(); break;
+    case 'memToggle': lsSet('volley-memhide-v1', memHide() ? '' : '1'); render(); break;
     case 'planTab': ui.planSet = parseInt(d.k, 10) || 1; ui.xchg = null; render(); break;
     case 'planAuto': { var pp = planOf(t); pp.auto = !pp.auto; save(); render(); break; }
     case 'planReset': { var pr = planOf(t); delete pr[parseInt(d.k, 10)]; save(); render(); break; }
