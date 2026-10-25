@@ -635,7 +635,7 @@ body.hasfab .tmsg{margin-bottom:0}
 .homenext{max-width:560px;margin:18px auto 0;padding:0 12px;display:flex;flex-direction:column;gap:10px}
 .homenext h2{font-size:15px;margin:6px 4px 0;color:var(--muted);font-weight:600}
 
-.formbox h3{font-size:15px;margin:12px 0 6px}
+.formbox h3{margin:14px 0 4px}
 .formbox .frow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0;flex-wrap:wrap}
 .formbox .fchips{display:flex;gap:4px;flex-wrap:wrap}
 .flowset{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line)}
@@ -913,6 +913,8 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .rohint{text-align:center}
 .msc-list{display:flex;flex-direction:column;gap:12px}
 .msc{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:12px}
+.tnm{font-weight:600;color:var(--muted);font-size:.8em}
+.msc.prepc .msc-tag{background:var(--surface2);color:var(--ink)}
 .msc-main{display:block;width:100%;background:none;border:0;color:var(--ink);text-align:left;padding:0}
 .msc-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:32px}
 .msc-tag{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--surface2);border:1px solid var(--line)}
@@ -1613,7 +1615,7 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], pres:{}, msgs:[], msgSeen:{}, reports:[], sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
+    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], pres:{}, msgs:[], msgSeen:{}, reports:[], sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], plan:[{},{}], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
     prefs:{ schema:true, table:false, players:false, sheet:false }
   };
 }
@@ -1644,6 +1646,8 @@ function migrate(s){
   if(s.firstSrv === undefined) s.firstSrv = null;
   if(s.titleAuto === undefined) s.titleAuto = !((s.title || '').trim());
   if(!s.starters) s.starters = [[],[]];
+  if(!s.plan) s.plan = [{}, {}];
+  s.library.forEach(function(e){ if(!e.plan) e.plan = [{}, {}]; });
   if(!s.subPairs) s.subPairs = [[],[]];
   if(!s.sanc) s.sanc = [{},{}];
   s.library.forEach(function(e){ if(e.mode === undefined){ e.mode = 'complet'; e.modeSet = true; } if(!e.sanc) e.sanc = [{},{}]; if(e.swap === undefined) e.swap = false; if(e.midSwap === undefined) e.midSwap = false; if(e.titleAuto === undefined) e.titleAuto = false; if(!e.starters) e.starters = [[],[]]; if(!e.subPairs) e.subPairs = [[],[]]; });
@@ -1958,7 +1962,7 @@ var RIGHTS = {
   evCreate:{ admin:1, fede:1, pres:'club', rclub:'club', requ:'team' },
   trainCreate:{ admin:1, pres:'club', rclub:'club' },
   designate:{ admin:1, fede:1, pres:'club', rclub:'club' },
-  compo:{ admin:1, requ:'team' },
+  compo:{ admin:1, pres:'club', rclub:'club', requ:'team' },
   score:{ admin:1, compteur:'match' }, validate:{ admin:1, arbitre:'match' }, unlock:{ admin:1, fede:1 },
   settings:{ admin:1 }, licFin:{ admin:1, fede:1 }
 };
@@ -2030,6 +2034,7 @@ function loadCompo(e){
   });
 }
 function whoTxt(mid){ var f = mid ? findMember(mid) : null; return f ? memberName(f.m) + ' (' + f.club.name + ')' : ''; }
+function fixDateOk(fe){ return !!fe && fe.kind !== 'event' && !(fe.f && fe.f.locked) && (can('matchDate', { cid:clubOfEntrant(fe.home) }) || (fe.kind === 'amical' && can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home }))); }
 function officialsHtml(fe, fm, lock){
   var fid = fe.fid, hc = clubOfEntrant(fe.home), canD = can('designate', { cid:hc }) && !lock && !fm;
   var out = '<div style="margin-top:14px"><h3 style="margin:0 0 4px">Officiels et composition</h3>';
@@ -2042,7 +2047,8 @@ function officialsHtml(fe, fm, lock){
     var c = fe.f.compo && fe.f.compo[tid], cf = c && c.cap ? findMember(c.cap) : null;
     var canC = can('compo', { cid:clubOfEntrant(tid), tid:tid }) && !lock && !fm;
     out += '<div class="fx" style="justify-content:space-between;gap:8px;margin:6px 0"><span><small class="muted">Composition · ' + esc(clubName(tid)) + '</small><br><b>' +
-      (c && c.pl.length ? c.pl.length + ' joueur' + (c.pl.length > 1 ? 's' : '') + (cf ? ' · capitaine ' + esc(memberName(cf.m)) : '') : 'Pas encore composée') + '</b></span>' +
+      (c && c.pl.length ? c.pl.length + ' joueur' + (c.pl.length > 1 ? 's' : '') + (cf ? ' · capitaine ' + esc(memberName(cf.m)) : '') : 'Pas encore composée') + '</b>' +
+      (c && c.pl.length && (adminScope() || prepInfo(fe).any) ? '<br><small class="muted">' + c.pl.slice().sort(function(a, b){ return (parseInt(a.num, 10) || 999) - (parseInt(b.num, 10) || 999); }).map(function(p){ var f = findMember(p.mid); return (p.num ? p.num + ' ' : '') + (f ? esc(memberName(f.m)) : '?'); }).join(' · ') + '</small>' : '') + '</span>' +
       (canC ? '<button class="btn" data-act="compoOpen" data-tid="' + tid + '">' + (c ? 'Modifier' : 'Composer') + '</button>' : '') + '</div>';
   });
   if(lock){
@@ -2928,6 +2934,7 @@ function endSet(){
     if(isDecisive()) S.firstSrv = null; else { S.serving = 1 - prevFirst; S.firstSrv = S.serving; }
     S.swap = !S.swap;
     ui.msg = 'Changement de côté : la saisie des scores est inversée.';
+    var pm = planApply(S.sets.length + 1); if(pm) ui.msg += ' ' + pm;
   }
   if(w[0] >= S.cfg.setsToWin || w[1] >= S.cfg.setsToWin){
     S.finished = true;
@@ -2952,7 +2959,7 @@ function endSet(){
   save(); render();
 }
 /* ---------- Bibliothèque de matchs (nouveau / reprendre) ---------- */
-var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap','firstSrv','starters','subPairs','sanc','titleAuto','mode','modeSet'];
+var MATCH_KEYS = ['created','title','teams','lineup','cfg','sets','cur','serving','timeouts','subs','events','history','finished','clock','tc','fixtureRef','matchChamp','prepared','champAdded','swap','midSwap','firstSrv','starters','plan','subPairs','sanc','titleAuto','mode','modeSet'];
 function hasContent(){ return S.events.length > 0 || S.sets.length > 0; }
 function matchSnapshot(){
   var o = {};
@@ -3942,9 +3949,27 @@ var MODES = {
     'Tout le mode Normal', 'Terrain, rotation et liste des joueurs', 'Qui marque, qui est remplacé, échanges de joueurs',
     'Blessures et cartons', 'Statistiques par joueur et feuille de match détaillée'] }
 };
-function modeOf(){ return MODES[S.mode] ? S.mode : 'complet'; }
 /* Qui peut saisir : pour l'instant l'administrateur principal (ou sans profil défini). Les autres rôles seront précisés avec la gestion des rôles. */
-function canScore(){ return can('score', { ref:S.fixtureRef ? S.fixtureRef.fid : '' }) && !fixLocked(S.fixtureRef); }
+/* ---------- Droits sur les matchs (25/10/2026) ----------
+   - Tout le monde (visiteur, licencié…) peut jouer un match libre, en mode Simple ou Normal.
+   - Un match du calendrier : saisie par le compteur désigné, l'administrateur et le staff de l'équipe (président, responsable de club, responsable d'équipe).
+   - Mode Complet : administrateur, compteur désigné et staff de l'équipe sur un match du calendrier. */
+function teamStaffRaw(tid){ return !!tid && availRoles() !== null && can('compo', { cid:clubOfEntrant(tid), tid:tid }); }
+function entryScoreOk(e){
+  return !!e && e.kind !== 'event' && !!e.home && !!e.away && !(e.f && e.f.locked) && (can('score', { ref:e.fid }) || teamStaffRaw(e.home) || teamStaffRaw(e.away));
+}
+function allowComplet(){
+  if(availRoles() === null || profGet() === 'admin') return true;
+  var fr = S.fixtureRef, e = fr ? calEntry(fr.cid, fr.fid) : null;
+  return !!e && e.kind !== 'event' && (can('score', { ref:fr.fid }) || teamStaffRaw(e.home) || teamStaffRaw(e.away));
+}
+function modeKeys(){ return allowComplet() ? ['simple', 'normal', 'complet'] : ['simple', 'normal']; }
+function modeOf(){ var m = MODES[S.mode] ? S.mode : 'complet'; return (m === 'complet' && !allowComplet()) ? 'normal' : m; }
+function canScore(){
+  if(!S.fixtureRef) return true;
+  var e = calEntry(S.fixtureRef.cid, S.fixtureRef.fid);
+  return (can('score', { ref:S.fixtureRef.fid }) || entryScoreOk(e)) && !fixLocked(S.fixtureRef);
+}
 function ro(){ return !canScore(); }
 function needsModePick(){ return ui.tab === 'match' && S.stage === 'play' && !S.finished && !S.modeSet && !hasContent() && canScore(); }
 function ibtn(t, kind){
@@ -4123,8 +4148,8 @@ function modePreview(k){
   return '<div class="pv" aria-label="Aperçu de l\'écran de saisie en mode ' + MODES[k].name + '"><div class="pv-top"></div>' + tiles + clock + court + '<div class="pv-card">' + more + '</div></div>';
 }
 function modePickView(){
-  var sel = ui.modeSel, out = '<div class="stack modepick"><p class="hint2" style="margin:0 4px">Choisissez comment saisir ce match. Vous pourrez changer de mode en cours de match.</p>';
-  ['simple', 'normal', 'complet'].forEach(function(k){
+  var sel = ui.modeSel, out = '<div class="stack modepick"><p class="hint2" style="margin:0 4px">Choisissez comment saisir ce match. Vous pourrez changer de mode en cours de match.' + (allowComplet() ? '' : ' Le mode Complet est réservé aux matchs officiels du calendrier (compteur désigné, staff de l\'équipe, administrateur).') + '</p>';
+  modeKeys().forEach(function(k){
     var m = MODES[k], on = sel === k;
     out += '<section class="card modecard' + (on ? ' sel' : '') + '"><button class="modesel" role="radio" aria-checked="' + on + '" data-act="modeSel" data-v="' + k + '"><span class="radio" aria-hidden="true"></span><span class="mt"><b>' + m.name + '</b><small>' + m.tag + '</small></span></button>' +
       '<ul class="modelist">' + m.feats.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></section>';
@@ -4150,7 +4175,7 @@ function fmtWhen(iso){
 }
 function homeView(){
   if(ui.addRes) return addResultView();
-  return homeView0() + ((canScore() || can('champEdit')) ? '<button class="fab" data-act="matchAddOpen" aria-label="Jouer un match ou ajouter un résultat">+</button>' : '');
+  return homeView0() + '<button class="fab" data-act="matchAddOpen" aria-label="' + (can('champEdit') ? 'Jouer un match ou ajouter un résultat' : 'Jouer un match') + '">+</button>';
 }
 /* Carte d'un match suivi : date, état, équipes avec leurs sets, durée et score de chaque set */
 function fmtPlay(ms){
@@ -4177,11 +4202,52 @@ function matchCardHtml(m){
     (ui.edit ? '<span class="msc-edit"><button class="delwrap" data-act="resumeSetup" data-mid="' + id + '" aria-label="Infos et paramètres de ' + esc(title) + '"><span class="editc">' + GEAR + '</span></button>' +
       '<button class="delwrap" data-act="delLibAsk" data-mid="' + id + '" aria-label="Supprimer ' + esc(title) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></span>' : '') + '</div>';
 }
+/* ---------- Matchs en préparation (équipe) et matchs à démarrer le jour J ---------- */
+function adminScope(){ return availRoles() === null || profGet() === 'admin'; }
+function prepInfo(e){
+  var me = meGet(), r = { staff:[], player:false, officer:false };
+  [e.home, e.away].forEach(function(t){
+    if(teamStaffRaw(t) && (profGet() !== 'admin' || isFav('team', t) || isFav('club', clubOfEntrant(t)))) r.staff.push(t);
+    var c = e.f && e.f.compo && e.f.compo[t];
+    if(me && c && (c.pl || []).some(function(p){ return p.mid === me; })) r.player = true;
+  });
+  if(me) ['compteur', 'arbitre'].forEach(function(k){ var x = entryRoleOf(e.fid, k); if(x && x.mid === me) r.officer = true; });
+  r.any = !!(r.staff.length || r.player || r.officer);
+  return r;
+}
+function fixStarted(fid){ return savedMatches().some(function(it){ return it.m.fixtureRef && it.m.fixtureRef.fid === fid; }); }
+function prepEntries(today){
+  return calEntries().filter(function(e){
+    return e.kind !== 'event' && e.home && e.away && !e.postponed && !entryResult(e) && !(e.f && e.f.locked) && e.date >= today && !fixStarted(e.fid);
+  }).map(function(e){ return { e:e, i:prepInfo(e) }; }).filter(function(x){ return x.i.any; })
+    .sort(function(a, b){ return (a.e.date + (a.e.time || '')).localeCompare(b.e.date + (b.e.time || '')); });
+}
+function compoLines(e, tid){
+  var c = e.f && e.f.compo && e.f.compo[tid];
+  if(!c || !(c.pl || []).length) return 'Pas encore composée';
+  return c.pl.length + ' joueur' + (c.pl.length > 1 ? 's' : '');
+}
+function prepCardHtml(e, i, today, day){
+  var started = !!(e.date === today), mine = [];
+  var btns = '';
+  if(i.staff.length && !(e.f && e.f.locked)){
+    i.staff.forEach(function(t){ btns += '<button class="btn" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(t) + '" data-back="match">Préparer' + (i.staff.length > 1 ? ' ' + esc(clubName(t)) : '') + '</button>'; });
+  }
+  if(day && entryScoreOk(e)) btns += '<button class="btn primary" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Démarrer</button>';
+  return '<div class="msc prepc"><button class="msc-main" data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '" aria-label="Ouvrir ' + esc(clubName(e.home) + ' – ' + clubName(e.away)) + '">' +
+    '<span class="msc-top"><span class="msc-tag">' + (day ? 'À démarrer' : 'En préparation') + '</span><span class="msc-date">' + esc(fmtDay(e.date) + (e.time ? ' à ' + e.time : '')) + '</span></span>' +
+    '<span class="msc-row"><span class="nm">' + esc(clubName(e.home)) + '</span></span><span class="msc-row"><span class="nm">' + esc(clubName(e.away)) + '</span></span>' +
+    '<span class="msc-box"><span class="msc-head"><span>COMPOSITION</span></span><small class="muted">' + esc(clubName(e.home)) + ' : ' + esc(compoLines(e, e.home)) + ' · ' + esc(clubName(e.away)) + ' : ' + esc(compoLines(e, e.away)) + '</small></span></button>' +
+    (btns ? '<div class="btnrow" style="margin:10px 0 0">' + btns + '</div>' : '') + '</div>';
+}
 function homeView0(){
-  var list = savedMatches(), out = '<div class="stack">';
-  out += '<div class="clubhead">' + (list.length && canScore() ? editBtnHtml() : '') + '<h2>Matchs suivis' + (list.length ? ' (' + list.length + ')' : '') + '</h2></div>';
-  if(!list.length) out += '<section class="card"><p class="muted" style="margin:0">Aucun match suivi en direct pour l\'instant. Touchez le bouton « + » pour jouer un match ou ajouter un résultat.</p></section>';
-  else out += '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + '</div>';
+  var today = isoOf(new Date()), list = savedMatches(), pe = prepEntries(today), day = pe.filter(function(x){ return x.e.date === today; }), soon = pe.filter(function(x){ return x.e.date > today; });
+  var nS = list.length + day.length, out = '<div class="stack">';
+  out += '<div class="clubhead">' + (list.length && canScore() ? editBtnHtml() : '') + '<h2>Matchs suivis' + (nS ? ' (' + nS + ')' : '') + '</h2></div>';
+  if(!nS) out += '<section class="card"><p class="muted" style="margin:0">Aucun match suivi en direct pour l\'instant. Touchez le bouton « + » pour jouer un match' + (can('champEdit') ? ' ou ajouter un résultat' : '') + '.</p></section>';
+  else out += '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + day.map(function(x){ return prepCardHtml(x.e, x.i, today, true); }).join('') + '</div>';
+  if(soon.length) out += '<div class="clubhead"><h2>Matchs en préparation</h2></div><div class="msc-list">' + soon.slice(0, 3).map(function(x){ return prepCardHtml(x.e, x.i, today, false); }).join('') + '</div>' +
+    (soon.length > 3 ? '<p class="muted">Les autres matchs à venir sont au calendrier.</p>' : '');
   return out + '</div>';
 }
 
@@ -4253,7 +4319,44 @@ function vcourt(t){
     '<div class="vrow front">' + front.map(function(i){ return cmpBtn(t, i); }).join('') + '</div>' +
     '<div class="vrow back">' + back.map(function(i){ return cmpBtn(t, i); }).join('') + '</div></div></div>';
 }
-function compositionHtml(t){
+/* ---------- Composition par set (25/10/2026) : sets 1 à 3 préparables, le set 1 sert de base aux suivants ---------- */
+function planOf(t){ if(!S.plan) S.plan = [{}, {}]; if(!S.plan[t]) S.plan[t] = {}; return S.plan[t]; }
+function planBase(t){ var p = planOf(t); return (matchStarted() && p.s1) ? p.s1 : S.lineup[t]; }
+function planOn(t){ var p = planOf(t); return !!(p.auto || p[2] || p[3]); }
+function planSnap(){ [0, 1].forEach(function(t){ if(!matchStarted()) planOf(t).s1 = S.lineup[t].slice(); }); }
+/* début d'un set : applique la composition prévue (set 2 ou 3 propre, sinon celle du set 1) */
+function planApply(setNo){
+  var done = [];
+  [0, 1].forEach(function(t){
+    var p = planOf(t); if(!planOn(t)) return;
+    var ids = (setNo <= 3 && p[setNo]) ? p[setNo] : p.s1;
+    if(!ids || ids.length !== 6 || !ids.some(Boolean) || !ids.every(function(id){ return !id || findPlayer(t, id); })) return;
+    S.lineup[t] = ids.slice(); done.push(tn(t));
+  });
+  return done.length ? 'Composition du set ' + setNo + ' appliquée (' + done.join(', ') + ').' : '';
+}
+function planHtml(t){
+  var k = ui.planSet || 1, p = planOf(t), tabs = '<div class="chips" role="tablist" aria-label="Composition par set" style="margin:10px 0 0">';
+  [1, 2, 3].forEach(function(n){ tabs += '<button class="chip' + (k === n ? ' sel' : '') + '" role="tab" aria-selected="' + (k === n) + '" data-act="planTab" data-k="' + n + '" data-team="' + t + '">Set ' + n + (n > 1 && p[n] ? ' ✓' : '') + '</button>'; });
+  tabs += '</div>';
+  var auto = planOn(t), out = '<h3 style="margin-top:18px">Composition de départ</h3>' + tabs;
+  if(k === 1) return out + compositionBody(t) + planAutoHtml(t, auto);
+  var cur = p[k] || planBase(t).slice(), lock = compoLock(t), pl = S.teams[t].players.slice().sort(sortP);
+  out += '<p class="hint2" style="margin:8px 0">' + (p[k] ? 'Composition propre au set ' + k + '.' : 'Identique à celle du set 1 tant que vous n\'y touchez pas.') + ' Poste 1 = serveur.</p><div class="stack" style="gap:6px">';
+  for(var i = 0; i < 6; i++){
+    out += '<label class="f" for="pl' + t + '_' + k + '_' + i + '" style="margin:4px 0 0">Poste ' + (i + 1) + '</label><select id="pl' + t + '_' + k + '_' + i + '" data-bind="plansel" data-team="' + t + '" data-set="' + k + '" data-pos="' + i + '"' + (lock ? ' disabled' : '') + '><option value="">— Libre —</option>' +
+      pl.map(function(x){ return '<option value="' + x.id + '"' + (cur[i] === x.id ? ' selected' : '') + '>' + esc(plabel(effNum(x), x.name)) + '</option>'; }).join('') + '</select>';
+  }
+  out += '</div>' + (p[k] && !lock ? '<div class="btnrow"><button class="btn wide" data-act="planReset" data-team="' + t + '" data-k="' + k + '">Reprendre la composition du set 1</button></div>' : '');
+  return out + planAutoHtml(t, auto);
+}
+function planAutoHtml(t, auto){
+  var p = planOf(t), forced = !!(p[2] || p[3]);
+  return '<div style="margin-top:12px"><button class="hsw" role="switch" aria-checked="' + auto + '" data-act="planAuto" data-team="' + t + '"' + (forced ? ' disabled' : '') + '><span>Appliquer automatiquement au début de chaque set</span><span class="track" aria-hidden="true"><span class="knob"></span></span></button>' +
+    '<p class="hint2" style="margin:4px 0 0">' + (forced ? 'Activé : une composition propre est prévue pour un set. Les sets sans composition propre reprennent celle du set 1.' : 'Au début de chaque set, la composition du set 1 est remise en place (rotation remise à zéro). Vous pouvez toujours la modifier en cours de match.') + '</p></div>';
+}
+function compositionHtml(t){ return planHtml(t); }
+function compositionBody(t){
   var L = S.lineup[t], pl = S.teams[t].players;
   var rows = '';
   for(var i = 0; i < 6; i++) rows += cmpRow('Poste ' + (i + 1), findPlayer(t, L[i]), t);
@@ -4261,7 +4364,7 @@ function compositionHtml(t){
   if(rest.length) rows += '<li class="cmpsep"><b>' + (L.every(Boolean) ? 'Banc' : 'Non placé') + '</b></li>';
   rest.forEach(function(p){ rows += cmpRow('', p, t); });
   var xm = xActive(t, 'prep');
-  return '<h3 style="margin-top:18px">Composition de départ</h3><div class="cmpgrid' + (xm ? ' xz' : '') + '"><ul class="cmplist">' + rows + '</ul>' +
+  return '<div class="cmpgrid' + (xm ? ' xz' : '') + '"><ul class="cmplist">' + rows + '</ul>' +
     '<div class="cmpcourt">' + vcourt(t) + xBenchHtml(t, 'prep') + '<div class="xrow">' + xBtnHtml(t, 'prep') + '</div></div></div>';
 }
 function addPlayerSheet(t){
@@ -4283,16 +4386,15 @@ function teamCard(t){
       '<span class="nm">' + esc(p.name) + (p.licence ? ' <small>' + esc(p.licence) + '</small>' : '') + (isCapOf(S, t, p.id) ? capBadge() : '') + '</span>' +
       ((matchStarted() || compoLock(t)) ? '' : '<button class="del" data-act="delP" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Retirer ' + esc(p.name || p.num) + '">' + xIcon(24) + '</button>') + '</li>';
   }).join('');
-  return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(tn(t)) + '</h2><p class="muted" style="margin:4px 0 0">' + (t ? 'Équipe à l\'extérieur' : 'Équipe à domicile') + (team.clubId ? ' · ' + esc(clubName(team.clubId)) : '') + '</p>' +
-    '<label class="f" for="tname' + t + '">Nom de l\'équipe</label>' +
-    '' + ifield('tname' + t, { value:team.name, attrs:'data-bind="tname" data-team="' + t + '"', aria:'Nom de l\'équipe' }) + '' +
-    captainHtml(t) + (compoLock(t) ? '<p class="hint2">La composition est fixée par le responsable d\'équipe.</p>' : '') +
+  var role = t ? 'Adversaire' : 'Notre équipe', nm = tn(t);
+  return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(role) + (nm && nm !== role ? ' <span class="tnm">· ' + esc(nm) + '</span>' : '') + '</h2><p class="muted" style="margin:4px 0 0">' + (t ? 'Équipe à l\'extérieur' : 'Équipe à domicile') + (team.clubId ? ' · ' + esc(clubName(team.clubId)) : '') + '</p>' +
+    (compoLock(t) ? '<p class="hint2">La composition est fixée par le responsable d\'équipe.</p>' : '') +
     '<div class="memhead"><h3>Membres de l\'équipe</h3>' + (compoLock(t) ? '' : '<button class="addbtn" data-act="addPlayerOpen" data-team="' + t + '" aria-label="Ajouter un joueur" title="Ajouter un joueur"><span class="ico-plus" aria-hidden="true"></span></button>') + '</div>' +
     (matchStarted() ? '<p class="hint2">Le match a commencé : les joueurs ne peuvent plus être retirés de la feuille.</p>' : '') +
     '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
     '<p class="numerr" data-numerr="' + t + '" role="alert" style="display:none"></p>' +
     '<ul class="plist">' + list + '</ul>' +
-    compositionHtml(t) + '</section>';
+    compositionHtml(t) + captainHtml(t) + '</section>';
 }
 /* Équipes du match : deux menus côte à côte (domicile à gauche, extérieur à droite), ou affichage seul si le match vient du calendrier */
 function homeAwayHtml(ch){
@@ -4792,6 +4894,16 @@ function homePicker(list, st, bindName, chipAct){
     '<label class="f" for="' + bindName + 'b">Équipe à l\'extérieur</label><select id="' + bindName + 'b" data-bind="' + bindName + '" data-k="b">' + opts(st.b, st.a) + '</select>' +
     '<p class="hint2">Une équipe ne peut pas jouer contre elle-même.</p>';
 }
+/* Heure saisie à la main : accepte 18:30, 18h30, 1830, 18h, 9 */
+function normTime(s){
+  var t = String(s || '').trim().toLowerCase().replace(/\s+/g, '');
+  if(!t) return '';
+  var m = t.match(/^(\d{1,2})(?:[:h.](\d{1,2})?)?$/) || t.match(/^(\d{1,2})(\d{2})$/);
+  if(!m) return null;
+  var h = +m[1], mi = m[2] === undefined || m[2] === '' ? 0 : +m[2];
+  if(m[2] && m[2].length === 1 && /[:h.]/.test(t)) mi = +m[2] * 10;
+  return (h > 23 || mi > 59) ? null : ('0' + h).slice(-2) + ':' + ('0' + mi).slice(-2);
+}
 function eventForm(){
   var ev = ui.ev, isMatch = ev.kind === 'match', out = '<div class="stack">';
   var isTrain = ev.kind === 'train';
@@ -4799,7 +4911,7 @@ function eventForm(){
     (isTrain && allowedClubs().length > 1 ? '<label class="f" for="evclub">Club</label><select id="evclub" data-bind="evf" data-k="club"><option value="">— Choisir —</option>' + allowedClubs().map(function(c){ return '<option value="' + c.id + '"' + (c.id === ev.club ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' : '') +
     (isTrain ? '<label class="f" for="evtname">Nom (facultatif)</label><input type="text" id="evtname" data-bind="evf" data-k="trainName" value="' + esc(ev.trainName || '') + '" placeholder="Entraînement" autocomplete="off">' : '') +
     '<label class="f" for="evdate">' + (isTrain && ev.rec !== 'none' ? 'Date du premier entraînement' : 'Date') + '</label><input type="date" id="evdate" data-bind="evf" data-k="date" value="' + esc(ev.date) + '">' +
-    '<label class="f" for="evtime">Heure (facultatif)</label><input type="time" id="evtime" data-bind="evf" data-k="time" value="' + esc(ev.time) + '">';
+    '<label class="f" for="evtime">Heure (facultatif)</label><input type="text" id="evtime" inputmode="numeric" maxlength="6" autocomplete="off" data-bind="evf" data-k="time" value="' + esc(ev.time) + '" placeholder="Ex. 18:30">';
   if(isMatch){
     var ch = champById(ev.target), list = ch ? entrantsOf(ch.clubIds) : allEntrants();
     out += group('Rattacher à', chip('evTarget', { t:'amical' }, 'Rencontre amicale', !ev.target) + champs().map(function(c){ return chip('evTarget', { t:c.id }, esc(c.name), ev.target === c.id); }).join(''));
@@ -5000,7 +5112,7 @@ function slArrow(key, n, dir, loop){
 function matchSlider(key, ents, start, today, favId, label){
   if(!ents.length) return '<p class="muted hempty">' + (start === 'last' ? 'Aucun match passé.' : 'Aucun match à venir.') + '</p>';
   var n = ents.length, i = slideState(key, n, start), e = ents[i];
-  var play = (!entryResult(e) && e.kind !== 'event' && can('score', { ref:e.fid }) && e.home && e.away) ? '<button class="btn wide primary homeplay" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Saisir ce match</button>' : '';
+  var play = (!entryResult(e) && e.kind !== 'event' && entryScoreOk(e) && e.home && e.away) ? '<button class="btn wide primary homeplay" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Saisir ce match</button>' : '';
   return '<div class="mcbox">' + (n > 1 ? '<p class="slcnt">' + (i + 1) + ' / ' + n + '</p>' : '') +
     '<div class="slider" data-sl="' + esc(key) + '">' + (n > 1 ? slArrow(key, n, -1) : '<span class="slbtn ph"></span>') +
     '<div class="slview">' + calRow(e, today, favId) + '</div>' +
@@ -5366,7 +5478,7 @@ function dataTeamsView(){
   }).join('');
   return out + '</section></div>';
 }
-/* ---------- Confrontations et forme récente (idée D) ---------- */
+/* ---------- Dernières confrontations et derniers résultats (idée D) ---------- */
 function allResults(){
   var out = [];
   S.champs.forEach(function(ch){
@@ -5377,31 +5489,34 @@ function allResults(){
   S.agenda.forEach(function(a){ if(a.kind === 'match' && a.result) out.push({ date:a.date, home:a.home, away:a.away, hs:a.result.hs, as:a.result.as, ref:a.id }); });
   return out.filter(function(r){ return r.date; });
 }
-function formHtml(e){
+function formBase(e){
   var self = e.kind === 'fixture' ? e.f.matchId : e.f.id;
   var rs = allResults().filter(function(r){ return r.date < e.date && r.ref !== self; }).sort(function(a, b){ return b.date.localeCompare(a.date); });
-  var h2h = rs.filter(function(r){ return (r.home === e.home && r.away === e.away) || (r.home === e.away && r.away === e.home); }).slice(0, 5);
-  function won(r, id){ return (r.home === id) === (r.hs > r.as); }
+  return { rs:rs, won:function(r, id){ return (r.home === id) === (r.hs > r.as); } };
+}
+/* Dernières confrontations : absent s'il n'y en a pas */
+function h2hHtml(e){
+  var b = formBase(e), won = b.won;
+  var h2h = b.rs.filter(function(r){ return (r.home === e.home && r.away === e.away) || (r.home === e.away && r.away === e.home); }).slice(0, 5);
+  if(!h2h.length) return '';
+  var wh = h2h.filter(function(r){ return won(r, e.home); }).length;
+  return '<div class="formbox"><h3>Dernières confrontations</h3>' + h2h.map(function(r){
+    return '<div class="mrow"><span style="flex:1">' + esc(clubName(r.home)) + ' <b>' + r.hs + ' – ' + r.as + '</b> ' + esc(clubName(r.away)) + '</span><small class="muted">' + esc(fmtDay(r.date)) + '</small></div>';
+  }).join('') + '<p class="hint2" style="margin:6px 0 0">' + esc(clubName(e.home)) + ' : ' + wh + ' victoire' + (wh > 1 ? 's' : '') + ' · ' + esc(clubName(e.away)) + ' : ' + (h2h.length - wh) + ' victoire' + (h2h.length - wh > 1 ? 's' : '') + '</p></div>';
+}
+function lastResHtml(e){
+  var b = formBase(e), won = b.won;
   function form(id){
-    var l = rs.filter(function(r){ return r.home === id || r.away === id; }).slice(0, 5).reverse();
+    var l = b.rs.filter(function(r){ return r.home === id || r.away === id; }).slice(0, 5).reverse();
     if(!l.length) return '<span class="muted">pas de résultat</span>';
     return l.map(function(r){
       var w = won(r, id), my = r.home === id ? r.hs : r.as, th = r.home === id ? r.as : r.hs, opp = r.home === id ? r.away : r.home;
       return '<span class="tag ' + (w ? 'ok' : 'bad') + '" title="' + esc(fmtDay(r.date) + ' : ' + my + '–' + th + ' contre ' + clubName(opp)) + '">' + (w ? 'V' : 'D') + ' ' + my + '–' + th + '</span>';
     }).join(' ');
   }
-  var out = '<div class="formbox"><h3>Forme récente</h3>' +
+  return '<div class="formbox"><h3>Derniers résultats de l\'équipe</h3>' +
     '<div class="frow"><span class="nm">' + esc(clubName(e.home)) + '</span><span class="fchips">' + form(e.home) + '</span></div>' +
-    '<div class="frow"><span class="nm">' + esc(clubName(e.away)) + '</span><span class="fchips">' + form(e.away) + '</span></div>' +
-    '<h3>Dernières confrontations</h3>';
-  if(!h2h.length) out += '<p class="muted" style="margin:4px 0 0">Aucune confrontation enregistrée entre ces deux équipes.</p>';
-  else {
-    var wh = h2h.filter(function(r){ return won(r, e.home); }).length;
-    out += h2h.map(function(r){
-      return '<div class="mrow"><span style="flex:1">' + esc(clubName(r.home)) + ' <b>' + r.hs + ' – ' + r.as + '</b> ' + esc(clubName(r.away)) + '</span><small class="muted">' + esc(fmtDay(r.date)) + '</small></div>';
-    }).join('') + '<p class="hint2" style="margin:6px 0 0">' + esc(clubName(e.home)) + ' : ' + wh + ' victoire' + (wh > 1 ? 's' : '') + ' · ' + esc(clubName(e.away)) + ' : ' + (h2h.length - wh) + ' victoire' + (h2h.length - wh > 1 ? 's' : '') + '</p>';
-  }
-  return out + '</div>';
+    '<div class="frow"><span class="nm">' + esc(clubName(e.away)) + '</span><span class="fchips">' + form(e.away) + '</span></div></div>';
 }
 /* ---------- Déroulé des sets d'un match suivi en direct (idée G) ---------- */
 function flowSets(m){
@@ -5770,7 +5885,7 @@ function sheetView(){
     }
   } else if(sh.kind === 'fixture'){
     var fe = calEntry(sh.cid, sh.fid);
-    var fDate = !!fe && fe.kind !== 'event' && (can('matchDate', { cid:clubOfEntrant(fe.home) }) || (fe.kind === 'amical' && can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home })));
+    var fDate = !!fe && fe.kind !== 'event' && fixDateOk(fe);
     var fEd = !!fe && (fe.kind === 'fixture' ? can('champEdit') : (fe.kind === 'event' ? (fe.f.train ? can('trainCreate', { cid:fe.f.club }) : can('evCreate')) : (can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home }) || can('evCreate', { cid:clubOfEntrant(fe.away), tid:fe.away }))));
     var fLock = !!fe && fe.kind !== 'event' && fe.f.locked ? fe.f.locked : null;
     if(fLock){ fDate = false; fEd = false; }
@@ -5780,25 +5895,34 @@ function sheetView(){
         presSheetHtml(fe, isoOf(new Date())) + (fEd ? '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>' : '');
     } else {
       var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Amical';
-      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' + formHtml(fe);
+      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>';
       if(fm){
         inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
-      } else if(fe.postponed && !fDate){
-        inner += '<p class="hint2">Ce match est reporté : il reste à jouer.</p>';
       } else if(fe.postponed){
-        inner += '<p class="hint2">Ce match est reporté : il ne compte pas dans le Jour de la semaine et reste à jouer. Quand la nouvelle date est connue, saisissez-la.</p><label class="f" for="fnewd">Nouvelle date</label><input type="date" id="fnewd" value="' + esc(fe.date) + '"><div class="btnrow"><button class="btn wide primary" data-act="fixResched">Replanifier à cette date</button><button class="btn wide" data-act="fixUnpost">Annuler le report</button></div>';
-      } else if((can('score', { ref:fe.fid }) && !fLock) || fDate){
+        inner += '<p class="hint2">Ce match est reporté : il reste à jouer' + (fDate ? '. Quand la nouvelle date est connue, utilisez « Modifier la date ».' : '.') + '</p>';
+      } else if(entryScoreOk(fe) && !fLock){
         inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
-          '<div class="btnrow">' + (can('score', { ref:fe.fid }) ? '<button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button>' : '') + (fDate ? '<button class="btn wide" data-act="fixPost">Reporter ce match</button>' : '') + '</div>' + (fDate ? '<div class="row2"><div><label class="f" for="fnewd">Date</label><input type="date" id="fnewd" value="' + esc(fe.date) + '"></div><div><label class="f" for="fnewt">Heure</label><input type="time" id="fnewt" value="' + esc(fe.time || '') + '"></div></div><div class="btnrow"><button class="btn wide" data-act="fixDate">Modifier la date et l\'heure</button></div>' : '');
+          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button></div>';
       }
-      inner += presSheetHtml(fe, isoOf(new Date())) + officialsHtml(fe, fm, fLock);
+      inner += h2hHtml(fe) + lastResHtml(fe) + officialsHtml(fe, fm, fLock) + presSheetHtml(fe, isoOf(new Date()));
       (function(){ var w = DB.who(fe.f), l = []; if(w.created) l.push('Ajouté le ' + fmtDay(w.created.at.slice(0, 10)) + (w.created.by ? ' par ' + w.created.by : '')); if(w.updated) l.push('modifié le ' + fmtDay(w.updated.at.slice(0, 10)) + (w.updated.by ? ' par ' + w.updated.by : '')); if(l.length) inner += '<p class="hint2" style="margin-top:12px">' + esc(l.join(' · ')) + '</p>'; })();
       if(fEd) inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
         RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
         '<div class="btnrow"><button class="btn wide" data-act="fixRes">Enregistrer le résultat</button>' +
         (fm ? '<button class="btn wide" data-act="fixClearAsk">Effacer le résultat</button>' : '') +
         '<button class="btn wide danger" data-act="fixDelAsk">Supprimer du calendrier</button></div>';
+      if(fDate && !fm) inner += '<div class="btnrow"><button class="btn wide" data-act="fixDateOpen">Modifier la date</button></div>';
     }
+  } else if(sh.kind === 'fixdate'){
+    var de = calEntry(sh.cid, sh.fid);
+    inner = '<h2>Modifier la date</h2><p class="hint2" style="margin-top:4px">' + (de && de.kind !== 'event' ? esc(clubName(de.home)) + ' – ' + esc(clubName(de.away)) : '') + '</p>';
+    if(!de || de.kind === 'event' || !fixDateOk(de)) inner += '<p class="muted">Modification non autorisée.</p><div class="btnrow"><button class="btn wide" data-act="fixBack">Retour</button></div>';
+    else inner += (de.postponed ? '<p class="hint2">Ce match est reporté : il ne compte pas dans le Jour de la semaine et reste à jouer. Saisissez la nouvelle date quand elle est connue.</p>' : '') +
+      '<label class="f" for="fnewd">Date</label><input type="date" id="fnewd" value="' + esc(de.date) + '">' +
+      '<label class="f" for="fnewt">Heure (facultatif)</label><input type="text" id="fnewt" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="Ex. 18:30" value="' + esc(de.time || '') + '">' + sheetErr(sh) +
+      '<div class="btnrow"><button class="btn wide primary" data-act="fixDate">' + (de.postponed ? 'Replanifier' : 'Enregistrer la date et l\'heure') + '</button>' +
+      (de.postponed ? '<button class="btn wide" data-act="fixUnpost">Annuler le report</button>' : '<button class="btn wide" data-act="fixPost">Reporter ce match</button>') +
+      '<button class="btn wide" data-act="fixBack">Retour</button></div>';
   } else if(sh.kind === 'sblogin'){ inner = sbLoginSheet(sh);
   } else if(sh.kind === 'sbclaim'){ inner = sbClaimSheet(sh);
   } else if(sh.kind === 'desig'){ inner = desigSheet(sh);
@@ -5839,7 +5963,7 @@ function sheetView(){
       (sh.err ? '<p class="hint2" style="color:var(--danger)" role="alert">' + esc(sh.err) + '</p>' : '') +
       '<div class="btnrow"><button class="btn wide danger" data-act="demoOk">Oui, charger</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'modechg'){
-    inner = '<h2>Mode de saisie</h2><p class="hint2">Le score et l\'historique du match sont conservés.</p><div class="modeopts">' + ['simple', 'normal', 'complet'].map(function(k){
+    inner = '<h2>Mode de saisie</h2><p class="hint2">Le score et l\'historique du match sont conservés.</p><div class="modeopts">' + modeKeys().map(function(k){
       return '<button class="modeopt' + (sh.v === k ? ' sel' : '') + '" role="radio" aria-checked="' + (sh.v === k) + '" data-act="modeChgPick" data-v="' + k + '"><span class="radio" aria-hidden="true"></span><span><b>' + MODES[k].name + '</b><small>' + MODES[k].tag + '</small></span></button>';
     }).join('') + '</div><div class="btnrow"><button class="btn wide primary" data-act="modeChgOk"' + (sh.v === modeOf() ? ' disabled' : '') + '>Changer de mode</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'favdel'){
@@ -5893,7 +6017,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','leavech','prevrestore','resdup'];
+  var own = ['sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -6031,8 +6155,9 @@ function createClub(){
   if(c.logo) computePalette(c);
 }
 function saveEvent(){
-  var ev = ui.ev, date = parseDate(ev.date), time = parseTime(ev.time), place = (ev.place || '').trim();
+  var ev = ui.ev, date = parseDate(ev.date), time = normTime(ev.time), place = (ev.place || '').trim();
   if(!date){ badField('evdate', 'Choisissez une date.'); return; }
+  if(time === null){ badField('evtime', 'Heure non valide : écrivez par exemple 18:30 ou 18h30.'); return; }
   if(ev.kind === 'train'){
     if(allowedClubs().length === 1) ev.club = allowedClubs()[0].id;
     if(!ev.club || !clubById(ev.club) || !allowedClubs().some(function(c){ return c.id === ev.club; })){ badField('evclub', 'Choisissez le club.'); return; }
@@ -6211,7 +6336,7 @@ document.addEventListener('click', function(e){
     case 'prevRestoreOk': { var pvk = prevGet(); if(pvk){ keepBefore('retour arrière'); applyBackup({ data:pvk.state }); ui.sheet = null; ui.msg = 'Données d\'avant restaurées.'; ui.dataView = 'home'; render(); window.scrollTo(0, 0); } else { ui.sheet = null; render(); } break; }
     case 'restoreNo': ui.pendingRestore = null; ui.sheet = null; render(); break;
     case 'openSetup': ui.setupSnap = matchSnapshot(); ui.prepTeam = null; ui.showSetup = true; ui.msg = ''; render(); window.scrollTo(0,0); break;
-    case 'startMatch': registerTypedTeams(); S.prepared = true; S.stage = 'play'; ui.showSetup = false; ui.prepTeam = null; ui.msg = ''; save(); render(); window.scrollTo(0,0); break;
+    case 'startMatch': registerTypedTeams(); planSnap(); S.prepared = true; S.stage = 'play'; ui.showSetup = false; ui.prepTeam = null; ui.msg = ''; save(); render(); window.scrollTo(0,0); break;
     case 'newPlay': newMatch(); break;
     case 'showResume': ui.resume = true; render(); window.scrollTo(0,0); break;
     case 'showAddRes': ui.addRes = true; ui.msg = ''; render(); window.scrollTo(0,0); break;
@@ -6253,7 +6378,7 @@ document.addEventListener('click', function(e){
     case 'editToggle': ui.edit = !ui.edit; render(); break;
     case 'toastClose': { var tel = document.getElementById('toast'); if(tel) tel.innerHTML = ''; break; }
     case 'matchAddGo': ui.sheet = null; if(d.v === 'play') newMatch(); else { ui.addRes = true; ui.msg = ''; render(); window.scrollTo(0,0); } break;
-    case 'matchAddOpen': ui.sheet = { kind:'matchadd' }; render(); break;
+    case 'matchAddOpen': if(can('champEdit')){ ui.sheet = { kind:'matchadd' }; render(); } else newMatch(); break;
     case 'champNewOpen': ui.sheet = { kind:'newchamp' }; ui.focus = 'newchamp'; render(); break;
     case 'repOpen': ui.sheet = { kind:'report', err:'', draft:{ prio:'normale', area:'', body:'' } }; render(); break;
     case 'repList': ui.sheet = { kind:'replist' }; render(); break;
@@ -6516,12 +6641,12 @@ document.addEventListener('click', function(e){
     case 'modeBack': ui.showSetup = true; ui.sheet = null; render(); window.scrollTo(0, 0); break;
     case 'modeSel': ui.modeSel = d.v; render(); break;
     case 'modeGo':
-      if(MODES[ui.modeSel]){ S.mode = ui.modeSel; S.modeSet = true; ui.hdrOpen = false; save(); render(); window.scrollTo(0, 0); }
+      if(MODES[ui.modeSel] && modeKeys().indexOf(ui.modeSel) >= 0){ S.mode = ui.modeSel; S.modeSet = true; ui.hdrOpen = false; save(); render(); window.scrollTo(0, 0); }
       break;
     case 'modeChg': ui.hdrOpen = false; ui.sheet = { kind:'modechg', v:modeOf() }; render(); break;
     case 'modeChgPick': sh.v = d.v; render(); break;
     case 'modeChgOk':
-      if(sh && MODES[sh.v]){ S.mode = sh.v; S.modeSet = true; ui.sheet = null; ui.xchg = null; save(); render(); }
+      if(sh && MODES[sh.v] && modeKeys().indexOf(sh.v) >= 0){ S.mode = sh.v; S.modeSet = true; ui.sheet = null; ui.xchg = null; save(); render(); }
       break;
     case 'openSub': ui.sheet = S.subs[t] >= 6 ? { kind:'subask', team:t } : { kind:'sub', team:t, exc:false }; render(); break;
     case 'subExc': ui.sheet = { kind:'sub', team:sh.team, exc:true }; render(); break;
@@ -6709,7 +6834,7 @@ document.addEventListener('click', function(e){
       });
       break;
     }
-    case 'fixBack': ui.sheet = { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
+    case 'fixBack': ui.sheet = (sh && sh.back === 'match') ? null : { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
     case 'desigOpen': ui.sheet = { kind:'desig', cid:sh.cid, fid:sh.fid, role:d.role, q:'', ext:false }; render(); break;
     case 'desigExt': sh.ext = !sh.ext; sh.q = ''; ui.focus = sh.ext ? 'dq' : null; render(); break;
     case 'desigPick': {
@@ -6718,14 +6843,15 @@ document.addEventListener('click', function(e){
       ui.sheet = { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
     }
     case 'compoOpen': {
-      var q_ce = calEntry(sh.cid, sh.fid), q_ct = findTeam(d.tid);
+      var q_cid = d.cid !== undefined ? d.cid : sh.cid, q_fid = d.fid || sh.fid;
+      var q_ce = calEntry(q_cid, q_fid), q_ct = findTeam(d.tid);
       if(!q_ce || !q_ct) break;
       var q_cp = q_ce.f.compo && q_ce.f.compo[d.tid];
       var q_rows = q_ct.t.memberIds.map(function(mid){ return findMember(mid); }).filter(Boolean).sort(function(a, b){ return (a.m.nom || '').localeCompare(b.m.nom || '', 'fr'); }).map(function(f){
         var x = q_cp && q_cp.pl.filter(function(p){ return p.mid === f.m.id; })[0];
         return { mid:f.m.id, on:!!x, num:x ? x.num : '' };
       });
-      ui.sheet = { kind:'compo', cid:sh.cid, fid:sh.fid, tid:d.tid, err:'', cap:q_cp ? q_cp.cap : '', rows:q_rows }; render(); break;
+      ui.sheet = { kind:'compo', cid:q_cid, fid:q_fid, tid:d.tid, err:'', cap:q_cp ? q_cp.cap : '', rows:q_rows, back:d.back || '' }; render(); break;
     }
     case 'cpCap': { var q_cr = sh.rows.filter(function(r){ return r.mid === d.mid; })[0]; if(q_cr){ if(sh.cap === d.mid) sh.cap = ''; else { sh.cap = d.mid; q_cr.on = true; } } render(); break; }
     case 'compoOk': {
@@ -6737,7 +6863,7 @@ document.addEventListener('click', function(e){
       q_ke.f.compo = q_ke.f.compo || {};
       if(!q_on.length) delete q_ke.f.compo[sh.tid];
       else q_ke.f.compo[sh.tid] = { pl:q_on.map(function(r){ return { mid:r.mid, num:String(r.num || '').trim() }; }), cap:q_on.some(function(r){ return r.mid === sh.cap; }) ? sh.cap : '', by:meGet(), date:stamp() };
-      save(); ui.sheet = { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
+      save(); ui.sheet = sh.back === 'match' ? null : { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
     }
     case 'validAsk': ui.sheet = { kind:'validfix', cid:sh.cid, fid:sh.fid }; render(); break;
     case 'validOk': {
@@ -6757,9 +6883,12 @@ document.addEventListener('click', function(e){
       if(rp && !rp.f.locked){ rp.f.postponed = act === 'fixPost'; save(); }
       ui.sheet = null; render(); break;
     }
+    case 'fixDateOpen': ui.sheet = { kind:'fixdate', cid:sh.cid, fid:sh.fid, err:'', draft:{} }; render(); break;
     case 'fixDate': {
-      var rd = calEntry(sh.cid, sh.fid), dn = document.getElementById('fnewd').value, tn2 = document.getElementById('fnewt').value;
-      if(rd && !rd.f.locked && dn && rd.kind !== 'event' && can('matchDate', { cid:clubOfEntrant(rd.home) })){ rd.f.date = dn; rd.f.time = tn2 || ''; save(); }
+      var rd = calEntry(sh.cid, sh.fid), dn = document.getElementById('fnewd').value, tn2 = normTime(document.getElementById('fnewt').value);
+      if(!dn){ sh.err = 'Choisissez une date.'; render(); break; }
+      if(tn2 === null){ sh.err = 'Heure non valide : écrivez par exemple 18:30 ou 18h30.'; render(); break; }
+      if(rd && !rd.f.locked && fixDateOk(rd)){ rd.f.date = dn; rd.f.time = tn2; rd.f.postponed = false; save(); }
       ui.sheet = null; render(); break;
     }
     case 'fixResched': {
@@ -6808,13 +6937,16 @@ document.addEventListener('click', function(e){
     case 'evSave': saveEvent(); break;
     case 'evHome': ui.ev.homeIs = d.s; ui.msg = ''; render(); break;
     case 'mmHome': ui.mm.homeIs = d.s; ui.msg = ''; render(); break;
-    case 'prepTeam': ui.prepTeam = t; render(); window.scrollTo(0,0); break;
+    case 'prepTeam': ui.prepTeam = t; ui.planSet = 1; render(); window.scrollTo(0,0); break;
+    case 'planTab': ui.planSet = parseInt(d.k, 10) || 1; render(); break;
+    case 'planAuto': { var pp = planOf(t); pp.auto = !pp.auto; save(); render(); break; }
+    case 'planReset': { var pr = planOf(t); delete pr[parseInt(d.k, 10)]; save(); render(); break; }
     case 'closeSetup': ui.showSetup = false; ui.prepTeam = null; ui.msg = ''; render(); window.scrollTo(0,0); break;
     case 'setupAsk': ui.sheet = { kind:'setupask' }; render(); break;
     case 'setupNo':
       if(ui.setupSnap){ var sn = ui.setupSnap; MATCH_KEYS.forEach(function(k){ S[k] = JSON.parse(JSON.stringify(sn[k])); }); S.clock = { running:false, since:0, acc:(sn.clock && sn.clock.acc) || 0 }; S.tc = null; S.prepared = true; ui.teamOther = [false, false]; }
       ui.setupSnap = null; stopClock(); S.stage = 'home'; ui.showSetup = false; ui.prepTeam = null; ui.sheet = null; ui.msg = ''; ui.resume = true; save(); render(); window.scrollTo(0,0); break;
-    case 'setupDone': registerTypedTeams(); ui.setupSnap = null; stopClock(); S.stage = 'home'; ui.showSetup = false; ui.prepTeam = null; ui.sheet = null; ui.msg = ''; ui.resume = true; save(); render(); window.scrollTo(0,0); break;
+    case 'setupDone': registerTypedTeams(); planSnap(); ui.setupSnap = null; stopClock(); S.stage = 'home'; ui.showSetup = false; ui.prepTeam = null; ui.sheet = null; ui.msg = ''; ui.resume = true; save(); render(); window.scrollTo(0,0); break;
     case 'prepBack': ui.prepTeam = null; render(); window.scrollTo(0,0); break;
     case 'clubsGo':
       ui.edit = false;
@@ -6953,6 +7085,15 @@ document.addEventListener('input', function(e){
   }
   else if(bind === 'addpost'){ if(!ui.addPost) ui.addPost = [null, null]; ui.addPost[t] = v; return; }
   else if(bind === 'tmchamp'){ var oldc = ui.teamSel ? champOfTeam(ui.teamSel) : null; if(oldc && v !== oldc.id){ var ldo = teamLoad(oldc, ui.teamSel); if(ldo.played || ldo.planned){ ui.sheet = { kind:'leavech', tid:ui.teamSel, chid:oldc.id, to:v }; ui.champEdit = false; render(); return; } } if(ui.teamSel){ champs().forEach(function(ch){ ch.clubIds = ch.clubIds.filter(function(x){ return x !== ui.teamSel; }); }); var chj = champById(v); if(chj) chj.clubIds.push(ui.teamSel); save(); } ui.champEdit = false; render(); return; }
+  else if(bind === 'plansel'){
+    var pk = parseInt(ds.set, 10), pi = parseInt(ds.pos, 10), pp2 = planOf(t);
+    if(!compoLock(t) && (pk === 2 || pk === 3)){
+      var arr = (pp2[pk] || planBase(t)).slice(), old = arr[pi] || null;
+      if(v){ var dup = arr.indexOf(v); if(dup >= 0 && dup !== pi) arr[dup] = old; }
+      arr[pi] = v || null; pp2[pk] = arr; save();
+    }
+    render(); return;
+  }
   else if(bind === 'captain'){ S.teams[t].captain = v || ''; save(); render(); return; }
   else if(bind === 'pickmember'){
     var club2 = clubById(S.teams[t].clubId), m2 = club2 && club2.members.filter(function(x){ return x.id === v; })[0];
