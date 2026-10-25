@@ -2114,7 +2114,7 @@ function cpCourt(sh, k){
     return '<button class="pl a' + (r ? (r.num ? '' : ' dflt') : ' empty') + '" data-act="cpPos" data-pos="' + i + '" aria-pressed="' + on + '" style="' + (on ? 'outline:3px solid var(--a);outline-offset:2px' : '') + '" aria-label="Poste ' + (i + 1) + (r ? ', ' + esc(cpLabel(r)) : ', vide') + '">' + (r ? esc(r.num || '–') : '+') + (r && sh.cap === r.mid ? '<span class="cap capb" aria-hidden="true"></span>' : '') + '</button>';
   }
   return '<div class="vcourt"><div class="vnet" aria-hidden="true"><span>FILET</span></div><div class="vhalf t0" role="group" aria-label="Terrain, filet en haut">' +
-    '<div class="vrow front">' + front.map(b).join('') + '</div><div class="vrow back">' + back.map(b).join('') + '</div></div></div>';
+    '<div class="vrow front">' + front.map(b).join('') + '</div><div class="vrow rear">' + back.map(b).join('') + '</div></div></div>';
 }
 function compoSheet(sh){
   var t = findTeam(sh.tid), k = sh.k || 1, on = sh.rows.filter(function(r){ return r.on; }), L = cpArr(sh, k);
