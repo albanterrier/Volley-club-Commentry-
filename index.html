@@ -3644,6 +3644,37 @@ function champSheet(cid){
   }
   return sh;
 }
+/* Préparation d'une rencontre à venir : on ouvre la page habituelle de préparation d'équipe (terrain, sets 1 à 3, capitaine),
+   puis « Enregistrer » recopie le résultat dans la rencontre. Le brouillon de match est ensuite supprimé ; un match déjà en cours est mis de côté (match suivi). */
+function startPrep(cid, fid, tid){
+  var e = calEntry(cid, fid);
+  if(!e || e.kind === 'event' || e.f.locked) return;
+  syncSquads(); resetForNew(); applyFixture(cid, fid); loadCompo(calEntry(cid, fid));
+  var t = e.home === tid ? 0 : 1;
+  ui.prepFix = { cid:cid, fid:fid, tid:tid, t:t };
+  setTab('match'); ui.showSetup = true; ui.prepTeam = t; ui.planSet = 1; ui.sheet = null; ui.msg = '';
+  save(); render(); window.scrollTo(0, 0);
+}
+function prepFixEnd(){ ui.prepFix = null; discardCurrent(); ui.showSetup = false; ui.prepTeam = null; ui.xchg = null; ui.sheet = null; ui.msg = ''; setTab('match'); save(); render(); window.scrollTo(0, 0); }
+function prepFixSave(){
+  var pf = ui.prepFix, e = pf && calEntry(pf.cid, pf.fid);
+  if(!e || e.f.locked || !can('compo', { cid:clubOfEntrant(pf.tid), tid:pf.tid })){ prepFixEnd(); return; }
+  var t = pf.t, T = S.teams[t], p = planOf(t), midOf = {}, seen = {}, dup = '';
+  T.players.forEach(function(x){ if(x.mid) midOf[x.id] = x.mid; });
+  var pl = T.players.filter(function(x){ return x.mid; });
+  pl.forEach(function(x){ var n = String(x.num || '').trim(); if(n){ if(seen[n]) dup = n; seen[n] = 1; } });
+  if(dup){ ui.msg = 'Le numéro ' + dup + ' est utilisé deux fois.'; render(); window.scrollTo(0, 0); return; }
+  var toM = function(a){ var r = []; for(var i = 0; i < 6; i++) r.push((a && midOf[a[i]]) || ''); return r; }, lu = {};
+  lu[1] = toM(S.lineup[t]);
+  [2, 3].forEach(function(k){ if(p[k]) lu[k] = toM(p[k]); });
+  e.f.compo = e.f.compo || {};
+  if(!pl.length) delete e.f.compo[pf.tid];
+  else {
+    var cp = T.captain && midOf[T.captain] || '';
+    e.f.compo[pf.tid] = { pl:pl.map(function(x){ return { mid:x.mid, num:String(x.num || '').trim() }; }), cap:cp, by:meGet(), date:stamp(), lu:lu, auto:!!p.auto };
+  }
+  prepFixEnd();
+}
 function startFixture(cid, fid){
   var e = calEntry(cid, fid);
   if(!e || e.kind === 'event' || e.f.locked) return;
@@ -4505,7 +4536,9 @@ function prepButtons(){
   }).join('') + '</div></section>';
 }
 function teamPrepView(t){
-  return '<div class="stack">' + teamCard(t) + '</div>';
+  var pf = ui.prepFix;
+  return '<div class="stack">' + (ui.msg ? '<p class="tmsg err" role="alert">' + esc(ui.msg) + '</p>' : '') + teamCard(t) +
+    (pf ? '<div class="btnrow"><button class="btn wide primary" data-act="prepSave">Enregistrer la préparation</button><button class="btn wide" data-act="prepCancel">Annuler</button></div>' : '') + '</div>';
 }
 function setupView(){
   if(ui.prepTeam === 0 || ui.prepTeam === 1) return teamPrepView(ui.prepTeam);
@@ -6928,18 +6961,9 @@ document.addEventListener('click', function(e){
       if(q_de && !q_de.f.locked && can('designate', { cid:clubOfEntrant(q_de.home) })) desigSet(sh.fid, sh.role, d.mid || '');
       ui.sheet = { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
     }
-    case 'compoOpen': {
-      var q_cid = d.cid !== undefined ? d.cid : sh.cid, q_fid = d.fid || sh.fid;
-      var q_ce = calEntry(q_cid, q_fid), q_ct = findTeam(d.tid);
-      if(!q_ce || !q_ct) break;
-      var q_cp = q_ce.f.compo && q_ce.f.compo[d.tid];
-      var q_rows = q_ct.t.memberIds.map(function(mid){ return findMember(mid); }).filter(Boolean).sort(function(a, b){ return (a.m.nom || '').localeCompare(b.m.nom || '', 'fr'); }).map(function(f){
-        var x = q_cp && q_cp.pl.filter(function(p){ return p.mid === f.m.id; })[0];
-        return { mid:f.m.id, on:!!x, num:x ? x.num : '' };
-      });
-      var q_lu = {}; if(q_cp && q_cp.lu) [1, 2, 3].forEach(function(k){ var a = q_cp.lu[k]; if(a && a.length === 6) q_lu[k] = a.map(function(m){ return q_rows.some(function(r){ return r.mid === m && r.on; }) ? m : ''; }); });
-      ui.sheet = { kind:'compo', cid:q_cid, fid:q_fid, tid:d.tid, err:'', cap:q_cp ? q_cp.cap : '', rows:q_rows, back:d.back || '', lu:q_lu, auto:!!(q_cp && q_cp.auto), k:1, sel:null }; render(); break;
-    }
+    case 'compoOpen': startPrep(d.cid !== undefined ? d.cid : (sh ? sh.cid : ''), d.fid || (sh ? sh.fid : ''), d.tid); break;
+    case 'prepSave': prepFixSave(); break;
+    case 'prepCancel': prepFixEnd(); break;
     case 'cpSet': sh.k = parseInt(d.k, 10); sh.sel = null; render(); break;
     case 'cpPos': { var q_p = parseInt(d.pos, 10); sh.sel = sh.sel === q_p ? null : q_p; render(); break; }
     case 'cpPut': {
@@ -7045,7 +7069,7 @@ document.addEventListener('click', function(e){
       if(ui.setupSnap){ var sn = ui.setupSnap; MATCH_KEYS.forEach(function(k){ S[k] = JSON.parse(JSON.stringify(sn[k])); }); S.clock = { running:false, since:0, acc:(sn.clock && sn.clock.acc) || 0 }; S.tc = null; S.prepared = true; ui.teamOther = [false, false]; }
       ui.setupSnap = null; stopClock(); S.stage = 'home'; ui.showSetup = false; ui.prepTeam = null; ui.sheet = null; ui.msg = ''; ui.resume = true; save(); render(); window.scrollTo(0,0); break;
     case 'setupDone': registerTypedTeams(); planSnap(); ui.setupSnap = null; stopClock(); S.stage = 'home'; ui.showSetup = false; ui.prepTeam = null; ui.sheet = null; ui.msg = ''; ui.resume = true; save(); render(); window.scrollTo(0,0); break;
-    case 'prepBack': ui.prepTeam = null; render(); window.scrollTo(0,0); break;
+    case 'prepBack': if(ui.prepFix){ prepFixEnd(); break; } ui.prepTeam = null; render(); window.scrollTo(0,0); break;
     case 'clubsGo':
       ui.edit = false;
       ui.clubView = d.v; ui.msg = '';
