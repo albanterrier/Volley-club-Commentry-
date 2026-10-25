@@ -1744,10 +1744,14 @@ function capBadge(){ return '<span class="cap" role="img" aria-label="Capitaine"
 function numCls(n){ var l = String(n || '').length; return l >= 4 ? 'l4' : (l === 3 ? 'l3' : (l === 2 ? 'l2' : '')); }
 function shirtHtml(n, small, dflt){ return '<span class="shirt' + (small ? ' shirt-s' : '') + '" aria-label="Numéro ' + esc(n || '') + '"><b class="snum-t ' + numCls(n) + (dflt ? ' dflt' : '') + '">' + esc(n || '–') + '</b></span>'; }
 function plabel(num,name){ return ((num ? '#' + num + ' ' : '') + (name || '')).trim(); }
-function onCourt(t){ return S.lineup[t].map(function(id){ return findPlayer(t,id); }).filter(Boolean); }
+/* Préparation : la page montre le set 1 (S.lineup) ou la composition prévue pour le set 2 ou 3 (S.plan) */
+function prepK(t){ return (ui.tab === 'match' && ui.prepTeam === t && (S.stage === 'setup' || (ui.showSetup && S.stage === 'play'))) ? (ui.planSet || 1) : 1; }
+function LU(t){ var k = prepK(t); if(k < 2) return S.lineup[t]; return planOf(t)[k] || planBase(t); }
+function LUw(t){ var k = prepK(t); if(k < 2) return S.lineup[t]; var p = planOf(t); if(!p[k]) p[k] = planBase(t).slice(); return p[k]; }
+function onCourt(t){ return LU(t).map(function(id){ return findPlayer(t,id); }).filter(Boolean); }
 function sancOf(t, id){ return (S.sanc && S.sanc[t] && S.sanc[t][id]) || ''; }
 function availBench(t){ return benchOf(t).filter(function(p){ return !sancOf(t, p.id); }); }
-function benchOf(t){ var ids = S.lineup[t]; return S.teams[t].players.filter(function(p){ return ids.indexOf(p.id) < 0; }); }
+function benchOf(t){ var ids = LU(t); return S.teams[t].players.filter(function(p){ return ids.indexOf(p.id) < 0; }); }
 function clockMs(){ return S.clock.acc + (S.clock.running ? Date.now() - S.clock.since : 0); }
 function setNumber(){ return S.sets.length + 1; }
 function setsWon(){ var w = [0,0]; S.sets.forEach(function(s){ if(s[0] > s[1]) w[0]++; else w[1]++; }); return w; }
@@ -4152,7 +4156,7 @@ function teamList(t){
   var top = st.map(function(id){ return findPlayer(t, id); }).filter(Boolean).sort(sortP).map(function(p){ return findPlayer(t, cur(p.id)) || p; });
   var topIds = top.map(function(p){ return p.id; });
   var bench = pl.filter(function(p){ return topIds.indexOf(p.id) < 0; }).sort(sortP);
-  var xs = (ui.xchg && ui.xchg.t === t && ui.xchg.sel) ? (ui.xchg.sel.kind === 'bench' ? ui.xchg.sel.v : S.lineup[t][ui.xchg.sel.v]) : '';
+  var xs = (ui.xchg && ui.xchg.t === t && ui.xchg.sel) ? (ui.xchg.sel.kind === 'bench' ? ui.xchg.sel.v : LU(t)[ui.xchg.sel.v]) : '';
   function row(p){ var sx = sancOf(t, p.id); return '<li class="plrow' + (sx ? ' sx-' + sx : '') + (xs && xs === p.id ? ' xsel' : '') + '" data-pid="' + p.id + '">' + playerListLabel(p, t) + '</li>'; }
   return '<div class="tlist' + (ui.xchg && ui.xchg.t === t && ui.xchg.ctx === 'play' ? ' xz' : '') + '" data-team="' + t + '"><ul class="tl">' + top.map(row).join('') +
     (bench.length ? '<li class="lsep" role="separator" aria-label="Banc"></li>' + bench.map(row).join('') : '') + '</ul></div>';
@@ -4167,7 +4171,7 @@ function xBtnHtml(t, ctx){
     (on ? xIcon(18) : '<span class="xico" aria-hidden="true"></span>') + '</button>';
 }
 function xPosBtn(t, i){
-  var p = findPlayer(t, S.lineup[t][i]), tc = teamColors()[t], sel = ui.xchg && ui.xchg.sel && ui.xchg.sel.kind === 'pos' && ui.xchg.sel.v === i;
+  var p = findPlayer(t, LU(t)[i]), tc = teamColors()[t], sel = ui.xchg && ui.xchg.sel && ui.xchg.sel.kind === 'pos' && ui.xchg.sel.v === i;
   var st = (p && !tc.def) ? ' style="background:' + tc.bg + ';color:' + tc.ink + ';border-color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + '"' : '';
   return '<button class="pl ' + (t ? 'b' : 'a') + (p ? (p.num ? '' : ' dflt') : ' empty') + (sel ? ' xsel' : '') + '" data-act="xPick" data-team="' + t + '" data-kind="pos" data-v="' + i + '"' + st +
     ' aria-pressed="' + !!sel + '" aria-label="Poste ' + (i + 1) + (p ? ', ' + esc(plabel(effNum(p), p.name)) : ', vide') + '">' + (p ? esc(effNum(p) || '–') : '+') + '</button>';
@@ -4185,7 +4189,7 @@ function xBenchHtml(t, ctx){
 function xPick(t, kind, v){
   var x = ui.xchg;
   if(!x || x.t !== t) return;
-  var L = S.lineup[t], sel = x.sel, here = { kind:kind, v:kind === 'pos' ? parseInt(v, 10) : v };
+  var L = x.ctx === 'prep' ? LUw(t) : S.lineup[t], sel = x.sel, here = { kind:kind, v:kind === 'pos' ? parseInt(v, 10) : v };
   if(!sel){ x.sel = here; render(); return; }
   if(sel.kind === here.kind && sel.v === here.v){ x.sel = null; render(); return; }
   if(sel.kind === 'bench' && here.kind === 'bench'){ x.sel = here; render(); return; }
@@ -4382,7 +4386,7 @@ function findHtml(t){
   return shown + (list.length > 8 ? '<p class="muted">' + (list.length - 8) + ' autres résultats. Précisez votre recherche.</p>' : '');
 }
 function captainHtml(t){
-  var on = onCourt(t), cur = S.teams[t].captain || '';
+  var on = S.lineup[t].map(function(id){ return findPlayer(t, id); }).filter(Boolean), cur = S.teams[t].captain || '';
   if(cur && !on.some(function(p){ return p.id === cur; }) && !findPlayer(t, cur)) cur = '';
   var dis = !on.length || compoLock(t);
   var opts = '<option value="">' + (dis ? 'Composez d\'abord l\'équipe de départ' : '— Aucun —') + '</option>' +
@@ -4413,13 +4417,13 @@ function addPostSelect(t){
 function postChoice(t){ var el = document.getElementById('addpost' + t); return el ? el.value : undefined; }
 /* Composition de départ : liste des postes à gauche, demi-terrain de l'équipe à droite (boutons de poste) */
 function cmpBtn0(t, i){
-  var p = findPlayer(t, S.lineup[t][i]), tc = teamColors()[t], cap = !!(p && isCapOf(S, t, p.id));
+  var p = findPlayer(t, LU(t)[i]), tc = teamColors()[t], cap = !!(p && isCapOf(S, t, p.id));
   var st = (p && !tc.def) ? ' style="background:' + tc.bg + ';color:' + tc.ink + ';border-color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + '"' : '';
   var label = 'Poste ' + (i + 1) + (p ? ', ' + plabel(effNum(p), p.name) : ', vide');
   return '<button class="pl ' + (t ? 'b' : 'a') + (p ? (p.num ? '' : ' dflt') : ' empty') + '" data-act="cmpPost" data-team="' + t + '" data-pos="' + i + '"' + st + ' aria-label="' + esc(label) + '">' + (p ? esc(effNum(p) || '–') : '+') + (cap ? '<span class="cap capb" aria-hidden="true"></span>' : '') + '</button>';
 }
 function cmpRow(label, p, t){
-  var xs = (ui.xchg && ui.xchg.t === t && ui.xchg.sel) ? (ui.xchg.sel.kind === 'bench' ? ui.xchg.sel.v : S.lineup[t][ui.xchg.sel.v]) : '';
+  var xs = (ui.xchg && ui.xchg.t === t && ui.xchg.sel) ? (ui.xchg.sel.kind === 'bench' ? ui.xchg.sel.v : LU(t)[ui.xchg.sel.v]) : '';
   return '<li class="cmprow' + (p ? '' : ' empty') + (p && xs && xs === p.id ? ' xsel' : '') + '">' + (label ? '<b>' + label + ' :</b> ' : '') + (p ? '<span class="cn' + (p.num ? '' : ' dflt') + '">' + esc(effNum(p) || '–') + '</span> ' + esc(p.name || '') + (isCapOf(S, t, p.id) ? capBadge() : '') : '<span class="muted">—</span>') + '</li>';
 }
 function vcourt(t){
@@ -4452,13 +4456,9 @@ function planHtml(t){
   tabs += '</div>';
   var auto = planOn(t), out = '<h3 style="margin-top:18px">Composition de départ</h3>' + tabs;
   if(k === 1) return out + compositionBody(t) + planAutoHtml(t, auto);
-  var cur = p[k] || planBase(t).slice(), lock = compoLock(t), pl = S.teams[t].players.slice().sort(sortP);
-  out += '<p class="hint2" style="margin:8px 0">' + (p[k] ? 'Composition propre au set ' + k + '.' : 'Identique à celle du set 1 tant que vous n\'y touchez pas.') + ' Poste 1 = serveur.</p><div class="stack" style="gap:6px">';
-  for(var i = 0; i < 6; i++){
-    out += '<label class="f" for="pl' + t + '_' + k + '_' + i + '" style="margin:4px 0 0">Poste ' + (i + 1) + '</label><select id="pl' + t + '_' + k + '_' + i + '" data-bind="plansel" data-team="' + t + '" data-set="' + k + '" data-pos="' + i + '"' + (lock ? ' disabled' : '') + '><option value="">— Libre —</option>' +
-      pl.map(function(x){ return '<option value="' + x.id + '"' + (cur[i] === x.id ? ' selected' : '') + '>' + esc(plabel(effNum(x), x.name)) + '</option>'; }).join('') + '</select>';
-  }
-  out += '</div>' + (p[k] && !lock ? '<div class="btnrow"><button class="btn wide" data-act="planReset" data-team="' + t + '" data-k="' + k + '">Reprendre la composition du set 1</button></div>' : '');
+  var lock = compoLock(t);
+  out += '<p class="hint2" style="margin:8px 0">' + (p[k] ? 'Composition propre au set ' + k + '.' : 'Identique à celle du set 1 tant que vous n\'y touchez pas.') + ' Poste 1 = serveur.</p>' + compositionBody(t);
+  out += (p[k] && !lock ? '<div class="btnrow"><button class="btn wide" data-act="planReset" data-team="' + t + '" data-k="' + k + '">Reprendre la composition du set 1</button></div>' : '');
   return out + planAutoHtml(t, auto);
 }
 function planAutoHtml(t, auto){
@@ -4468,7 +4468,7 @@ function planAutoHtml(t, auto){
 }
 function compositionHtml(t){ return planHtml(t); }
 function compositionBody(t){
-  var L = S.lineup[t], pl = S.teams[t].players;
+  var L = LU(t), pl = S.teams[t].players;
   var rows = '';
   for(var i = 0; i < 6; i++) rows += cmpRow('Poste ' + (i + 1), findPlayer(t, L[i]), t);
   var rest = pl.filter(function(p){ return L.indexOf(p.id) < 0; }).sort(sortP);
@@ -5960,10 +5960,10 @@ function sheetView(){
     inner = '<h2>Revenir à l\'état d\'avant ?</h2><p class="hint2">État du ' + esc(fmtWhen(pvo ? pvo.savedAt : '')) + (pvo ? ' (avant ' + esc(pvo.reason) + ')' : '') + '. Les données actuelles seront remplacées ; elles sont gardées à leur tour comme copie automatique, vous pourrez donc revenir en arrière.</p>' +
       '<div class="btnrow"><button class="btn wide danger" data-act="prevRestoreOk">Oui, revenir en arrière</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'cmppost'){
-    var cpt = sh.team, cpos = sh.pos, ccur = S.lineup[cpt][cpos], cro = S.teams[cpt].players.slice().sort(sortP);
+    var cpt = sh.team, cpos = sh.pos, ccur = LU(cpt)[cpos], cro = S.teams[cpt].players.slice().sort(sortP);
     var cplace = ['derrière à droite, au service', 'au filet à droite', 'au filet au centre', 'au filet à gauche', 'derrière à gauche', 'derrière au centre'][cpos];
     var cchips = cro.map(function(p){
-      var at = S.lineup[cpt].indexOf(p.id);
+      var at = LU(cpt).indexOf(p.id);
       return chip('cmpAssign', { pid:p.id }, '<b' + (p.num ? '' : ' class="dflt"') + '>' + esc(effNum(p)) + '</b>' + esc(p.name) + (isCapOf(S, cpt, p.id) ? capBadge() : '') + (at >= 0 && at !== cpos ? ' <small>(poste ' + (at + 1) + ')</small>' : ''), p.id === ccur);
     }).join('') + chip('cmpAssign', { pid:'' }, 'Aucun joueur', !ccur);
     inner = '<h2>Poste ' + (cpos + 1) + '</h2><p class="hint2" style="margin-top:4px">' + esc(tn(cpt)) + ' · ' + cplace + '</p>' +
@@ -6485,7 +6485,7 @@ document.addEventListener('click', function(e){
     case 'cmpPost': ui.sheet = { kind:'cmppost', team:t, pos:parseInt(d.pos, 10) }; render(); break;
     case 'cmpAssign': {
       var sh2 = ui.sheet; if(!sh2 || sh2.kind !== 'cmppost') break;
-      var L2 = S.lineup[sh2.team], pid2 = d.pid || '';
+      var L2 = LUw(sh2.team), pid2 = d.pid || '';
       if(pid2){ var j2 = L2.indexOf(pid2); if(j2 >= 0 && j2 !== sh2.pos) L2[j2] = L2[sh2.pos]; }
       L2[sh2.pos] = pid2 || null;
       ui.sheet = null; save(); render(); break;
@@ -7060,7 +7060,7 @@ document.addEventListener('click', function(e){
     case 'evHome': ui.ev.homeIs = d.s; ui.msg = ''; render(); break;
     case 'mmHome': ui.mm.homeIs = d.s; ui.msg = ''; render(); break;
     case 'prepTeam': ui.prepTeam = t; ui.planSet = 1; render(); window.scrollTo(0,0); break;
-    case 'planTab': ui.planSet = parseInt(d.k, 10) || 1; render(); break;
+    case 'planTab': ui.planSet = parseInt(d.k, 10) || 1; ui.xchg = null; render(); break;
     case 'planAuto': { var pp = planOf(t); pp.auto = !pp.auto; save(); render(); break; }
     case 'planReset': { var pr = planOf(t); delete pr[parseInt(d.k, 10)]; save(); render(); break; }
     case 'closeSetup': ui.showSetup = false; ui.prepTeam = null; ui.msg = ''; render(); window.scrollTo(0,0); break;
