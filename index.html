@@ -4500,11 +4500,11 @@ function teamCard(t){
   var role = t ? 'Adversaire' : 'Notre équipe', nm = tn(t);
   return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(role) + (nm && nm !== role ? ' <span class="tnm">· ' + esc(nm) + '</span>' : '') + '</h2><p class="muted" style="margin:4px 0 0">' + (t ? 'Équipe à l\'extérieur' : 'Équipe à domicile') + (team.clubId ? ' · ' + esc(clubName(team.clubId)) : '') + '</p>' +
     (compoLock(t) ? '<p class="hint2">La composition est fixée par le responsable d\'équipe.</p>' : '') +
-    '<div class="memhead"><h3>Membres de l\'équipe</h3>' + (compoLock(t) ? '' : '<button class="addbtn" data-act="addPlayerOpen" data-team="' + t + '" aria-label="Ajouter un joueur" title="Ajouter un joueur"><span class="ico-plus" aria-hidden="true"></span></button>') + '</div>' +
+    '<div class="memhead"><h3 style="margin:0"><button class="linkbtn" data-act="memToggle" aria-expanded="' + (ui.memHide ? 'false' : 'true') + '" style="font:inherit;color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px">Membres de l\'équipe <span aria-hidden="true">' + (ui.memHide ? '▾' : '▴') + '</span></button></h3>' + (compoLock(t) ? '' : '<button class="addbtn" data-act="addPlayerOpen" data-team="' + t + '" aria-label="Ajouter un joueur" title="Ajouter un joueur"><span class="ico-plus" aria-hidden="true"></span></button>') + '</div>' +
     (matchStarted() ? '<p class="hint2">Le match a commencé : les joueurs ne peuvent plus être retirés de la feuille.</p>' : '') +
-    '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
+    (ui.memHide ? '' : '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
     '<p class="numerr" data-numerr="' + t + '" role="alert" style="display:none"></p>' +
-    '<ul class="plist">' + list + '</ul>' +
+    '<ul class="plist">' + list + '</ul>') +
     compositionHtml(t) + captainHtml(t) + '</section>';
 }
 /* Équipes du match : deux menus côte à côte (domicile à gauche, extérieur à droite), ou affichage seul si le match vient du calendrier */
@@ -7060,6 +7060,7 @@ document.addEventListener('click', function(e){
     case 'evHome': ui.ev.homeIs = d.s; ui.msg = ''; render(); break;
     case 'mmHome': ui.mm.homeIs = d.s; ui.msg = ''; render(); break;
     case 'prepTeam': ui.prepTeam = t; ui.planSet = 1; render(); window.scrollTo(0,0); break;
+    case 'memToggle': ui.memHide = !ui.memHide; render(); break;
     case 'planTab': ui.planSet = parseInt(d.k, 10) || 1; ui.xchg = null; render(); break;
     case 'planAuto': { var pp = planOf(t); pp.auto = !pp.auto; save(); render(); break; }
     case 'planReset': { var pr = planOf(t); delete pr[parseInt(d.k, 10)]; save(); render(); break; }
