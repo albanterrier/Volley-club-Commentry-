@@ -2028,7 +2028,14 @@ function loadCompo(e){
       return f ? { id:uid(), num:x.num || '', name:memberName(f.m), licence:f.m.licence || '', mid:x.mid } : null;
     }).filter(Boolean);
     S.teams[t].players = pl;
-    S.lineup[t] = [null, null, null, null, null, null];
+    var byMid = {}; pl.forEach(function(p){ byMid[p.mid] = p.id; });
+    var toIds = function(a){ var r = []; for(var i = 0; i < 6; i++) r.push((a && byMid[a[i]]) || null); return r; };
+    var lu = c.lu || {};
+    S.lineup[t] = toIds(lu[1]);
+    if(lu[1] || lu[2] || lu[3] || c.auto){
+      var pp = planOf(t); pp.auto = !!c.auto;
+      [2, 3].forEach(function(k){ if(lu[k]) pp[k] = toIds(lu[k]).map(function(x){ return x || ''; }); });
+    }
     var cp = pl.filter(function(p){ return p.mid === c.cap; })[0];
     S.teams[t].captain = cp ? cp.id : '';
   });
@@ -2091,16 +2098,53 @@ function desigSheet(sh){
     '<div class="btnrow"><button class="btn wide" data-act="desigExt">' + (sh.ext ? 'Revenir au club qui reçoit' : 'Chercher un autre licencié') + '</button><button class="btn wide" data-act="fixBack">Retour</button></div>';
   return out;
 }
+/* Préparation en amont : mêmes présentation et logique qu'à la création du match (schéma du terrain, sets 1 à 3, capitaine dessous) */
+function cpArr(sh, k){ var a = sh.lu && sh.lu[k]; return a ? a.slice() : ((k > 1 && sh.lu && sh.lu[1]) ? sh.lu[1].slice() : ['', '', '', '', '', '']); }
+function cpClean(sh, on){
+  var lu = {}, ok = {}; on.forEach(function(r){ ok[r.mid] = 1; });
+  [1, 2, 3].forEach(function(k){ var a = sh.lu && sh.lu[k]; if(a) lu[k] = a.map(function(m){ return ok[m] ? m : ''; }); });
+  return lu;
+}
+function cpRow(sh, mid){ return sh.rows.filter(function(r){ return r.mid === mid; })[0]; }
+function cpLabel(r){ var f = findMember(r.mid); return (r.num ? r.num + ' · ' : '') + (f ? memberName(f.m) : '?'); }
+function cpCourt(sh, k){
+  var L = cpArr(sh, k), front = [3, 2, 1], back = [4, 5, 0];
+  function b(i){
+    var r = L[i] ? cpRow(sh, L[i]) : null, on = sh.sel === i;
+    return '<button class="pl a' + (r ? (r.num ? '' : ' dflt') : ' empty') + '" data-act="cpPos" data-pos="' + i + '" aria-pressed="' + on + '" style="' + (on ? 'outline:3px solid var(--a);outline-offset:2px' : '') + '" aria-label="Poste ' + (i + 1) + (r ? ', ' + esc(cpLabel(r)) : ', vide') + '">' + (r ? esc(r.num || '–') : '+') + (r && sh.cap === r.mid ? '<span class="cap capb" aria-hidden="true"></span>' : '') + '</button>';
+  }
+  return '<div class="vcourt"><div class="vnet" aria-hidden="true"><span>FILET</span></div><div class="vhalf t0" role="group" aria-label="Terrain, filet en haut">' +
+    '<div class="vrow front">' + front.map(b).join('') + '</div><div class="vrow back">' + back.map(b).join('') + '</div></div></div>';
+}
 function compoSheet(sh){
-  var t = findTeam(sh.tid), out = '<h2>Composition · ' + esc(t ? t.t.name : '') + '</h2><p class="hint2" style="margin-top:4px">Cochez les joueurs du match, saisissez leur numéro et désignez le capitaine. Le compteur ne modifie pas cette composition.</p><div class="stack">';
+  var t = findTeam(sh.tid), k = sh.k || 1, on = sh.rows.filter(function(r){ return r.on; }), L = cpArr(sh, k);
+  var out = '<h2>Préparation · ' + esc(t ? t.t.name : '') + '</h2><p class="hint2" style="margin-top:4px">Cochez les joueurs du match et saisissez leur numéro, puis placez-les sur le terrain. Le compteur ne modifie pas cette composition.</p><h3 style="margin:12px 0 4px">Joueurs du match</h3><div class="stack">';
   sh.rows.forEach(function(r){
     var f = findMember(r.mid); if(!f) return;
     out += '<div class="fx" style="gap:8px;align-items:center;margin:4px 0"><input type="checkbox" data-bind="cpon" data-mid="' + r.mid + '"' + (r.on ? ' checked' : '') + ' aria-label="Joue"><span style="flex:1">' + esc(memberName(f.m)) + '</span>' +
-      '<input type="text" inputmode="numeric" maxlength="3" placeholder="N°" style="width:56px" data-bind="cpnum" data-mid="' + r.mid + '" value="' + esc(r.num) + '" aria-label="Numéro">' +
-      '<button class="btn' + (sh.cap === r.mid ? ' primary' : '') + '" data-act="cpCap" data-mid="' + r.mid + '" aria-label="Capitaine">C</button></div>';
+      '<input type="text" inputmode="numeric" maxlength="3" placeholder="N°" style="width:56px" data-bind="cpnum" data-mid="' + r.mid + '" value="' + esc(r.num) + '" aria-label="Numéro"></div>';
   });
   if(!sh.rows.length) out += '<p class="muted">Cette équipe n\'a pas encore de membres.</p>';
-  return out + '</div>' + sheetErr(sh) + '<div class="btnrow"><button class="btn wide primary" data-act="compoOk">Enregistrer la composition</button><button class="btn wide" data-act="fixBack">Annuler</button></div>';
+  out += '</div><h3 style="margin:16px 0 0">Composition de départ</h3><div class="chips" role="tablist" aria-label="Composition par set" style="margin:10px 0 0">';
+  [1, 2, 3].forEach(function(n){ out += '<button class="chip' + (k === n ? ' sel' : '') + '" role="tab" aria-selected="' + (k === n) + '" data-act="cpSet" data-k="' + n + '">Set ' + n + (n > 1 && sh.lu && sh.lu[n] ? ' ✓' : '') + '</button>'; });
+  out += '</div>';
+  if(k > 1) out += '<p class="hint2" style="margin:8px 0">' + (sh.lu && sh.lu[k] ? 'Composition propre au set ' + k + '.' : 'Identique à celle du set 1 tant que vous n\'y touchez pas.') + ' Poste 1 = serveur.</p>';
+  out += cpCourt(sh, k);
+  if(!on.length) out += '<p class="hint2">Cochez d\'abord des joueurs pour pouvoir les placer.</p>';
+  else if(sh.sel === null || sh.sel === undefined) out += '<p class="hint2">Touchez un poste du terrain pour y placer un joueur.</p>';
+  else {
+    out += '<p class="hint2" style="margin:8px 0 4px">Poste ' + (sh.sel + 1) + ' : choisissez le joueur</p><div class="stack" style="gap:6px">' + on.map(function(r){
+      var at = L.indexOf(r.mid);
+      return '<button class="btn' + (L[sh.sel] === r.mid ? ' primary' : '') + '" data-act="cpPut" data-mid="' + r.mid + '">' + esc(cpLabel(r)) + (at >= 0 && at !== sh.sel ? ' <small>(poste ' + (at + 1) + ')</small>' : '') + '</button>';
+    }).join('') + (L[sh.sel] ? '<button class="btn" data-act="cpPut" data-mid="">Laisser le poste libre</button>' : '') + '</div>';
+  }
+  if(k > 1 && sh.lu && sh.lu[k]) out += '<div class="btnrow"><button class="btn wide" data-act="cpReset" data-k="' + k + '">Reprendre la composition du set 1</button></div>';
+  var forced = !!(sh.lu && (sh.lu[2] || sh.lu[3]));
+  out += '<div style="margin-top:12px"><button class="hsw" role="switch" aria-checked="' + (sh.auto || forced) + '" data-act="cpAuto"' + (forced ? ' disabled' : '') + '><span>Appliquer automatiquement au début de chaque set</span><span class="track" aria-hidden="true"><span class="knob"></span></span></button>' +
+    '<p class="hint2" style="margin:4px 0 0">' + (forced ? 'Activé : une composition propre est prévue pour un set. Les sets sans composition propre reprennent celle du set 1.' : 'Au début de chaque set, la composition du set 1 est remise en place.') + '</p></div>';
+  out += '<label class="f" for="cpcap">Capitaine de l\'équipe</label><select id="cpcap" data-bind="cpcap"' + (on.length ? '' : ' disabled') + '><option value="">— Aucun —</option>' +
+    on.map(function(r){ return '<option value="' + r.mid + '"' + (sh.cap === r.mid ? ' selected' : '') + '>' + esc(cpLabel(r)) + '</option>'; }).join('') + '</select>';
+  return out + sheetErr(sh) + '<div class="btnrow"><button class="btn wide primary" data-act="compoOk">Enregistrer la composition</button><button class="btn wide" data-act="fixBack">Annuler</button></div>';
 }
 function scopeTxt(r){
   var t = r.tid ? findTeam(r.tid) : null, c = r.cid ? clubById(r.cid) : null;
@@ -6893,9 +6937,21 @@ document.addEventListener('click', function(e){
         var x = q_cp && q_cp.pl.filter(function(p){ return p.mid === f.m.id; })[0];
         return { mid:f.m.id, on:!!x, num:x ? x.num : '' };
       });
-      ui.sheet = { kind:'compo', cid:q_cid, fid:q_fid, tid:d.tid, err:'', cap:q_cp ? q_cp.cap : '', rows:q_rows, back:d.back || '' }; render(); break;
+      var q_lu = {}; if(q_cp && q_cp.lu) [1, 2, 3].forEach(function(k){ var a = q_cp.lu[k]; if(a && a.length === 6) q_lu[k] = a.map(function(m){ return q_rows.some(function(r){ return r.mid === m && r.on; }) ? m : ''; }); });
+      ui.sheet = { kind:'compo', cid:q_cid, fid:q_fid, tid:d.tid, err:'', cap:q_cp ? q_cp.cap : '', rows:q_rows, back:d.back || '', lu:q_lu, auto:!!(q_cp && q_cp.auto), k:1, sel:null }; render(); break;
     }
-    case 'cpCap': { var q_cr = sh.rows.filter(function(r){ return r.mid === d.mid; })[0]; if(q_cr){ if(sh.cap === d.mid) sh.cap = ''; else { sh.cap = d.mid; q_cr.on = true; } } render(); break; }
+    case 'cpSet': sh.k = parseInt(d.k, 10); sh.sel = null; render(); break;
+    case 'cpPos': { var q_p = parseInt(d.pos, 10); sh.sel = sh.sel === q_p ? null : q_p; render(); break; }
+    case 'cpPut': {
+      var q_k = sh.k || 1, q_a = cpArr(sh, q_k), q_s = sh.sel, q_m = d.mid || '';
+      if(q_s === null || q_s === undefined) break;
+      var q_at = q_m ? q_a.indexOf(q_m) : -1;
+      if(q_at >= 0) q_a[q_at] = q_a[q_s];
+      q_a[q_s] = q_m;
+      if(!sh.lu) sh.lu = {}; sh.lu[q_k] = q_a; sh.sel = null; render(); break;
+    }
+    case 'cpReset': { if(sh.lu) delete sh.lu[parseInt(d.k, 10)]; sh.sel = null; render(); break; }
+    case 'cpAuto': sh.auto = !sh.auto; render(); break;
     case 'compoOk': {
       var q_ke = calEntry(sh.cid, sh.fid);
       if(!q_ke || q_ke.f.locked || !can('compo', { cid:clubOfEntrant(sh.tid), tid:sh.tid })){ ui.sheet = null; render(); break; }
@@ -6904,7 +6960,7 @@ document.addEventListener('click', function(e){
       if(q_dup){ sh.err = 'Le numéro ' + q_dup + ' est utilisé deux fois.'; render(); break; }
       q_ke.f.compo = q_ke.f.compo || {};
       if(!q_on.length) delete q_ke.f.compo[sh.tid];
-      else q_ke.f.compo[sh.tid] = { pl:q_on.map(function(r){ return { mid:r.mid, num:String(r.num || '').trim() }; }), cap:q_on.some(function(r){ return r.mid === sh.cap; }) ? sh.cap : '', by:meGet(), date:stamp() };
+      else q_ke.f.compo[sh.tid] = { pl:q_on.map(function(r){ return { mid:r.mid, num:String(r.num || '').trim() }; }), cap:q_on.some(function(r){ return r.mid === sh.cap; }) ? sh.cap : '', by:meGet(), date:stamp(), lu:cpClean(sh, q_on), auto:!!sh.auto };
       save(); ui.sheet = sh.back === 'match' ? null : { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
     }
     case 'validAsk': ui.sheet = { kind:'validfix', cid:sh.cid, fid:sh.fid }; render(); break;
@@ -7153,7 +7209,8 @@ document.addEventListener('input', function(e){
   else if(bind === 'champsel'){ ui.edit = false; ui.champSel = v; ui.mm = { a:'', b:'', homeIs:'a', res:'3-0' }; render(); return; }
   else if(bind === 'calf'){ ui.fil[ds.k] = v; ui.calPast = false; render(); return; }
   else if(bind === 'sn'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
-  else if(bind === 'cpon'){ var q_o = ui.sheet && ui.sheet.rows && ui.sheet.rows.filter(function(x){ return x.mid === ds.mid; })[0]; if(q_o){ q_o.on = !!e.target.checked; if(!q_o.on && ui.sheet.cap === q_o.mid){ ui.sheet.cap = ''; render(); } } return; }
+  else if(bind === 'cpon'){ var q_o = ui.sheet && ui.sheet.rows && ui.sheet.rows.filter(function(x){ return x.mid === ds.mid; })[0]; if(q_o){ q_o.on = !!e.target.checked; if(!q_o.on){ if(ui.sheet.cap === q_o.mid) ui.sheet.cap = ''; [1, 2, 3].forEach(function(k){ var a = ui.sheet.lu && ui.sheet.lu[k]; if(a) ui.sheet.lu[k] = a.map(function(m){ return m === q_o.mid ? '' : m; }); }); } render(); } return; }
+  else if(bind === 'cpcap'){ if(ui.sheet) ui.sheet.cap = v; return; }
   else if(bind === 'cpnum'){ var q_n = ui.sheet && ui.sheet.rows && ui.sheet.rows.filter(function(x){ return x.mid === ds.mid; })[0]; if(q_n) q_n.num = v; return; }
   else if(bind === 'rs'){
     if(ui.sheet && ui.sheet.draft){
