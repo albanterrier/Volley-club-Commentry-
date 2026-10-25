@@ -2415,6 +2415,42 @@ function calKeep(e){
   }
   return true;
 }
+/* ---------- Calendrier par semaine et vue par défaut (25/10/2026) ----------
+   Sans filtre, on n'affiche que la semaine choisie (moins de lignes = page rapide). La vue par défaut est
+   l'Excellence, ou le club de la personne si elle est licenciée, plus ses favoris (clubs, équipes, championnats). */
+function calBaseOn(){ return !calAnyFilter() && !ui.calAll; }
+function calBase(){
+  var mc = myClubId(), fv = favOf(), b = { cl:fv.club.slice(), tm:fv.team.slice(), ch:fv.champ.slice(), mc:mc };
+  if(mc){ if(b.cl.indexOf(mc) < 0) b.cl.push(mc); }
+  else champLvlList(1).forEach(function(c){ if(b.ch.indexOf(c.id) < 0) b.ch.push(c.id); });
+  return (b.cl.length || b.tm.length || b.ch.length) ? b : null;
+}
+function calBaseTeam(b, id){ return !!id && (b.tm.indexOf(id) >= 0 || b.cl.indexOf(clubOfEntrant(id)) >= 0); }
+function calBaseKeep(e, b){
+  if(e.cid && b.ch.indexOf(e.cid) >= 0) return true;
+  if(calBaseTeam(b, e.home) || calBaseTeam(b, e.away)) return true;
+  if(e.f && e.f.train) return !!e.f.club && b.cl.indexOf(e.f.club) >= 0;
+  return e.kind === 'event';
+}
+function calScope(list){
+  var b = calBaseOn() ? calBase() : null;
+  return list.filter(function(e){ return calKeep(e) && (!b || calBaseKeep(e, b)); });
+}
+function calBaseLabel(){
+  var b = calBase(), fv = favOf(), nf = fv.club.length + fv.team.length + fv.champ.length, mc = myClubId(), c = mc ? clubById(mc) : null;
+  return (c ? 'club ' + c.name : 'Excellence') + (nf ? ' + favoris' : '');
+}
+function calBaseDay(){
+  var today = isoOf(new Date());
+  if(ui.calDay) return ui.calDay;
+  if(inSeason(today)) return today;
+  var s = curSeason(); return today < s.debut ? s.debut : s.fin;
+}
+function calBannerHtml(){
+  if(calAnyFilter()) return '';
+  return '<p class="muted" style="margin:0 2px">' + (ui.calAll ? 'Affichage : tous les championnats' : 'Affichage : ' + esc(calBaseLabel())) +
+    ' · <button class="linkbtn" data-act="calAll">' + (ui.calAll ? 'Vue par défaut' : 'Tout afficher') + '</button></p>';
+}
 function calHash(){
   var p = ['saison=' + encodeURIComponent(S.season)], f = ui.fil;
   if(f.team) p.push('equipe=' + encodeURIComponent(f.team));
@@ -4809,8 +4845,8 @@ function weekRel(w, thisWeek){
   return d === 0 ? 'Cette semaine' : (d === 1 ? 'Semaine prochaine' : (d === -1 ? 'Semaine dernière' : ''));
 }
 function calStripHtml(){
-  var today = isoOf(new Date()), base = ui.calDay || today, ws = weekStart(base), cnt = {}, typ = {};
-  calEntries().filter(calKeep).filter(function(e){ return calModeKeep(e, today); }).forEach(function(e){ cnt[e.date] = (cnt[e.date] || 0) + 1; (typ[e.date] = typ[e.date] || {})[entryType(e)] = 1; });
+  var today = isoOf(new Date()), base = calBaseDay(), ws = weekStart(base), cnt = {}, typ = {};
+  calScope(calEntries()).filter(function(e){ return calModeKeep(e, today); }).forEach(function(e){ cnt[e.date] = (cnt[e.date] || 0) + 1; (typ[e.date] = typ[e.date] || {})[entryType(e)] = 1; });
   var days = '', dt = toDate(ws), k;
   for(k = 0; k < 7; k++){
     var iso1 = isoOf(dt), wd = dt.toLocaleDateString('fr-FR', { weekday:'short' }).replace('.', '').toUpperCase();
@@ -4818,7 +4854,7 @@ function calStripHtml(){
     dt.setDate(dt.getDate() + 1);
   }
   var arrow = function(n, p, lab){ return '<button class="ibtn" data-act="calWeek" data-n="' + n + '" aria-label="' + lab + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + p + '"/></svg></button>'; };
-  return '<section class="card strip" id="calstrip"><div class="stripH"><b>' + esc(toDate(base).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })) + '</b><span>' + arrow(-1, 'M15 5l-7 7 7 7', 'Semaine précédente') + arrow(1, 'M9 5l7 7-7 7', 'Semaine suivante') + '</span></div><div class="days">' + days + '</div></section>';
+  return '<section class="card strip" id="calstrip"><div class="stripH"><b>' + esc(toDate(base).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })) + '</b><span>' + arrow(-1, 'M15 5l-7 7 7 7', 'Semaine précédente') + arrow(1, 'M9 5l7 7-7 7', 'Semaine suivante') + '</span></div>' + (ws !== weekStart(today) ? '<button class="linkbtn" data-act="calToday" style="margin:0 0 6px">Revenir à aujourd\'hui</button>' : '') + '<div class="days">' + days + '</div></section>';
 }
 /* Boutons « Par semaine / Par jour » retirés du calendrier (24/10/2026) : passer GRP_BTN à true et rappeler groupChips() dans calendarView pour les remettre */
 var GRP_BTN = false;
@@ -4829,21 +4865,24 @@ function groupChips(){
 /* Exempts à afficher sous une semaine du calendrier, en respectant les filtres */
 function calExempt(w){
   if(norm(ui.calQ) || (ui.calType && ui.calType !== 'c')) return [];
-  var f = ui.fil;
+  var f = ui.fil, b = calBaseOn() ? calBase() : null;
   return champs().filter(function(ch){ return !f.champ || f.champ === ch.id; }).map(function(ch){
-    return { ch:ch, ids:exemptOf(ch, w).filter(function(id){ return (!f.team || f.team === id) && (!f.club || clubOfEntrant(id) === f.club); }) };
+    return { ch:ch, ids:exemptOf(ch, w).filter(function(id){ return (!f.team || f.team === id) && (!f.club || clubOfEntrant(id) === f.club) && (!b || b.ch.indexOf(ch.id) >= 0 || calBaseTeam(b, id)); }) };
   });
 }
 function calListHtml(){
   var out = '', all = calEntries(), today = isoOf(new Date()), mode = ui.calMode || 'all';
-  var filtered = all.filter(calKeep);
+  var filtered = calScope(all);
   var shown = filtered.filter(function(e){ return calModeKeep(e, today); });
+  var win = !calAnyFilter() && !GRP_BTN, wk0 = weekStart(calBaseDay());
+  if(win){ var wk1 = isoOf((function(d){ d.setDate(d.getDate() + 6); return d; })(toDate(wk0))); shown = shown.filter(function(e){ return e.date >= wk0 && e.date <= wk1; }); }
   var weeks = {}, meta = {}, order = [], thisWeek = weekStart(today), byDay = GRP_BTN && S.prefs.groupBy === 'day';
   shown.forEach(function(e){
     var w = weekStart(e.date), k = byDay ? w + '|' + (e.cid || '~') : w;
     if(!weeks[k]){ weeks[k] = []; order.push(k); meta[k] = { w:w, ch:byDay ? e.ch : null }; }
     weeks[k].push(e);
   });
+  if(win && !order.length){ order.push(wk0); weeks[wk0] = []; meta[wk0] = { w:wk0, ch:null }; }
   if(byDay) order.sort(function(a, b){
     var A = meta[a], B = meta[b];
     return A.w !== B.w ? A.w.localeCompare(B.w) : (A.ch ? A.ch.name : '\uffff').localeCompare(B.ch ? B.ch.name : '\uffff', 'fr');
@@ -4855,7 +4894,8 @@ function calListHtml(){
     out += '<section class="card"><p class="muted" style="margin:0">' + (!all.length ? 'Aucune rencontre ni événement pour la saison ' + esc(curSeason().label) + '. Créez-en avec le bouton « + ».' : (filtered.length ? (mode === 'done' ? 'Aucune rencontre terminée.' : 'Rien à venir : tout est terminé.') : 'Aucune rencontre ne correspond à votre recherche.')) + '</p>' +
       (filtered.length === 0 && all.length && calAnyFilter() ? '<div class="btnrow"><button class="btn wide" data-act="calReset">Tout effacer</button></div>' : '') + '</section>';
   }
-  var past = mode === 'done' ? [] : order.filter(function(k){ return meta[k].w < thisWeek; }), fut = mode === 'done' ? order : order.filter(function(k){ return meta[k].w >= thisWeek; });
+  if(win) out = calBannerHtml() + out;
+  var past = (mode === 'done' || win) ? [] : order.filter(function(k){ return meta[k].w < thisWeek; }), fut = (mode === 'done' || win) ? order : order.filter(function(k){ return meta[k].w >= thisWeek; });
   var collapse = past.length > 0 && fut.length > 0 && !ui.calPast, inRange = inSeason(today) && mode !== 'done';
   function weekCard(k){
     var mt = meta[k], w = mt.w, rel = weekRel(w, thisWeek), ttl, sub;
@@ -4865,7 +4905,7 @@ function calListHtml(){
       sub = (rel ? rel + ' · ' : '') + weekRange(w);
     } else { ttl = rel || weekLabel(w); sub = rel ? weekRange(w) : ''; }
     var ex = byDay ? (mt.ch ? exemptHtml(calExempt(w).filter(function(it){ return it.ch.id === mt.ch.id; }), false) : '') : exemptHtml(calExempt(w), true);
-    return '<section class="wkblock"><div class="wkh"><h3>' + esc(ttl) + '</h3>' + (sub ? '<span class="muted">' + esc(sub) + '</span>' : '') + '</div><div class="mcs">' + weeks[k].map(function(e){ return calRow(e, today); }).join('') + '</div>' + ex + '</section>';
+    return '<section class="wkblock"><div class="wkh"><h3>' + esc(ttl) + '</h3>' + (sub ? '<span class="muted">' + esc(sub) + '</span>' : '') + '</div><div class="mcs">' + (weeks[k].length ? weeks[k].map(function(e){ return calRow(e, today); }).join('') : '<p class="muted" style="margin:6px 2px">Aucune rencontre cette semaine.</p>') + '</div>' + ex + '</section>';
   }
   if(past.length && fut.length){
     var nPast = past.reduce(function(n, k){ return n + weeks[k].length; }, 0), unit = byDay ? 'journée' : 'semaine';
@@ -4873,9 +4913,9 @@ function calListHtml(){
   }
   if(!collapse) past.forEach(function(k){ out += weekCard(k); });
   var mark = '<div class="todaymark" id="todaymark" role="separator"><span>Aujourd\'hui · ' + esc(fmtDay(today)) + '</span></div>';
-  if(inRange && fut.length) out += mark;
+  if(inRange && fut.length && !win) out += mark;
   fut.forEach(function(k){ out += weekCard(k); });
-  if(inRange && !fut.length && order.length) out += mark;
+  if(inRange && !fut.length && order.length && !win) out += mark;
   return out;
 }
 function calendarView(){
@@ -6589,6 +6629,8 @@ document.addEventListener('click', function(e){
     case 'seasonCopyTog': if(ui.sheet && ui.sheet.draft){ ui.sheet.draft.copy = !ui.sheet.draft.copy; render(); } break;
     case 'seasonCreate': seasonCreate(); break;
     case 'seasonCopyFrom': copySeasonStructure(d.sid, S.season); ui.champSel = null; ui.msg = 'Championnats et équipes repris.'; save(); render(); break;
+    case 'calAll': ui.calAll = !ui.calAll; ui.calDay = null; render(); break;
+    case 'calToday': ui.calDay = null; render(); break;
     case 'calPast': ui.calPast = !ui.calPast; ui.calJump = true; render(); break;
     case 'hdrToggle': ui.hdrOpen = !ui.hdrOpen; render(); break;
     case 'serve':
@@ -6789,7 +6831,7 @@ document.addEventListener('click', function(e){
     case 'grpBy': S.prefs.groupBy = d.g; save(); render(); break;
     case 'calMode': ui.calMode = d.m; ui.calJump = d.m !== 'done'; render(); break;
     case 'calDay': ui.calDay = d.d; if(d.d < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = d.d; render(); break;
-    case 'calWeek': { var cwd = toDate(ui.calDay || isoOf(new Date())); cwd.setDate(cwd.getDate() + 7 * parseInt(d.n, 10)); ui.calDay = isoOf(cwd); if(ui.calDay < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = ui.calDay; render(); break; }
+    case 'calWeek': { var cwd = toDate(calBaseDay()); cwd.setDate(cwd.getDate() + 7 * parseInt(d.n, 10)); ui.calDay = isoOf(cwd); if(ui.calDay < weekStart(isoOf(new Date()))) ui.calPast = true; if(calAnyFilter()) ui.calGo = ui.calDay; render(); break; }
     case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; delete lc.pal; delete lc.palv; ui.msg = ''; save(); render(); } break; }
     case 'openFixture': ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break;
     case 'sbOpen': ui.sheet = { kind:'sblogin', draft:{ step:'email', email:'', code:'' }, err:'' }; render(); break;
@@ -7235,6 +7277,16 @@ document.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key
     if(Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     var sel = '.slbtn[data-dir="' + (dx > 0 ? '-1' : '1') + '"]', b = sl.classList.contains('homegrp') ? sl.querySelector('.homenav ' + sel) : sl.querySelector(sel) || (sl.classList.contains('clubslide') ? sl.parentNode.querySelector('.clubnav ' + sel) : null);
     if(b && b.getAttribute('data-act') === 'slide') b.click();
+  }, { passive:true });
+})();
+(function(){
+  var wx = 0, wy = 0, wok = false;
+  document.addEventListener('touchstart', function(e){ wok = !!(e.target.closest && e.target.closest('#callist,#calstrip') && ui.tab === 'cal' && !calAnyFilter() && e.touches[0]); if(wok){ wx = e.touches[0].clientX; wy = e.touches[0].clientY; } }, { passive:true });
+  document.addEventListener('touchend', function(e){
+    if(!wok || !e.changedTouches[0]) return; wok = false;
+    var dx = e.changedTouches[0].clientX - wx, dy = e.changedTouches[0].clientY - wy;
+    if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    var b = document.querySelector('#calstrip [data-act="calWeek"][data-n="' + (dx < 0 ? '1' : '-1') + '"]'); if(b) b.click();
   }, { passive:true });
 })();
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible' && S.clock.running) keepAwake(); });
