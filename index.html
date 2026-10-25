@@ -1481,6 +1481,14 @@ function sbClaimSheet(sh){
 }
 /* ---------- Notifications (web push) ---------- */
 var PUSH_PUBKEY = 'BBcnEdBYdwMdb5_XYfuU_E7i2UWAR7lW4f1XHpV3GsS8t2AjMFLSf27Dlp9d4JrCUSKM1RnoNx2SKQ0cYGONxmw';
+var PUSH_TYPES = [
+  ['team', 'Fils d\'équipe', 'Messages ordinaires de vos équipes (les annonces arrivent toujours).'],
+  ['match', 'Mes matchs', 'Date, heure ou lieu modifié, match reporté, composition publiée, désignation arbitre ou compteur.'],
+  ['rappel', 'Rappel de la veille', 'La veille au soir d\'un match où vous êtes dans la composition.'],
+  ['fav', 'Mes favoris', 'Résultats de vos équipes et clubs favoris, et leurs matchs le jour J.'],
+  ['event', 'Entraînements et événements', 'Nouveaux, modifiés ou annulés (pour ceux auxquels vous avez répondu).'],
+  ['club', 'Gestion du club', 'Demandes de licence à valider et invitations reçues.']
+];
 var PUSH = (function(){
   var KEYP = 'volley-push-v1', st = { sub:false, busy:false, msg:'', ready:false };
   function prefs(){ var o = DB.dev.getJson(KEYP); return (o && typeof o === 'object') ? o : { team:true }; }
@@ -1491,7 +1499,7 @@ var PUSH = (function(){
   function key(s){ var p = '='.repeat((4 - s.length % 4) % 4), b = (s + p).replace(/-/g, '+').replace(/_/g, '/'), r = atob(b), a = new Uint8Array(r.length); for(var i = 0; i < r.length; i++) a[i] = r.charCodeAt(i); return a; }
   function reg(){ return navigator.serviceWorker.ready; }
   function current(){ return reg().then(function(r){ return r.pushManager.getSubscription(); }); }
-  function send(sub){ var j = sub.toJSON(); return SB.pushRegister(j.endpoint, j.keys.p256dh, j.keys.auth, prefs()); }
+  function send(sub){ var j = sub.toJSON(), fv = favOf(), o = Object.assign({}, prefs(), { fav:{ club:fv.club.slice(), team:fv.team.slice(), champ:fv.champ.slice() } }); return SB.pushRegister(j.endpoint, j.keys.p256dh, j.keys.auth, o); }
   function paint(){ try{ if(ui.tab === 'settings' && !(ui.sheet && ui.sheet.draft)) render(); }catch(e){} }
   function done(m){ st.busy = false; if(m !== undefined) st.msg = m; paint(); }
   function refresh(){
@@ -1520,15 +1528,14 @@ var PUSH = (function(){
       return sub.unsubscribe().then(function(){ st.sub = false; return SB.pushUnregister(ep).catch(function(){}); }).then(function(){ done('Notifications désactivées sur cet appareil.'); });
     }).catch(function(){ done('Désactivation impossible pour le moment.'); });
   }
-  function setTeam(v){
-    var o = prefs(); o.team = !!v; setPrefs(o); paint();
-    if(st.sub) current().then(function(sub){ if(sub) send(sub).catch(function(){}); }).catch(function(){});
-  }
+  function sync(){ if(st.sub && Notification.permission === 'granted' && SB.status().logged) current().then(function(sub){ if(sub) send(sub).catch(function(){}); }).catch(function(){}); }
+  function setPref(k, v){ var o = prefs(); o[k] = !!v; setPrefs(o); paint(); sync(); }
+  function setTeam(v){ setPref('team', v); }
   function test(){
     reg().then(function(r){ return r.showNotification('Volley-Club Commentry', { body:'Ceci est une notification de test.', icon:'./icon-192.png', tag:'test', data:{ url:'./#/messages' } }); })
       .then(function(){ done('Test envoyé : une notification doit apparaître.'); }, function(){ done('Le test a échoué : notifications non autorisées ?'); });
   }
-  return { st:st, prefs:prefs, supported:supported, ios:ios, standalone:standalone, refresh:refresh, enable:enable, disable:disable, setTeam:setTeam, test:test };
+  return { st:st, prefs:prefs, supported:supported, ios:ios, standalone:standalone, refresh:refresh, enable:enable, disable:disable, setTeam:setTeam, setPref:setPref, sync:sync, test:test };
 })();
 function pushCardHtml(){
   var s = PUSH.st, out = '<section class="card"><h2>Notifications</h2>';
@@ -1537,18 +1544,18 @@ function pushCardHtml(){
     return out + '<p class="muted" style="margin:6px 0 0">Ce navigateur ne gère pas les notifications. Essayez Chrome, Edge, Firefox ou Safari récent.</p></section>';
   }
   var denied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
-  out += '<p class="muted" style="margin:6px 0 0">Recevez une alerte sur cet appareil pour les messages privés, les annonces et, pour l\'administrateur, les signalements.</p>';
+  out += '<p class="muted" style="margin:6px 0 0">Recevez une alerte sur cet appareil : messages, annonces, matchs, rappels, favoris, événements et gestion du club (au choix).</p>';
   if(s.msg) out += '<p class="hint2">' + esc(s.msg) + '</p>';
   if(denied && !s.sub) out += '<p class="hint2" style="color:var(--danger)">Les notifications sont bloquées pour ce site : autorisez-les dans les réglages du navigateur ou du téléphone.</p>';
   out += '<div class="btnrow">';
   if(s.sub){
-    var tm = PUSH.prefs().team !== false;
-    out += '<button class="btn wide" data-act="pushTeam" aria-pressed="' + tm + '">' + (tm ? '✓ ' : '') + 'Alertes des fils d\'équipe</button>' +
+    var pf = PUSH.prefs();
+    out += '</div><h3 style="margin:14px 0 4px">Me prévenir pour</h3>' + PUSH_TYPES.map(function(x){ var on = pf[x[0]] !== false; return '<button class="hsw" style="width:100%;justify-content:space-between;margin:6px 0" role="switch" aria-checked="' + on + '" data-act="pushPref" data-k="' + x[0] + '"><span style="white-space:normal;text-align:left"><b>' + esc(x[1]) + '</b><br><small class="muted">' + esc(x[2]) + '</small></span><span class="track" aria-hidden="true"><span class="knob"></span></span></button>'; }).join('') + '<div class="btnrow">' +
       '<button class="btn wide" data-act="pushTest">Envoyer un test</button>' +
       '<button class="btn wide" data-act="pushOff"' + (s.busy ? ' disabled' : '') + '>Désactiver sur cet appareil</button>';
   } else out += '<button class="btn wide primary" data-act="pushOn"' + (s.busy || denied ? ' disabled' : '') + '>' + (s.busy ? 'Activation…' : 'Activer les notifications') + '</button>';
   out += '</div>';
-  if(s.sub) out += '<p class="hint2">Les messages privés et les annonces vous alertent toujours ; vous pouvez couper seulement les messages ordinaires des fils d\'équipe.</p>';
+  if(s.sub) out += '<p class="hint2">Les messages privés, les annonces et, pour l\'administrateur, les signalements vous alertent toujours. Les réglages ci-dessus valent pour cet appareil.</p>';
   return out + '</section>';
 }
 function sbCardHtml(){
@@ -4453,7 +4460,7 @@ function planApply(setNo){
 }
 function planHtml(t){
   var k = ui.planSet || 1, p = planOf(t), tabs = '<div class="chips" role="tablist" aria-label="Composition par set" style="margin:10px 0 0">';
-  [1, 2, 3].forEach(function(n){ tabs += '<button class="chip' + (k === n ? ' sel' : '') + '" role="tab" aria-selected="' + (k === n) + '" data-act="planTab" data-k="' + n + '" data-team="' + t + '">Set ' + n + (n > 1 && p[n] ? ' ✓' : '') + '</button>'; });
+  [1, 2, 3].forEach(function(n){ tabs += '<button class="chip' + (k === n ? ' sel' : '') + '" role="tab" aria-selected="' + (k === n) + '" data-act="planTab" data-k="' + n + '" data-team="' + t + '">Set ' + n + ((n > 1 ? !!p[n] : S.lineup[t].filter(Boolean).length === 6) ? ' ✓' : '') + '</button>'; });
   tabs += '</div>';
   var auto = planOn(t), out = '<h3 style="margin-top:18px">Composition de départ</h3>' + tabs;
   if(k === 1) return out + compositionBody(t) + planAutoHtml(t, auto);
@@ -6372,12 +6379,12 @@ document.addEventListener('click', function(e){
       var fl = favOf()[d.kind], fi = fl.indexOf(d.id);
       if(fi >= 0){ ui.sheet = { kind:'favdel', k:d.kind, id:d.id, back:(ui.sheet && ui.sheet.kind === 'profile') ? ui.sheet : null }; }
       else fl.push(d.id);
-      save(); render(); break;
+      save(); render(); PUSH.sync(); break;
     }
     case 'favDelOk': {
       var fl2 = favOf()[sh.k], fi2 = fl2.indexOf(sh.id);
       if(fi2 >= 0) fl2.splice(fi2, 1);
-      ui.sheet = sh.back; save(); render(); break;
+      ui.sheet = sh.back; save(); render(); PUSH.sync(); break;
     }
     case 'favDelNo': {
       ui.sheet = sh.back; render(); break;
@@ -6942,6 +6949,7 @@ document.addEventListener('click', function(e){
     case 'pushOn': PUSH.enable(); break;
     case 'pushOff': PUSH.disable(); break;
     case 'pushTeam': PUSH.setTeam(PUSH.prefs().team === false); break;
+    case 'pushPref': PUSH.setPref(d.k, PUSH.prefs()[d.k] === false); break;
     case 'pushTest': PUSH.test(); break;
     case 'sbClaimOpen': ui.sheet = { kind:'sbclaim', draft:{ mcid:'', mid:'', code:'' }, err:'' }; render(); break;
     case 'sbClaimOk': {
