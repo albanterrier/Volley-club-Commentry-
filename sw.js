@@ -1,9 +1,9 @@
-/* Service worker : permet d'ouvrir l'application sans réseau.
-   - Les fichiers de l'application sont mis en cache à la première visite.
-   - Ensuite ils sont servis depuis le cache, et mis à jour en arrière-plan quand il y a du réseau.
-   - Pour forcer une mise à jour complète, changez le numéro de version ci-dessous.
-   - À l'installation, les fichiers sont rechargés depuis le serveur (jamais depuis un ancien cache du navigateur). */
-const VERSION = 'v3. 025';
+/* Service worker : ouverture hors ligne + notifications.
+   - Les fichiers de l'application sont mis en cache à la première visite, puis servis depuis le cache
+     et mis à jour en arrière-plan quand il y a du réseau.
+   - À CHAQUE nouvelle version déposée sur GitHub, changez le numéro VERSION ci-dessous (n'importe quel texte différent du précédent).
+   - Notifications : le serveur envoie un message « push » ; ce fichier l'affiche, et ouvre l'application au toucher. */
+const VERSION = 'v3.026';
 const CACHE = 'volley-' + VERSION;
 const FONTS = 'volley-fonts';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png'];
@@ -51,4 +51,25 @@ self.addEventListener('fetch', function(e){
       })
     );
   }
+});
+
+/* ---------- Notifications ---------- */
+self.addEventListener('push', function(e){
+  var d = {};
+  try{ d = e.data ? e.data.json() : {}; }catch(x){ try{ d = { body: e.data.text() }; }catch(y){} }
+  var opt = { body: d.body || '', icon: './icon-192.png', badge: './icon-192.png', data: { url: d.url || './#/messages' } };
+  if(d.tag){ opt.tag = d.tag; opt.renotify = true; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Volley-Club Commentry', opt));
+});
+
+self.addEventListener('notificationclick', function(e){
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || './#/messages';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list){
+    for(var i = 0; i < list.length; i++){
+      var c = list[i];
+      if('focus' in c){ c.postMessage({ type: 'open', url: url }); return c.focus(); }
+    }
+    return self.clients.openWindow(url);
+  }));
 });
