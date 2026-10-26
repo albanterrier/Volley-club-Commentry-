@@ -275,6 +275,13 @@ header.top.ho{align-items:flex-start}
 .setlbl{position:absolute;left:50%;top:calc(12px + (min(100vw,720px) - 34px) / 12);transform:translate(-50%,-50%);z-index:1;font-size:13px;font-weight:700;white-space:nowrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px 9px}
 
 /* Photos, boutons d'édition, menu */
+.avw{position:relative;display:inline-flex;flex-shrink:0}
+.pdot{position:absolute;right:-3px;bottom:-3px;width:13px;height:13px;border-radius:50%;box-sizing:border-box;box-shadow:0 0 0 2px var(--surface,#fff)}
+.pdot.none{background:#8A93A0}
+.pdot.linked{background:#fff;border:3px solid #2EA043}
+.pdot.live{background:#2EA043}
+.pdlegend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin:6px 0 8px}
+.pdlegend .pdot{position:static;display:inline-block;vertical-align:-2px;margin-right:4px;box-shadow:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--line);vertical-align:middle}
 .av.ph{display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--muted);font-family:var(--font-d)}
 .avbtn{background:none;border:0;padding:0;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%}
@@ -1455,8 +1462,23 @@ var SB = (function(){
         return pull().then(function(){ return { ok:true, role:role }; });
       }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
     },
-    answer:function(id, accept){
-      return req('POST', '/rest/v1/rpc/v2c_answer_request', { p_id:id, p_accept:!!accept }).then(function(r){
+    memStatus:function(cid){
+      return req('POST', '/rest/v1/rpc/v2c_members_status', { p_club:cid }).then(function(r){
+        if(!r.ok || !Array.isArray(r.json)) return { ok:false };
+        var map = {}; r.json.forEach(function(x){ map[x.member_id] = { linked:!!x.linked, seen:x.last_seen || '' }; });
+        return { ok:true, map:map };
+      }, function(){ return { ok:false }; });
+    },
+    touch:function(){ if(ses()) req('POST', '/rest/v1/rpc/v2c_touch_seen', {}).then(function(){}, function(){}); },
+    merge:function(keep, drop){
+      return req('POST', '/rest/v1/rpc/v2c_merge_members', { p_keep:keep, p_drop:drop }).then(function(r){
+        if(!r.ok) return { ok:false, msg:errTxt(r.json, 'Refusé') };
+        return pull().then(function(){ return { ok:true }; });
+      }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
+    },
+    answer:function(id, accept, mid){
+      var body = { p_id:id, p_accept:!!accept }; if(mid) body.p_mid = mid;
+      return req('POST', '/rest/v1/rpc/v2c_answer_request', body).then(function(r){
         if(!r.ok) return { ok:false, msg:errTxt(r.json, 'Refusé') };
         return pull().then(function(){ return { ok:true }; });
       }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
@@ -2508,14 +2530,102 @@ function requestSheet(sh){
     '<label class="f" for="rq_nai">Date de naissance</label><input type="text" id="rq_nai" data-bind="rs" data-k="naiss" value="' + esc(dr.naiss || '') + '" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="JJ/MM/AAAA">' + rsField('rq_lic', 'Numéro de licence', 'licence', dr.licence) +
     rsSelect('rq_cid', 'Club', 'cid', clubItems(S.clubs), dr.cid, '— Choisir —') + (SB.status().logged ? '' : '<p class="hint2">Pour que votre demande arrive au club, connectez-vous d\'abord : Paramètres › Compte en ligne. Elle sera alors envoyée automatiquement.</p>') + sheetErr(sh) + btnRow('requestOk', 'Envoyer la demande');
 }
+/* ---------- Doublons de licenciés : fiches proches et fusion (26/10/2026) ---------- */
+function lev(a, b){
+  var m = a.length, n = b.length, p = [], i, j, c;
+  for(j = 0; j <= n; j++) p[j] = j;
+  for(i = 1; i <= m; i++){ var q = [i]; for(j = 1; j <= n; j++){ c = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1; q[j] = Math.min(p[j] + 1, q[j - 1] + 1, p[j - 1] + c); } p = q; }
+  return p[n];
+}
+/* deux fiches se ressemblent : même numéro de licence, ou même nom/prénom (accents, tirets, majuscules et ordre ignorés, une ou deux fautes tolérées) */
+function memSimilar(a, b){
+  if(!a || !b || a.id === b.id) return false;
+  if(norm(a.licence) && norm(a.licence) === norm(b.licence)) return true;
+  var x1 = norm((a.prenom || '') + (a.nom || '')), x2 = norm((a.nom || '') + (a.prenom || '')), y1 = norm((b.prenom || '') + (b.nom || '')), y2 = norm((b.nom || '') + (b.prenom || ''));
+  if(!x1 || !y1) return false;
+  if(x1 === y1 || x1 === y2 || x2 === y1) return true;
+  var lim = Math.min(x1.length, y1.length) >= 8 ? 2 : (Math.min(x1.length, y1.length) >= 5 ? 1 : 0);
+  return lim > 0 && (lev(x1, y1) <= lim || lev(x1, y2) <= lim);
+}
+function reqSimilar(r){
+  var c = clubById(r.cid); if(!c) return [];
+  var probe = { id:'', licence:r.licence, nom:r.nom, prenom:r.prenom };
+  return c.members.filter(function(m){ return memSimilar(probe, m); });
+}
+function memMergeSheet(sh){
+  var f = findMember(sh.mid); if(!f) return '<h2>Fusionner</h2><p class="muted">Fiche introuvable.</p><div class="btnrow"><button class="btn wide" data-act="closeSheet">Fermer</button></div>';
+  var c = f.club, a = f.m, dr = sh.draft, b = dr.b ? findMember(dr.b) : null, bm = b && b.club.id === c.id ? b.m : null;
+  var others = sortMembers(c.members.filter(function(x){ return x.id !== a.id; })), sim = others.filter(function(x){ return memSimilar(a, x); });
+  var items = sim.map(function(x){ return [x.id, memberName(x) + ' (ressemble)']; }).concat(others.filter(function(x){ return sim.indexOf(x) < 0; }).map(function(x){ return [x.id, memberName(x)]; }));
+  var out = '<h2>Fusionner deux fiches</h2><p class="hint2" style="margin-top:4px">Les deux fiches deviennent une seule : équipes, rôles, présences et compositions sont repris sur la fiche conservée.</p>' +
+    '<p class="hint2" style="margin:10px 0 0">Fiche ouverte : <b>' + esc(memberName(a)) + '</b>' + (a.licence ? ' · licence ' + esc(a.licence) : '') + '</p>' +
+    rsSelect('mm_b', 'Fusionner avec', 'b', items, dr.b, '— Choisir l\'autre fiche —');
+  if(bm){
+    function card(x, k){
+      var nt = (c.teams || []).filter(function(t){ return (t.memberIds || []).indexOf(x.id) >= 0; }).length;
+      return '<div class="card' + (dr.keep === k ? ' sel' : '') + '" style="margin:8px 0;' + (dr.keep === k ? 'border:2px solid var(--acc)' : '') + '"><b>' + esc(memberName(x)) + '</b><br><span class="muted">' + (x.licence ? 'Licence ' + esc(x.licence) : 'Sans numéro de licence') + (x.age !== '' && x.age != null ? ' · ' + esc(String(x.age)) + ' ans' : '') + ' · ' + nt + ' équipe' + (nt > 1 ? 's' : '') + (x.photo ? ' · photo' : '') + '</span>' +
+        '<div class="btnrow"><button class="btn wide' + (dr.keep === k ? ' primary' : '') + '" data-act="memMergeKeep" data-k="' + k + '">' + (dr.keep === k ? '✓ Fiche conservée' : 'Garder cette fiche') + '</button></div></div>';
+    }
+    out += '<p class="hint2" style="margin:12px 0 0">Quelle fiche conserver ? L\'autre disparaît, mais son nom reste dans l\'historique de la fiche conservée.</p>' + card(a, 'a') + card(bm, 'b') +
+      '<p class="hint2">Le numéro de licence, l\'âge et la photo manquants sont repris de l\'autre fiche. Si les deux fiches ont déjà un compte, la fusion est refusée. <b>La fusion est définitive.</b></p>';
+  }
+  return out + sheetErr(sh) + '<div class="btnrow">' + (bm ? '<button class="btn wide primary" data-act="memMergeOk"' + (sh.busy ? ' disabled' : '') + '>' + (sh.busy ? 'Fusion en cours…' : 'Fusionner définitivement') + '</button>' : '') + '<button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+}
+/* fusion sans serveur : toutes les références à la fiche « drop » pointent vers la fiche « keep » */
+function memberMergeLocal(keepId, dropId){
+  var fk = findMember(keepId), fd = findMember(dropId); if(!fk || !fd || fk.club.id !== fd.club.id) return false;
+  var k = fk.m, d = fd.m, c = fk.club;
+  if(!k.licence && d.licence) k.licence = d.licence;
+  if((k.age === '' || k.age == null) && d.age !== '' && d.age != null) k.age = d.age;
+  if(!k.photo && d.photo){ k.photo = d.photo; k.photoPublic = !!d.photoPublic; }
+  if((d.licSeason || 0) > (k.licSeason || 0)) k.licSeason = d.licSeason;
+  k.merged = (k.merged || []).concat([{ nom:d.nom || '', prenom:d.prenom || '', by:meGet() || '', date:stamp() }]);
+  c.members = c.members.filter(function(x){ return x.id !== dropId; });
+  function uniq(a){ var s = {}; return a.filter(function(x){ if(s[x]) return false; s[x] = 1; return true; }); }
+  (c.teams || []).forEach(function(t){ t.memberIds = uniq((t.memberIds || []).map(function(i){ return i === dropId ? keepId : i; })); });
+  function sw(p){ if(p && p.mid === dropId) p.mid = keepId; }
+  S.teams.forEach(function(t){ (t.players || []).forEach(sw); });
+  S.clubs.forEach(function(cl){ (cl.teams || []).forEach(function(t){ if(t.squad && t.squad.players) t.squad.players.forEach(sw); }); });
+  S.library.forEach(function(e){ (e.teams || []).forEach(function(t){ (t.players || []).forEach(sw); }); });
+  S.roles = (S.roles || []).filter(function(r){ return !(r.mid === dropId && S.roles.some(function(q){ return q.mid === keepId && q.role === r.role && (q.cid || '') === (r.cid || '') && (q.tid || '') === (r.tid || '') && (q.ref || '') === (r.ref || ''); })); });
+  S.roles.forEach(function(r){ if(r.mid === dropId) r.mid = keepId; });
+  (S.requests || []).forEach(function(r){ if(r.mid === dropId) r.mid = keepId; });
+  function compo(cp){
+    if(!cp) return;
+    Object.keys(cp).forEach(function(tid){
+      var x = cp[tid]; if(!x) return;
+      var seen = {}; x.pl = (x.pl || []).map(function(p){ if(p.mid === dropId) p.mid = keepId; return p; }).filter(function(p){ if(seen[p.mid]) return false; seen[p.mid] = 1; return true; });
+      if(x.cap === dropId) x.cap = keepId;
+      if(x.by === dropId) x.by = keepId;
+      if(x.lu) Object.keys(x.lu).forEach(function(n){ var s2 = {}; x.lu[n] = (x.lu[n] || []).map(function(m){ if(m === dropId) m = keepId; if(m && s2[m]) return ''; if(m) s2[m] = 1; return m; }); });
+    });
+  }
+  S.champs.forEach(function(ch){ (ch.fixtures || []).forEach(function(f){ compo(f.compo); if(f.locked && f.locked.by === dropId) f.locked.by = keepId; }); });
+  (S.agenda || []).forEach(function(a){ compo(a.compo); });
+  Object.keys(S.pres || {}).forEach(function(e){ var m = S.pres[e]; if(m && m[dropId]){ if(!m[keepId]) m[keepId] = m[dropId]; delete m[dropId]; } });
+  if(S.sb && S.sb.pq) S.sb.pq.forEach(function(x){ if(x.m === dropId) x.m = keepId; });
+  if(S.fav && S.fav[dropId]){ if(!S.fav[keepId]) S.fav[keepId] = S.fav[dropId]; delete S.fav[dropId]; }
+  if(S.adminId === dropId) S.adminId = keepId;
+  (S.msgs || []).forEach(function(m){ if(m.author === dropId) m.author = keepId; if(m.scope === 'dm' && m.ref) m.ref = m.ref.split('|').map(function(x){ return x === dropId ? keepId : x; }).sort().join('|'); });
+  if(meReal() === dropId) meSet(keepId);
+  return true;
+}
 function requestsSheet(){
   var l = pendingRequests(), out = '<h2>Demandes à traiter (' + l.length + ')</h2>';
   if(!l.length) return out + '<p class="muted" style="margin:0">Aucune demande en attente.</p>';
   l.forEach(function(r){
     var c = clubById(r.cid), f = r.mid ? findMember(r.mid) : null;
     out += '<div class="card" style="margin:10px 0"><b>' + esc(r.prenom + ' ' + r.nom) + '</b><br><span class="muted">Licence ' + esc(r.licence) + ' · ' + esc(c ? c.name : '') + '</span><br>' +
-      '<span class="muted">' + (f ? 'Fiche trouvée' + (r.ageOk === true ? ', âge cohérent' : (r.ageOk === false ? ', âge différent de la fiche' : '')) : 'Aucune fiche correspondante : l\'acceptation la créera') + '</span>' +
-      '<div class="btnrow"><button class="btn wide primary" data-act="reqAcc" data-id="' + r.id + '">Accepter</button><button class="btn wide" data-act="reqRef" data-id="' + r.id + '">Refuser</button></div></div>';
+      '<span class="muted">' + (f ? 'Fiche trouvée' + (r.ageOk === true ? ', âge cohérent' : (r.ageOk === false ? ', âge différent de la fiche' : '')) : 'Aucune fiche identique : l\'acceptation créera une nouvelle personne') + '</span>';
+    var sim = f ? [] : reqSimilar(r);
+    if(sim.length){
+      out += '<p class="hint2" style="margin:10px 0 4px">Cette personne est-elle déjà dans le club ?</p>';
+      sim.slice(0, 4).forEach(function(m){
+        out += '<div class="fx" style="justify-content:space-between;gap:8px;margin:4px 0"><span><b>' + esc(memberName(m)) + '</b><br><small class="muted">' + (m.licence ? 'Licence ' + esc(m.licence) : 'Sans numéro de licence') + (m.age !== '' && m.age != null ? ' · ' + esc(String(m.age)) + ' ans' : '') + '</small></span>' +
+          '<button class="btn" data-act="reqLink" data-id="' + r.id + '" data-mid="' + m.id + '">C\'est elle</button></div>';
+      });
+    }
+    out += '<div class="btnrow"><button class="btn wide' + (sim.length ? '' : ' primary') + '" data-act="reqAcc" data-id="' + r.id + '">' + (sim.length ? 'Accepter comme nouvelle personne' : 'Accepter') + '</button><button class="btn wide" data-act="reqRef" data-id="' + r.id + '">Refuser</button></div></div>';
   });
   return out;
 }
@@ -4852,11 +4962,30 @@ function clubCountText(){
   var q = norm(ui.clq || ''), n = S.clubs.filter(function(c){ return !q || norm(c.name).indexOf(q) >= 0 || (c.teams || []).some(function(t){ return norm(t.name).indexOf(q) >= 0; }); }).length;
   return n + ' club' + (n > 1 ? 's' : '') + (q ? ' sur ' + S.clubs.length : '');
 }
+/* ---------- Voyant « rattaché à l'appli / en ligne » sur les membres du club (26/10/2026) ---------- */
+var memSt = { cid:'', at:0, map:null, busy:false };
+function memStatusFor(cid){
+  if(!cid || !SB.status().logged || !can('memberEdit', { cid:cid })) return null;
+  if((memSt.cid !== cid || Date.now() - memSt.at > 60000) && !memSt.busy){
+    memSt.busy = true;
+    SB.memStatus(cid).then(function(r){
+      memSt.busy = false; memSt.cid = cid; memSt.at = Date.now(); memSt.map = r.ok ? r.map : null;
+      if(r.ok){ try{ if(!(ui.sheet && (ui.sheet.draft || ui.sheet.rows))) render(); }catch(e){} }
+    });
+  }
+  return memSt.cid === cid ? memSt.map : null;
+}
+function memDot(map, mid){
+  if(!map) return '';
+  var x = map[mid], live = x && x.seen && (Date.now() - new Date(x.seen).getTime() < 300000);
+  var cls = !x || !x.linked ? 'none' : (live ? 'live' : 'linked'), tip = cls === 'none' ? 'Pas rattaché à l\'appli' : (cls === 'live' ? 'Utilise l\'appli en ce moment' : 'Rattaché à l\'appli');
+  return '<span class="pdot ' + cls + '" role="img" aria-label="' + tip + '" title="' + tip + '"></span>';
+}
 function memberRows(list, withActions){
-  var priv = list.some(canSeePriv);
-  return '<div class="tablewrap"><table class="tbl-left"><thead><tr><th>Nom</th><th>Prénom</th>' + (priv ? '<th>Licence</th><th>Âge</th>' : '') + (withActions ? '<th><span class="sr">Actions</span></th>' : '') + '</tr></thead><tbody>' +
+  var priv = list.some(canSeePriv), f0 = list.length ? findMember(list[0].id) : null, pmap = f0 ? memStatusFor(f0.club.id) : null;
+  return (pmap ? '<div class="pdlegend"><span><span class="pdot none"></span>Pas rattaché</span><span><span class="pdot linked"></span>Rattaché</span><span><span class="pdot live"></span>En ligne</span></div>' : '') + '<div class="tablewrap"><table class="tbl-left"><thead><tr><th>Nom</th><th>Prénom</th>' + (priv ? '<th>Licence</th><th>Âge</th>' : '') + (withActions ? '<th><span class="sr">Actions</span></th>' : '') + '</tr></thead><tbody>' +
     list.map(function(m){
-      return '<tr><td><span class="fxteam">' + avatar(photoShown(m) ? m.photo : '', 32, memberName(m)) + '<span class="nm" title="' + esc(m.nom) + '">' + esc(m.nom) + '</span></span></td><td>' + esc(m.prenom) + '</td>' + (priv ? (canSeePriv(m) ? '<td>' + esc(m.licence) + '</td><td>' + esc(m.age) + '</td>' : '<td></td><td></td>') : '') +
+      return '<tr><td><span class="fxteam">' + (pmap ? '<span class="avw">' + avatar(photoShown(m) ? m.photo : '', 32, memberName(m)) + memDot(pmap, m.id) + '</span>' : avatar(photoShown(m) ? m.photo : '', 32, memberName(m))) + '<span class="nm" title="' + esc(m.nom) + '">' + esc(m.nom) + '</span></span></td><td>' + esc(m.prenom) + '</td>' + (priv ? (canSeePriv(m) ? '<td>' + esc(m.licence) + '</td><td>' + esc(m.age) + '</td>' : '<td></td><td></td>') : '') +
         (withActions ? '<td><span class="actcell"><button class="delwrap" data-act="editMember" data-mid="' + m.id + '" aria-label="Modifier les informations de ' + esc(memberName(m)) + '"><span class="editc">' + GEAR + '</span></button>' +
         '<button class="delwrap" data-act="delMemberAsk" data-mid="' + m.id + '" aria-label="Supprimer ' + esc(memberName(m)) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></span></td>' : '') + '</tr>';
     }).join('') + '</tbody></table></div>';
@@ -6295,7 +6424,9 @@ function sheetView(){
       '<div class="row2"><div><label class="f" for="em_nom">Nom</label><input type="text" id="em_nom" data-bind="emf" data-k="nom" value="' + esc(dr.nom) + '" autocomplete="off"></div>' +
       '<div><label class="f" for="em_pre">Prénom</label><input type="text" id="em_pre" data-bind="emf" data-k="prenom" value="' + esc(dr.prenom) + '" autocomplete="off"></div></div>' +
       (sh.err ? '<p class="hint2" style="color:var(--danger)" role="alert">' + esc(sh.err) + '</p>' : '') +
+      (function(){ var mf = findMember(sh.mid); return mf && can('memberEdit', { cid:mf.club.id }) && mf.club.members.length > 1 ? '<div class="btnrow"><button class="btn wide" data-act="memMergeOpen">Fusionner avec une autre fiche…</button></div>' : ''; })() +
       '<div class="btnrow"><button class="btn wide primary" data-act="memSave">Enregistrer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+  } else if(sh.kind === 'memmerge'){ inner = memMergeSheet(sh);
   } else if(sh.kind === 'restore'){
     var pr = ui.pendingRestore, dd = pr && pr.data || {};
     inner = '<h2>Restaurer cette sauvegarde ?</h2><p class="hint2">Sauvegarde du ' + esc(fmtWhen(pr ? pr.exportedAt : '')) + ' : ' + (dd.clubs || []).length + ' club' + ((dd.clubs || []).length > 1 ? 's' : '') + ', ' + (dd.champs || []).length + ' championnat' + ((dd.champs || []).length > 1 ? 's' : '') + ', ' + (((dd.library || []).length) + ((dd.events || []).length || (dd.sets || []).length ? 1 : 0)) + ' match' + '(s). Toutes les données actuelles de cet appareil seront remplacées. Une copie automatique est gardée : vous pourrez revenir en arrière depuis Sauvegarde.</p>' +
@@ -6359,7 +6490,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['licinv','sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
+  var own = ['memmerge','licinv','sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -6647,6 +6778,23 @@ document.addEventListener('click', function(e){
       if(fm){ ui.sheet = { kind:'editmember', mid:d.mid, err:'', draft:{ licence:fm.m.licence || '', nom:fm.m.nom || '', prenom:fm.m.prenom || '', age:fm.m.age === '' || fm.m.age == null ? '' : String(fm.m.age), photo:fm.m.photo || '', photoPublic:!!fm.m.photoPublic } }; render(); }
       break;
     }
+    case 'memMergeOpen': { var mm_f = findMember(sh.mid); if(mm_f && can('memberEdit', { cid:mm_f.club.id })){ ui.sheet = { kind:'memmerge', mid:sh.mid, err:'', draft:{ b:'', keep:'a' } }; render(); } break; }
+    case 'memMergeKeep': sh.draft.keep = d.k === 'b' ? 'b' : 'a'; render(); break;
+    case 'memMergeOk': {
+      var mm_a = findMember(sh.mid), mm_b = sh.draft.b ? findMember(sh.draft.b) : null;
+      if(!mm_a || !mm_b || mm_a.club.id !== mm_b.club.id || !can('memberEdit', { cid:mm_a.club.id })){ sh.err = 'Choisissez l\'autre fiche.'; render(); break; }
+      var mm_keep = sh.draft.keep === 'b' ? mm_b.m.id : mm_a.m.id, mm_drop = mm_keep === mm_a.m.id ? mm_b.m.id : mm_a.m.id, mm_name = memberName(mm_keep === mm_a.m.id ? mm_a.m : mm_b.m);
+      if(SB.status().logged){
+        sh.err = ''; sh.busy = true; render();
+        SB.sync().then(function(){ return SB.merge(mm_keep, mm_drop); }).then(function(r2){
+          if(!r2.ok){ sh.busy = false; sh.err = r2.msg; render(); return; }
+          ui.sheet = { kind:'info', title:'Fiches fusionnées', note:'Il ne reste qu\'une fiche : ' + mm_name + '.' }; render();
+        });
+        break;
+      }
+      memberMergeLocal(mm_keep, mm_drop); save();
+      ui.sheet = { kind:'info', title:'Fiches fusionnées', note:'Il ne reste qu\'une fiche : ' + mm_name + '.' }; render(); break;
+    }
     case 'memPhotoDel': sh.draft.photo = ''; render(); break;
     case 'memSave': {
       var ef = findMember(sh.mid), dr2 = sh.draft;
@@ -6898,16 +7046,22 @@ document.addEventListener('click', function(e){
       render(); break;
     }
     case 'reqOpen': ui.sheet = { kind:'requests' }; render(); if(SB.status().logged) SB.sync(); break;
-    case 'reqAcc': case 'reqRef': {
-      var q_rq = (S.requests || []).filter(function(x){ return x.id === d.id; })[0];
+    case 'reqAcc': case 'reqRef': case 'reqLink': {
+      var q_rq = (S.requests || []).filter(function(x){ return x.id === d.id; })[0], q_pick = '';
+      if(act === 'reqLink'){
+        var q_lm = q_rq && d.mid ? findMember(d.mid) : null;
+        if(!q_lm || q_lm.club.id !== q_rq.cid){ render(); break; }
+        q_pick = d.mid;
+      }
       if(q_rq && SB.status().logged && can('licValidate', { cid:q_rq.cid })){
-        SB.answer(q_rq.id, act === 'reqAcc').then(function(r2){
+        SB.answer(q_rq.id, act !== 'reqRef', q_pick).then(function(r2){
           if(!r2.ok) ui.sheet = { kind:'info', title:'Demande non traitée', note:r2.msg };
           render();
         });
         break;
       }
       if(q_rq && can('licValidate', { cid:q_rq.cid })){
+        if(q_pick) q_rq.mid = q_pick;
         if(act === 'reqRef') q_rq.state = 'refusee';
         else {
           var q_c2 = clubById(q_rq.cid), q_fm = q_rq.mid ? findMember(q_rq.mid) : null;
@@ -7494,6 +7648,7 @@ document.addEventListener('input', function(e){
         if(q_k === 'mcid'){ q_dr.mid = ''; if(!q_dr.cid) q_dr.cid = v; render(); }
         else if(q_k === 'role'){ if(!q_dr.cid) q_dr.cid = q_dr.mcid; q_dr.tid = ''; render(); }
         else if(q_k === 'cid'){ q_dr.tid = ''; render(); }
+      } else if(ui.sheet.kind === 'memmerge' && q_k === 'b'){ q_dr.keep = 'a'; render();
       } else if(ui.sheet.kind === 'licinv' && q_k === 'cid'){ q_dr.mid = ''; render();
       } else if(ui.sheet.kind === 'testas' && q_k === 'mcid'){ q_dr.mid = ''; render(); }
       else if(ui.sheet.kind === 'sbclaim' && q_k === 'mcid'){ q_dr.mid = ''; render(); }
@@ -7624,6 +7779,8 @@ document.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible' && S.clock.running) keepAwake(); });
 
 setTimeout(reqCheck, 1800); setTimeout(invAuto, 2500);
+setTimeout(function(){ try{ SB.touch(); }catch(e){} }, 3000);
+setInterval(function(){ try{ if(document.visibilityState === 'visible') SB.touch(); }catch(e){} }, 120000);
 setInterval(function(){
   var txt = fmt(clockMs()), cs = document.querySelectorAll ? document.querySelectorAll('.clk') : [];
   for(var ci = 0; ci < cs.length; ci++) cs[ci].textContent = txt;
