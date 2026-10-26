@@ -473,6 +473,8 @@ body.hasnav{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 header.top{border-bottom:1px solid rgba(255,255,255,.08)}
 .hl{display:flex;align-items:center;gap:6px;min-width:0;flex:1}
 .hr{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.ibtn{position:relative}
+.ibtn .dotred{position:absolute;top:7px;right:6px;width:12px;height:12px;border-radius:50%;background:#E53935;border:2px solid var(--bg,#0e1621);box-sizing:border-box}
 .ibtn{width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
 .ibtn:active{background:rgba(255,255,255,.14)}
 .ibtn svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -1413,7 +1415,7 @@ var SB = (function(){
   function sync(){
     if(busy || !ses()) return Promise.resolve(false);
     busy = true;
-    return push().then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); return r; }, function(){ busy = false; });
+    return push().then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); if(typeof reqCheck === 'function') reqCheck(); return r; }, function(){ busy = false; });
   }
   return {
     status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length + ((S.sb && S.sb.pq) ? S.sb.pq.length : 0), busy:busy, msg:st.msg }; },
@@ -2051,8 +2053,9 @@ function myRoles(){ var me = meGet(); return (S.roles || []).filter(function(r){
 function availRoles(){
   var f = meInfo();
   if(!f) return adminInfo() ? ['visiteur'] : null;
-  var out = ['visiteur', 'licencie'];
-  if(S.adminId === f.m.id) out.push('admin');
+  /* un licencié n'est plus jamais « visiteur » (seul l'administrateur garde ce choix, pour essayer l'appli comme un visiteur) */
+  var out = ['licencie'];
+  if(S.adminId === f.m.id){ out.push('visiteur'); out.push('admin'); }
   myRoles().forEach(function(r){ if(out.indexOf(r.role) < 0) out.push(r.role); });
   return ROLES.map(function(r){ return r[0]; }).filter(function(k){ return out.indexOf(k) >= 0; });
 }
@@ -2331,9 +2334,23 @@ function newCode(){
   for(i = 0; i < 6; i++) s += al.charAt(Math.floor(Math.random() * al.length));
   return s;
 }
+/* ---------- Demandes à valider (26/10/2026) : voyant rouge sur le profil + message temporaire ouvrant « Rôles et demandes » ---------- */
+var reqNotified = {};
+function reqCheck(){
+  try{
+    var p = pendingRequests(), fresh = p.filter(function(r){ return !reqNotified[r.id]; });
+    p.forEach(function(r){ reqNotified[r.id] = 1; });
+    if(!fresh.length || (matchStarted() && !S.finished)) return;
+    var el = document.getElementById('toast'); if(!el) return;
+    el.setAttribute('aria-live', 'polite');
+    el.innerHTML = '<div class="tmsg" data-act="rolesOpen" role="button" tabindex="0">' + esc(p.length + (p.length > 1 ? ' demandes à valider' : ' demande à valider')) + ' · <u>Toucher pour ouvrir</u></div>';
+    clearTimeout(toastT); toastT = setTimeout(function(){ el.innerHTML = ''; }, 10000);
+  }catch(e){}
+}
 function profBtnHtml(){
   var a = meInfo(), photo = (a && photoShown(a.m) && profGet() !== 'visiteur') ? a.m.photo : '';
-  return '<button class="ibtn" data-act="profOpen" aria-label="Profil' + (a ? ' : ' + esc(profLabel(profGet())) : '') + '">' + (photo ? '<img class="av" src="' + esc(photo) + '" alt="" width="30" height="30">' :
+  var rq = pendingRequests().length;
+  return '<button class="ibtn" data-act="profOpen" aria-label="Profil' + (a ? ' : ' + esc(profLabel(profGet())) : '') + (rq ? ' · ' + rq + ' demande' + (rq > 1 ? 's' : '') + ' à valider' : '') + '">' + (rq ? '<span class="dotred" aria-hidden="true"></span>' : '') + (photo ? '<img class="av" src="' + esc(photo) + '" alt="" width="30" height="30">' :
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>') + '</button>';
 }
 function profPickerHtml(){
@@ -2501,8 +2518,8 @@ function profSheetHtml0(){
   }
   var sc = scopeTxtFor(cur);
   out += '<div class="profid">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div></div>' +
-    '<p class="hint2" style="margin:14px 0 6px">Changer de rôle</p><div class="btnrow">';
-  PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
+    (av.length > 1 ? '<p class="hint2" style="margin:14px 0 6px">Changer de rôle</p>' : '') + '<div class="btnrow">';
+  if(av.length > 1) PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
   out += '</div>';
   var due = licClubs().some(licDue);
   if(nominable().length || can('licValidate') || licClubs().length){
@@ -6757,7 +6774,7 @@ document.addEventListener('click', function(e){
       if(S.fav && S.fav['_'] && !S.fav[q_mem.id]) S.fav[q_mem.id] = S.fav['_'];
       meSet(q_mem.id); ui.sheet = null; save(); render(); break;
     }
-    case 'rolesOpen': ui.sheet = { kind:'roles' }; render(); if(SB.status().logged) SB.sync(); break;
+    case 'rolesOpen': { var rtel = document.getElementById('toast'); if(rtel) rtel.innerHTML = ''; } ui.sheet = { kind:'roles' }; render(); if(SB.status().logged) SB.sync(); break;
     case 'roleAddOpen': ui.sheet = { kind:'roleAdd', err:'', draft:{ mcid:'', mid:'', role:'', cid:'', tid:'' } }; render(); break;
     case 'roleAttrOk': case 'roleInvOk': {
       var q_r = sh.draft, q_err = '', q_f = q_r.mid ? findMember(q_r.mid) : null, q_scoped = q_r.role === 'pres' || q_r.role === 'rclub' || q_r.role === 'requ';
@@ -7539,6 +7556,7 @@ document.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key
 })();
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible' && S.clock.running) keepAwake(); });
 
+setTimeout(reqCheck, 1800);
 setInterval(function(){
   var txt = fmt(clockMs()), cs = document.querySelectorAll ? document.querySelectorAll('.clk') : [];
   for(var ci = 0; ci < cs.length; ci++) cs[ci].textContent = txt;
