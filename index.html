@@ -576,6 +576,9 @@ header.top .hl>.ibtn[data-tab="menu"]:active{transform:translateY(1px);box-shado
 .prs{min-height:36px;padding:0 12px;border-radius:999px;border:1.5px solid var(--line-ui);background:var(--bg);color:var(--muted);font-weight:700;font-size:13px;white-space:nowrap}
 .prs.ok{background:#2e9e5b;border-color:#2e9e5b;color:#fff}
 .prs.bad{background:#d64545;border-color:#d64545;color:#fff}
+.pcnt{font-weight:700}.pcnt b{font-weight:800}.pcnt .cp{color:#2e9e5b}.pcnt .ca{color:#d64545}
+.prs.ok .pcnt .cp{color:#fff}.prs.ok .pcnt .ca{color:#d64545;background:#fff;border-radius:999px;padding:0 5px}
+.prs.bad .pcnt{background:#fff;color:#555;border-radius:999px;padding:1px 7px}
 .mc-att{font-size:13px;color:var(--muted);text-align:center}
 .mc-att b.ok{color:#35b26a}.mc-att b.bad{color:#e5484d}
 div.mc{cursor:pointer}
@@ -5228,7 +5231,12 @@ function presCan(e, today){
 function presBtn(e, today){
   if(!presCan(e, today)) return '';
   var st = (S.pres[e.fid] || {})[meGet()];
-  return '<button class="prs' + (st === 'p' ? ' ok' : (st === 'a' ? ' bad' : '')) + '" data-act="presTog" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" aria-label="Ma présence : ' + (st === 'p' ? 'présent' : (st === 'a' ? 'absent' : 'sans réponse')) + '">' + (st === 'p' ? 'Présent' : (st === 'a' ? 'Absent' : 'Présent ?')) + '</button>';
+  return '<button class="prs' + (st === 'p' ? ' ok' : (st === 'a' ? ' bad' : '')) + '" data-act="presTog" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" aria-label="Ma présence : ' + (st === 'p' ? 'présent' : (st === 'a' ? 'absent' : 'sans réponse')) + '">' + (st === 'p' ? 'Présent' : (st === 'a' ? 'Absent' : 'Présent ?')) + presCnt(e) + '</button>';
+}
+function presCnt(e){
+  if(!presVisible(e)) return '';
+  var i = presInfo(e);
+  return ' <span class="pcnt">(<b class="cp">' + i.p.length + '</b>/<b class="ca">' + i.a.length + '</b>)</span>';
 }
 /* réponses visibles pour la personne : présents, absents, nombre sans réponse */
 function presInfo(e){
@@ -5244,6 +5252,7 @@ function presInfo(e){
   return out;
 }
 function presSum(e){
+  return '';
   if(!presVisible(e) || !S.pres[e.fid]) return '';
   var i = presInfo(e);
   if(!i.p.length && !i.a.length) return '';
