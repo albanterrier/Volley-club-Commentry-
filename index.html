@@ -2162,7 +2162,7 @@ function compoViewSheet(sh){
   var byMid = {}; c.pl.forEach(function(p){ byMid[p.mid] = p; });
   function pn(mid){ var f = findMember(mid); return f ? memberName(f.m) : '?'; }
   var tabs = '<div class="chips" role="tablist" aria-label="Composition par set" style="margin:10px 0 0">';
-  [1, 2, 3].forEach(function(n){ tabs += '<button class="chip' + (k === n ? ' sel' : '') + '" role="tab" aria-selected="' + (k === n) + '" data-act="cvSet" data-k="' + n + '">Set ' + n + (n > 1 && !lu[n] ? ' (= set 1)' : '') + '</button>'; });
+  [1, 2, 3].forEach(function(n){ tabs += '<button class="chip' + (k === n ? ' sel' : '') + '" role="tab" aria-selected="' + (k === n) + '" data-act="cvSet" data-k="' + n + '">Set ' + n + '</button>'; });
   tabs += '</div>';
   function pos(i){
     var mid = ids[i], p = mid && byMid[mid], mine = !!(me && mid && mid === me);
