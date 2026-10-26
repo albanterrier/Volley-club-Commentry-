@@ -171,6 +171,9 @@ textarea{min-height:120px;font-size:16px}
 .memhead .addbtn{position:static;width:40px;height:40px}
 .cmpgrid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:10px;align-items:start;margin-top:8px}
 .cmplist{list-style:none;margin:0;padding:0}
+.pl.me{box-shadow:0 0 0 3px var(--gold),0 0 12px 2px var(--gold);background:var(--gold);color:#000}
+.cmprow.me{background:rgba(255,193,7,.28);border-radius:8px;padding-left:6px;padding-right:6px;font-weight:700;box-shadow:inset 3px 0 0 var(--gold)}
+.cmpbox.me{box-shadow:0 0 0 2px var(--gold);border-radius:10px}
 .cmprow{font-size:14px;line-height:1.25;padding:5px 0}
 .cmprow .cn{font-family:var(--font-d);font-weight:400}
 .cmpsep{list-style:none;border-top:2px solid var(--ink);margin-top:6px;padding:6px 0 2px;font-size:14px}
@@ -327,6 +330,7 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .seasonbtn{font:inherit;font-size:14px;font-weight:700;min-height:44px;padding:0 14px;border-radius:22px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:var(--head-ink);cursor:pointer;white-space:nowrap}
 .seasonbtn.onbg{background:var(--surface);color:var(--ink);border-color:var(--line)}
 .seasonrow{display:flex;justify-content:center;margin:14px 0 0}
+.tmp{display:inline-block;font-size:.72em;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);border:1px dashed var(--muted);border-radius:6px;padding:0 5px;line-height:1.5;vertical-align:middle}
 .todaymark{display:flex;align-items:center;gap:10px;margin:2px 0;scroll-margin-top:84px;color:var(--a);font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
 .todaymark::before,.todaymark::after{content:"";flex:1;height:2px;background:var(--a)}
 .fchips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
@@ -2150,6 +2154,35 @@ function loadCompo(e){
 }
 function whoTxt(mid){ var f = mid ? findMember(mid) : null; return f ? memberName(f.m) + ' (' + f.club.name + ')' : ''; }
 function fixDateOk(fe){ return !!fe && fe.kind !== 'event' && !(fe.f && fe.f.locked) && (can('matchDate', { cid:clubOfEntrant(fe.home) }) || (fe.kind === 'amical' && can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home }))); }
+/* ---------- Consultation d'une composition (26/10/2026) : lecture seule, avec mise en évidence du licencié connecté ---------- */
+function compoViewSheet(sh){
+  var fe = calEntry(sh.cid, sh.fid), c = fe && fe.f.compo && fe.f.compo[sh.tid];
+  if(!fe || !c || !c.pl.length) return '<h2>Composition</h2><p class="muted">Pas encore composée.</p><div class="btnrow"><button class="btn wide" data-act="fixBack">Retour</button></div>';
+  var me = meGet(), k = sh.set || 1, lu = c.lu || {}, ids = lu[k] || lu[1] || [], t = fe.home === sh.tid ? 0 : 1;
+  var byMid = {}; c.pl.forEach(function(p){ byMid[p.mid] = p; });
+  function pn(mid){ var f = findMember(mid); return f ? memberName(f.m) : '?'; }
+  var tabs = '<div class="chips" role="tablist" aria-label="Composition par set" style="margin:10px 0 0">';
+  [1, 2, 3].forEach(function(n){ tabs += '<button class="chip' + (k === n ? ' sel' : '') + '" role="tab" aria-selected="' + (k === n) + '" data-act="cvSet" data-k="' + n + '">Set ' + n + (n > 1 && !lu[n] ? ' (= set 1)' : '') + '</button>'; });
+  tabs += '</div>';
+  function pos(i){
+    var mid = ids[i], p = mid && byMid[mid], mine = !!(me && mid && mid === me);
+    return '<span class="pl ' + (t ? 'b' : 'a') + (p ? (p.num ? '' : ' dflt') : ' empty') + (mine ? ' me' : '') + '" aria-label="Poste ' + (i + 1) + (p ? ', ' + esc(pn(mid)) : ', vide') + '">' + (p ? esc(p.num || '–') : '–') + (p && mid === c.cap ? '<span class="cap capb" aria-hidden="true"></span>' : '') + '</span>';
+  }
+  var front = [3, 2, 1], back = [4, 5, 0];
+  var court = '<div class="vcourt"><div class="vnet" aria-hidden="true"><span>FILET</span></div><div class="vhalf t' + t + '" role="group" aria-label="Terrain, filet en haut">' +
+    '<div class="vrow front">' + front.map(pos).join('') + '</div><div class="vrow rear">' + back.map(pos).join('') + '</div></div></div>';
+  var placed = {}, rows = '';
+  for(var i = 0; i < 6; i++){ var mid = ids[i], p = mid && byMid[mid]; if(mid) placed[mid] = 1;
+    rows += '<li class="cmprow' + (p ? '' : ' empty') + (p && me && mid === me ? ' me' : '') + '">' + '<b>Poste ' + (i + 1) + ' :</b> ' + (p ? '<span class="cn">' + esc(p.num || '–') + '</span> ' + esc(pn(mid)) + (mid === c.cap ? capBadge() : '') : '<span class="muted">—</span>') + '</li>'; }
+  var rest = c.pl.filter(function(p){ return !placed[p.mid]; }).sort(function(a, b){ return (parseInt(a.num, 10) || 999) - (parseInt(b.num, 10) || 999); });
+  if(rest.length) rows += '<li class="cmpsep"><b>' + (ids.filter(Boolean).length === 6 ? 'Banc' : 'Non placé') + '</b></li>';
+  rest.forEach(function(p){ rows += '<li class="cmprow' + (me && p.mid === me ? ' me' : '') + '"><span class="cn">' + esc(p.num || '–') + '</span> ' + esc(pn(p.mid)) + (p.mid === c.cap ? capBadge() : '') + '</li>'; });
+  var inList = !!(me && byMid[me]);
+  return '<h2>Composition · ' + esc(clubName(sh.tid)) + '</h2><p class="hint2" style="margin-top:4px">' + esc(clubName(fe.home) + ' – ' + clubName(fe.away)) + ' · ' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + tmpTag(fe) + '</p>' +
+    (me ? '<p class="hint2" style="margin:4px 0 0">' + (inList ? 'Vous êtes dans cette composition : repérez-vous en surbrillance.' : 'Vous ne figurez pas dans cette composition.') + '</p>' : '') +
+    tabs + '<div class="cmpgrid"><ul class="cmplist">' + rows + '</ul><div class="cmpcourt">' + court + '</div></div>' +
+    '<div class="btnrow"><button class="btn wide" data-act="fixBack">Retour</button></div>';
+}
 function officialsHtml(fe, fm, lock){
   var fid = fe.fid, hc = clubOfEntrant(fe.home), canD = can('designate', { cid:hc }) && !lock && !fm;
   var out = '<div style="margin-top:14px"><h3 style="margin:0 0 4px">Officiels et composition</h3>';
@@ -2163,8 +2196,8 @@ function officialsHtml(fe, fm, lock){
     var canC = can('compo', { cid:clubOfEntrant(tid), tid:tid }) && !lock && !fm;
     out += '<div class="fx" style="justify-content:space-between;gap:8px;margin:6px 0"><span><small class="muted">Composition · ' + esc(clubName(tid)) + '</small><br><b>' +
       (c && c.pl.length ? c.pl.length + ' joueur' + (c.pl.length > 1 ? 's' : '') + (cf ? ' · capitaine ' + esc(memberName(cf.m)) : '') : 'Pas encore composée') + '</b>' +
-      (c && c.pl.length && (adminScope() || prepInfo(fe).any) ? '<br><small class="muted">' + c.pl.slice().sort(function(a, b){ return (parseInt(a.num, 10) || 999) - (parseInt(b.num, 10) || 999); }).map(function(p){ var f = findMember(p.mid); return (p.num ? p.num + ' ' : '') + (f ? esc(memberName(f.m)) : '?'); }).join(' · ') + '</small>' : '') + '</span>' +
-      (canC ? '<button class="btn" data-act="compoOpen" data-tid="' + tid + '">' + (c ? 'Modifier' : 'Composer') + '</button>' : '') + '</div>';
+      '</span><span class="btnrow" style="margin:0;gap:6px">' + (c && c.pl.length && (adminScope() || prepInfo(fe).any) ? '<button class="btn" data-act="compoView" data-tid="' + tid + '">Voir</button>' : '') +
+      (canC ? '<button class="btn" data-act="compoOpen" data-tid="' + tid + '">' + (c ? 'Modifier' : 'Composer') + '</button>' : '') + '</span></div>';
   });
   if(lock){
     out += '<p class="hint2" style="margin-top:10px">🔒 Résultat validé et verrouillé le ' + esc(fmtDay(lock.date)) + (lock.who ? ' par ' + esc(lock.who) : '') + '.</p>';
@@ -4459,7 +4492,7 @@ function prepCardHtml(e, i, today, day){
   }
   if(day && entryScoreOk(e)) btns += '<button class="btn primary" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Démarrer</button>';
   return '<div class="msc prepc"><button class="msc-main" data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '" aria-label="Ouvrir ' + esc(clubName(e.home) + ' – ' + clubName(e.away)) + '">' +
-    '<span class="msc-top"><span class="msc-tag">' + (day ? 'À démarrer' : 'En préparation') + '</span><span class="msc-date">' + esc(fmtDay(e.date) + (e.time ? ' à ' + e.time : '')) + '</span></span>' +
+    '<span class="msc-top"><span class="msc-tag">' + (day ? 'À démarrer' : 'En préparation') + '</span><span class="msc-date">' + esc(fmtDay(e.date) + (e.time ? ' à ' + e.time : '')) + '</span>' + tmpTag(e) + '</span>' +
     '<span class="msc-row"><span class="nm">' + esc(clubName(e.home)) + '</span></span><span class="msc-row"><span class="nm">' + esc(clubName(e.away)) + '</span></span>' +
     '<span class="msc-box"><span class="msc-head"><span>COMPOSITION</span></span><small class="muted">' + esc(clubName(e.home)) + ' : ' + esc(compoLines(e, e.home)) + ' · ' + esc(clubName(e.away)) + ' : ' + esc(compoLines(e, e.away)) + '</small></span></button>' +
     (btns ? '<div class="btnrow" style="margin:10px 0 0">' + btns + '</div>' : '') + '</div>';
@@ -4956,6 +4989,17 @@ function presVisible(e){
   var pc = presClubs(e);
   return !!meInfo() && (pc === null || pc.indexOf(myClubId()) >= 0);
 }
+/* ---------- Dates temporaires (26/10/2026) ----------
+   La date d'une rencontre de championnat reprise du calendrier officiel est « temporaire » tant qu'un membre du staff d'une des deux équipes
+   ne l'a pas validée (ou qu'elle n'a pas été fixée par « Modifier la date »). Pas de présence possible sur une date temporaire. */
+function dateTemp(e){ return !!e && e.kind === 'fixture' && !e.postponed && !e.f.dateOk && !e.f.locked && !entryResult(e); }
+function dateValidOk(e){ return dateTemp(e) && (can('compo', { cid:clubOfEntrant(e.home), tid:e.home }) || can('compo', { cid:clubOfEntrant(e.away), tid:e.away })); }
+function tmpTag(e){ return dateTemp(e) ? ' <small class="tmp">temporaire</small>' : ''; }
+function dateTempHtml(e){
+  if(!dateTemp(e)) return '';
+  return '<p class="hint2" style="margin:2px 0 6px"><b class="tmp">Date temporaire</b> : elle vient du calendrier officiel et n\'est pas encore confirmée.</p>' +
+    (dateValidOk(e) ? '<div class="btnrow"><button class="btn wide" data-act="dateValid">Valider la date et l\'heure</button></div><p class="hint2" style="margin-top:0">Vérifiez la date et l\'heure avant de valider. « Modifier la date » les valide aussi.</p>' : '');
+}
 function presCan(e, today){
   if(!meInfo() || profGet() === 'visiteur' || e.postponed || entryResult(e) || e.date < today) return false;
   var pc = presClubs(e);
@@ -4995,7 +5039,7 @@ function calRow(e, today, favArg){
   var res = entryResult(e), late = !res && !e.postponed && e.date < today, fav = favArg === undefined ? favGet() : favArg;
   var sel = ui.calDay && ui.calDay === e.date ? ' sel' : '';
   var attrs = ' data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '"';
-  var when = '<span>' + (e.postponed ? '<s>' : '') + esc(fmtDay(e.date)) + (e.time ? ' · ' + esc(e.time) : '') + (e.postponed ? '</s>' : '') + '</span>';
+  var when = '<span>' + (e.postponed ? '<s>' : '') + esc(fmtDay(e.date)) + (e.time ? ' · ' + esc(e.time) : '') + (e.postponed ? '</s>' : '') + tmpTag(e) + '</span>';
   if(e.kind === 'event'){
     var efoot = '<span class="mc-foot">' + when + (e.f.train && e.title !== 'Entraînement' && clubById(e.f.club) ? '<span>' + esc(clubById(e.f.club).name) + '</span>' : '') + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span>', epb = presBtn(e, today);
     if(epb) efoot = '<span class="mc-foot3"><span class="fl"></span><span class="fm">' + efoot + '</span><span class="fr">' + epb + '</span></span>';
@@ -5010,7 +5054,7 @@ function calRow(e, today, favArg){
   var hw = res && res.hs > res.as, aw = res && res.as > res.hs;
   var rel = !res && !e.postponed && today ? Math.round((new Date(e.date + 'T12:00:00') - new Date(today + 'T12:00:00')) / 86400000) : 9, foot;
   if(rel === 0 || rel === 1){
-    foot = '<span class="mc-foot c near"><span class="mc-day">' + (rel ? 'Demain' : 'Aujourd\'hui') + '</span>' + (e.time ? '<span class="mc-time">' + esc(e.time) + '</span>' : '') + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span>';
+    foot = '<span class="mc-foot c near"><span class="mc-day">' + (rel ? 'Demain' : 'Aujourd\'hui') + '</span>' + tmpTag(e) + (e.time ? '<span class="mc-time">' + esc(e.time) + '</span>' : '') + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span>';
   } else foot = '<span class="mc-foot c">' + when + (e.place ? '<span>' + esc(e.place) + '</span>' : '') + '</span>';
   var mpb = presBtn(e, today);
   if(bm || mpb) foot = '<span class="mc-foot3"><span class="fl">' + bm + '</span><span class="fm">' + foot + '</span><span class="fr">' + mpb + '</span></span>';
@@ -6122,7 +6166,7 @@ function sheetView(){
         presSheetHtml(fe, isoOf(new Date())) + (fEd ? '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>' : '');
     } else {
       var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Amical';
-      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>';
+      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + (fe.place ? ' · ' + esc(fe.place) : '') + '</p>' + dateTempHtml(fe);
       if(fm){
         inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
       } else if(fe.postponed){
@@ -6154,6 +6198,7 @@ function sheetView(){
   } else if(sh.kind === 'sbclaim'){ inner = sbClaimSheet(sh);
   } else if(sh.kind === 'desig'){ inner = desigSheet(sh);
   } else if(sh.kind === 'compo'){ inner = compoSheet(sh);
+  } else if(sh.kind === 'compoView'){ inner = compoViewSheet(sh);
   } else if(sh.kind === 'validfix'){
     inner = '<h2>Valider ce résultat ?</h2><p class="hint2">« ' + esc(entryLabel(sh.fid)) + ' » sera verrouillé : le résultat, la date et la composition ne pourront plus être modifiés. Seuls l\'administrateur et la fédération peuvent le déverrouiller.</p>' +
       '<div class="btnrow"><button class="btn wide primary" data-act="validOk">Oui, valider et verrouiller</button><button class="btn wide" data-act="fixBack">Annuler</button></div>';
@@ -6402,7 +6447,7 @@ function saveEvent(){
     var homeId = ev.a, awayId = ev.b;
     var ch = champById(ev.target);
     if(ch){
-      ch.fixtures.push({ id:uid(), date:date, time:time, place:place, home:homeId, away:awayId, matchId:null });
+      ch.fixtures.push({ id:uid(), date:date, time:time, place:place, home:homeId, away:awayId, matchId:null, dateOk:{ by:meGet(), date:stamp() } });
       ui.msg = 'Rencontre créée dans ' + ch.name + '.';
     } else {
       S.agenda.push({ id:uid(), kind:'match', date:date, time:time, place:place, home:homeId, away:awayId, result:null });
@@ -7067,6 +7112,8 @@ document.addEventListener('click', function(e){
       });
       break;
     }
+    case 'compoView': ui.sheet = { kind:'compoView', cid:sh.cid, fid:sh.fid, tid:d.tid, set:1 }; render(); break;
+    case 'cvSet': sh.set = parseInt(d.k, 10) || 1; render(); break;
     case 'fixBack': ui.sheet = (sh && sh.back === 'match') ? null : { kind:'fixture', cid:sh.cid, fid:sh.fid }; render(); break;
     case 'desigOpen': ui.sheet = { kind:'desig', cid:sh.cid, fid:sh.fid, role:d.role, q:'', ext:false }; render(); break;
     case 'desigExt': sh.ext = !sh.ext; sh.q = ''; ui.focus = sh.ext ? 'dq' : null; render(); break;
@@ -7120,16 +7167,17 @@ document.addEventListener('click', function(e){
       ui.sheet = null; render(); break;
     }
     case 'fixDateOpen': ui.sheet = { kind:'fixdate', cid:sh.cid, fid:sh.fid, err:'', draft:{} }; render(); break;
+    case 'dateValid': { var dv = calEntry(sh.cid, sh.fid); if(dv && dateValidOk(dv)){ dv.f.dateOk = { by:meGet(), date:stamp() }; save(); toastShow('Date validée.'); } render(); break; }
     case 'fixDate': {
       var rd = calEntry(sh.cid, sh.fid), dn = document.getElementById('fnewd').value, tn2 = normTime(document.getElementById('fnewt').value);
       if(!dn){ sh.err = 'Choisissez une date.'; render(); break; }
       if(tn2 === null){ sh.err = 'Heure non valide : écrivez par exemple 18:30 ou 18h30.'; render(); break; }
-      if(rd && !rd.f.locked && fixDateOk(rd)){ rd.f.date = dn; rd.f.time = tn2; rd.f.postponed = false; save(); }
+      if(rd && !rd.f.locked && fixDateOk(rd)){ rd.f.date = dn; rd.f.time = tn2; rd.f.postponed = false; rd.f.dateOk = { by:meGet(), date:stamp() }; save(); }
       ui.sheet = null; render(); break;
     }
     case 'fixResched': {
       var rs = calEntry(sh.cid, sh.fid), nd = document.getElementById('fnewd').value;
-      if(rs && !rs.f.locked && nd){ rs.f.date = nd; rs.f.postponed = false; save(); }
+      if(rs && !rs.f.locked && nd){ rs.f.date = nd; rs.f.postponed = false; rs.f.dateOk = { by:meGet(), date:stamp() }; save(); }
       ui.sheet = null; render(); break;
     }
     case 'fixRes': {
@@ -7152,6 +7200,7 @@ document.addEventListener('click', function(e){
     case 'presTog': {
       var pe = calEntry(d.cid, d.fid), pm = meGet();
       if(!pe || !pm || !presCan(pe, isoOf(new Date()))) break;
+      if(dateTemp(pe)){ toastShow('Date temporaire : la présence sera ouverte quand le staff d\'une des deux équipes aura validé la date.'); break; }
       var pmap = S.pres[pe.fid] = S.pres[pe.fid] || {}, pcur = pmap[pm];
       if(!pcur) pmap[pm] = 'p'; else if(pcur === 'p') pmap[pm] = 'a'; else delete pmap[pm];
       S.sb.pq = (S.sb.pq || []).filter(function(x){ return !(x.e === pe.fid && x.m === pm); }); S.sb.pq.push({ e:pe.fid, m:pm, s:pmap[pm] || '' });
