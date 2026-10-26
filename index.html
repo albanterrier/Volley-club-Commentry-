@@ -1251,6 +1251,7 @@ var SB = (function(){
       var T = [['settings', 'k'], ['clubs', 'id'], ['teams', 'id'], ['members', 'id'], ['member_private', 'member_id'], ['member_photos', 'member_id'], ['champs', 'id'], ['fixtures', 'id'], ['results', 'id'], ['agenda', 'id'], ['roles', 'id'], ['requests', 'id'], ['profiles', 'user_id'], ['presences', 'entry_id,member_id']];
       return Promise.all(T.map(function(t){ return all(t[0], t[1]); })).then(function(a){
         var R = { settings:a[0], clubs:a[1], teams:a[2], members:a[3], mp:a[4], mph:a[5], champs:a[6], fixtures:a[7], results:a[8], agenda:a[9], roles:a[10], requests:a[11] }, prof = a[12];
+        if(!lsGet(MEKEY) && !(S.sb && S.sb.at) && S.adminId && findMember(S.adminId)) meSet(S.adminId);
         merge(build(R));
         var set = {}; R.settings.forEach(function(r){ set[r.k] = r.v; });
         S.adminId = typeof set.admin_id === 'string' ? set.admin_id : '';
@@ -2036,7 +2037,9 @@ function meReal(){
   var v = lsGet(MEKEY);
   if(v === '-') return '';
   if(v && findMember(v)) return v;
-  return (S.adminId && findMember(S.adminId)) ? S.adminId : '';
+  /* Repli « l'appareil appartient à l'administrateur » : seulement tant que l'appareil n'a jamais été synchronisé avec le serveur.
+     Après une synchronisation, un appareil sans profil lié est un visiteur (sinon tout licencié qui se connecte devenait l'administrateur). */
+  return (S.adminId && findMember(S.adminId) && !(S.sb && S.sb.at)) ? S.adminId : '';
 }
 function meTest(){ var v = lsGet(TESTKEY), r = meReal(); return (v && r && r === S.adminId && findMember(v)) ? v : ''; }
 function meGet(){ return meTest() || meReal(); }
