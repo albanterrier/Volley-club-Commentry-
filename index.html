@@ -1415,7 +1415,7 @@ var SB = (function(){
   function sync(){
     if(busy || !ses()) return Promise.resolve(false);
     busy = true;
-    return push().then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); if(typeof reqCheck === 'function') reqCheck(); return r; }, function(){ busy = false; });
+    return push().then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); if(typeof reqCheck === 'function') reqCheck(); if(typeof invAuto === 'function') invAuto(); return r; }, function(){ busy = false; });
   }
   return {
     status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length + ((S.sb && S.sb.pq) ? S.sb.pq.length : 0), busy:busy, msg:st.msg }; },
@@ -2420,8 +2420,19 @@ function meCreateSheet(sh){
 function rolesSheet(){
   var nom = nominable(), pend = pendingRequests(), out = '<h2>Rôles et demandes</h2><div class="btnrow">';
   if(nom.length) out += '<button class="btn wide primary" data-act="roleAddOpen">Attribuer un rôle ou inviter</button>';
+  if(licInvClubs().length) out += '<button class="btn wide' + (nom.length ? '' : ' primary') + '" data-act="licInvOpen">Inviter un licencié par lien</button>';
   if(can('licValidate')) out += '<button class="btn wide" data-act="reqOpen">Demandes à traiter (' + pend.length + ')</button>';
   out += '</div>';
+  var lip = licInvPending();
+  if(lip.length){
+    out += '<p class="hint2" style="margin:14px 0 6px">Liens en attente (' + lip.length + ')</p>';
+    lip.forEach(function(r){
+      var f = findMember(r.mid);
+      out += '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="nm">' + esc(f ? memberName(f.m) : 'Licencié supprimé') + '</span><small>' + esc('Lien valable jusqu\'au ' + fmtDay(r.exp) + ' · code ' + r.code) + '</small></span></div>' +
+        '<button class="delwrap" data-act="licInvShow" data-id="' + r.id + '" aria-label="Revoir le lien" style="margin-right:4px"><span class="delc" aria-hidden="true">↗</span></button>' +
+        '<button class="delwrap" data-act="roleDelAsk" data-id="' + r.id + '" aria-label="Annuler ce lien"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
+    });
+  }
   var list = (S.roles || []).filter(function(r){ return nom.indexOf(r.role) >= 0 && nomScopeOk(r); });
   out += '<p class="hint2" style="margin:14px 0 6px">Rôles que vous gérez (' + list.length + ')</p>';
   if(!list.length) out += '<p class="muted" style="margin:0">Aucun rôle attribué pour l\'instant.</p>';
@@ -2431,6 +2442,36 @@ function rolesSheet(){
       '<button class="delwrap" data-act="roleDelAsk" data-id="' + r.id + '" aria-label="Retirer ce rôle"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
   });
   return out;
+}
+/* ---------- Lien d'invitation « licencié d'office » (26/10/2026) ---------- */
+var INVKEY = 'volley-invcode-v1', invBusy = false;
+function licInvClubs(){ return S.clubs.filter(function(c){ return can('licValidate', { cid:c.id }); }); }
+function licInvLink(code){ return location.href.split('#')[0].split('?')[0] + '?invite=' + code; }
+function licInvSheet(sh){
+  var dr = sh.draft, cl = licInvClubs(), mc = dr.cid ? clubById(dr.cid) : null;
+  return '<h2>Inviter un licencié par lien</h2><p class="hint2" style="margin-top:4px">La personne ouvre le lien, se connecte avec son e-mail et est rattachée à sa fiche, sans demande ni validation. Le lien est à usage unique et valable 7 jours.</p>' +
+    rsSelect('li_c', 'Club', 'cid', clubItems(cl), dr.cid, '— Choisir —') +
+    rsSelect('li_m', 'Licencié', 'mid', memberItems(mc), dr.mid, mc ? '— Choisir —' : 'Choisissez d\'abord le club') + sheetErr(sh) +
+    '<div class="btnrow"><button class="btn wide primary" data-act="licInvOk">Créer le lien</button><button class="btn wide" data-act="rolesOpen">Retour</button></div>';
+}
+function licInvText(r){
+  var f = findMember(r.mid), c = clubById(r.cid), url = licInvLink(r.code);
+  return { kind:'text', title:'Lien d\'invitation créé', canShare:!!navigator.share, note:'Envoyez ce message à ' + (f ? memberName(f.m) : 'la personne') + '. Le lien sert une seule fois et est valable jusqu\'au ' + fmtDay(r.exp).replace(/\.$/, '') + '.',
+    text:'Bonjour, voici votre invitation pour rejoindre Volley-Club Commentry comme licencié(e)' + (c ? ' du club ' + c.name : '') + '.\n\n1) Ouvrez ce lien : ' + url + '\n2) Connectez-vous avec votre adresse e-mail (Paramètres › Compte en ligne).\n3) Votre fiche est alors rattachée automatiquement. Si besoin, le code est : ' + r.code + ' (Profil › J\'ai un code d\'invitation).' };
+}
+function licInvPending(){ return (S.roles || []).filter(function(r){ return r.role === 'licencie' && r.state === 'invite' && can('licValidate', { cid:r.cid }); }); }
+/* un code reçu par lien est mémorisé ; dès que l'appareil est connecté et sans fiche, il est utilisé automatiquement */
+function invAuto(){
+  try{
+    var c = lsGet(INVKEY);
+    if(!c || invBusy || !SB.status().logged || meReal()) return;
+    invBusy = true;
+    SB.redeem(c).then(function(r){
+      invBusy = false;
+      if(r.ok){ lsSet(INVKEY, ''); toastShow('Invitation acceptée : vous êtes rattaché à votre fiche de licencié.'); render(); }
+      else if(/expir|inconnu|déjà|non valide/i.test(r.msg || '')){ lsSet(INVKEY, ''); toastShow('Invitation inutilisable : ' + r.msg + '. Demandez un nouveau lien à votre club.'); }
+    });
+  }catch(e){ invBusy = false; }
 }
 function roleAddSheet(sh){
   var dr = sh.draft, nom = nominable(), mclubs = nomClubs(), mc = dr.mcid ? clubById(dr.mcid) : null, sc = dr.cid ? clubById(dr.cid) : null;
@@ -6219,6 +6260,7 @@ function sheetView(){
   } else if(sh.kind === 'desig'){ inner = desigSheet(sh);
   } else if(sh.kind === 'compo'){ inner = compoSheet(sh);
   } else if(sh.kind === 'compoView'){ inner = compoViewSheet(sh);
+  } else if(sh.kind === 'licinv'){ inner = licInvSheet(sh);
   } else if(sh.kind === 'validfix'){
     inner = '<h2>Valider ce résultat ?</h2><p class="hint2">« ' + esc(entryLabel(sh.fid)) + ' » sera verrouillé : le résultat, la date et la composition ne pourront plus être modifiés. Seuls l\'administrateur et la fédération peuvent le déverrouiller.</p>' +
       '<div class="btnrow"><button class="btn wide primary" data-act="validOk">Oui, valider et verrouiller</button><button class="btn wide" data-act="fixBack">Annuler</button></div>';
@@ -6309,7 +6351,7 @@ function sheetView(){
       '<div class="btnrow">' + (sh.canShare ? '<button class="btn wide primary" data-act="nativeShare">Partager</button>' : '') +
       '<button class="btn wide ' + (sh.canShare ? '' : 'primary') + '" data-act="copy">Copier</button></div>';
   }
-  var own = ['sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
+  var own = ['licinv','sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -6792,9 +6834,21 @@ document.addEventListener('click', function(e){
       else ui.sheet = { kind:'roles' };
       render(); break;
     }
+    case 'licInvOpen': ui.sheet = { kind:'licinv', err:'', draft:{ cid:'', mid:'' } }; render(); break;
+    case 'licInvOk': {
+      var li_d = sh.draft, li_f = li_d.mid ? findMember(li_d.mid) : null;
+      if(!li_d.cid || !li_f || li_f.club.id !== li_d.cid){ sh.err = 'Choisissez le club puis le licencié.'; render(); break; }
+      if(!can('licValidate', { cid:li_d.cid })){ sh.err = 'Vous ne pouvez pas inviter dans ce club.'; render(); break; }
+      var li_x = new Date(); li_x.setDate(li_x.getDate() + 7);
+      var li_row = { id:uid(), mid:li_d.mid, role:'licencie', cid:li_d.cid, tid:'', by:meGet(), date:stamp(), state:'invite', code:newCode(), exp:isoOf(li_x) };
+      (S.roles || []).filter(function(x){ return x.role === 'licencie' && x.state === 'invite' && x.mid === li_d.mid; }).forEach(function(x){ DB.remove('role', x.id); });
+      DB.add('role', li_row); save();
+      ui.sheet = licInvText(li_row); render(); break;
+    }
+    case 'licInvShow': { var li_r = (S.roles || []).filter(function(x){ return x.id === d.id; })[0]; if(li_r){ ui.sheet = licInvText(li_r); render(); } break; }
     case 'roleDelAsk': ui.sheet = { kind:'roledel', id:d.id }; render(); break;
     case 'roleDelOk': DB.remove('role', sh.id); save(); ui.sheet = { kind:'roles' }; render(); break;
-    case 'invCodeOpen': ui.sheet = { kind:'invcode', err:'', draft:{ code:'' } }; render(); break;
+    case 'invCodeOpen': ui.sheet = { kind:'invcode', err:'', draft:{ code:lsGet(INVKEY) || '' } }; render(); break;
     case 'invCodeOk': {
       var q_code = String(sh.draft.code || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), q_today = isoOf(new Date());
       if(SB.status().logged){
@@ -6802,7 +6856,8 @@ document.addEventListener('click', function(e){
         sh.err = ''; sh.busy = true; render();
         SB.redeem(q_code).then(function(r2){
           if(!r2.ok){ sh.busy = false; sh.err = r2.msg; render(); return; }
-          ui.sheet = { kind:'info', title:'Invitation acceptée', note:'Votre rôle « ' + (r2.role ? profLabel(r2.role) : '') + ' » est activé. Touchez votre profil pour le choisir.' };
+          lsSet(INVKEY, '');
+          ui.sheet = { kind:'info', title:'Invitation acceptée', note:r2.role === 'licencie' ? 'Votre compte est rattaché à votre fiche : vous êtes licencié. Touchez votre profil pour le voir.' : 'Votre rôle « ' + (r2.role ? profLabel(r2.role) : '') + ' » est activé. Touchez votre profil pour le choisir.' };
           render();
         });
         break;
@@ -6813,9 +6868,10 @@ document.addEventListener('click', function(e){
       var q_me = meReal(), q_who = findMember(q_inv.mid);
       if(q_me && q_me !== q_inv.mid && q_me !== S.adminId){ sh.err = 'Cet appareil est déjà utilisé par une autre personne.'; render(); break; }
       q_inv.state = 'actif'; delete q_inv.code; delete q_inv.exp;
+      if(q_inv.role === 'licencie' && q_who){ q_who.m.licSeason = licYear(q_who.club); }
       if(!q_me) meSet(q_inv.mid);
       save();
-      ui.sheet = { kind:'info', title:'Invitation acceptée', note:q_me && q_me !== q_inv.mid ? 'Le rôle est activé pour ' + (q_who ? memberName(q_who.m) : 'cette personne') + '. Utilisez « Tester un rôle » pour l\'essayer.' : 'Votre rôle « ' + profLabel(q_inv.role) + ' » est activé. Touchez votre profil pour le choisir.' };
+      ui.sheet = { kind:'info', title:'Invitation acceptée', note:q_me && q_me !== q_inv.mid ? 'Le rôle est activé pour ' + (q_who ? memberName(q_who.m) : 'cette personne') + '. Utilisez « Tester un rôle » pour l\'essayer.' : (q_inv.role === 'licencie' ? 'Votre fiche est rattachée : vous êtes licencié. Touchez votre profil pour le voir.' : 'Votre rôle « ' + profLabel(q_inv.role) + ' » est activé. Touchez votre profil pour le choisir.') };
       render(); break;
     }
     case 'requestOpen': ui.sheet = { kind:'request', err:'', draft:{ prenom:'', nom:'', naiss:'', licence:'', cid:'' } }; render(); break;
@@ -7428,6 +7484,7 @@ document.addEventListener('input', function(e){
         if(q_k === 'mcid'){ q_dr.mid = ''; if(!q_dr.cid) q_dr.cid = v; render(); }
         else if(q_k === 'role'){ if(!q_dr.cid) q_dr.cid = q_dr.mcid; q_dr.tid = ''; render(); }
         else if(q_k === 'cid'){ q_dr.tid = ''; render(); }
+      } else if(ui.sheet.kind === 'licinv' && q_k === 'cid'){ q_dr.mid = ''; render();
       } else if(ui.sheet.kind === 'testas' && q_k === 'mcid'){ q_dr.mid = ''; render(); }
       else if(ui.sheet.kind === 'sbclaim' && q_k === 'mcid'){ q_dr.mid = ''; render(); }
     }
@@ -7556,7 +7613,7 @@ document.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key
 })();
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible' && S.clock.running) keepAwake(); });
 
-setTimeout(reqCheck, 1800);
+setTimeout(reqCheck, 1800); setTimeout(invAuto, 2500);
 setInterval(function(){
   var txt = fmt(clockMs()), cs = document.querySelectorAll ? document.querySelectorAll('.clk') : [];
   for(var ci = 0; ci < cs.length; ci++) cs[ci].textContent = txt;
@@ -7607,6 +7664,14 @@ if('serviceWorker' in navigator){
     if(d && d.type === 'open'){ ui.msgThread = null; ui.sheet = null; setTab('msg'); render(); try{ if(SB.status().logged) SB.msgSync(); }catch(e){} window.scrollTo(0, 0); }
   });
 }
+try{
+  var iv0 = (location.search.match(/[?&]invite=([A-Za-z0-9]{4,12})/) || [])[1];
+  if(iv0){
+    iv0 = iv0.toUpperCase(); lsSet(INVKEY, iv0);
+    history.replaceState(history.state, '', location.pathname + location.hash);
+    if(!ui.sheet) ui.sheet = { kind:'invcode', err:'', draft:{ code:iv0 } };
+  }
+}catch(e){}
 render();
 if(navY){ window.scrollTo(0, navY); }
 PUSH.refresh();
