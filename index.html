@@ -2322,6 +2322,14 @@ function licDue(c){ return isoOf(new Date()) >= (licYear(c) + 1) + '-' + (S.licF
 function licOf(c, m){ return m.licSeason != null ? m.licSeason : licYear(c); }
 function licToRenew(c){ return c.members.filter(function(m){ return licOf(c, m) < licYear(c); }); }
 function licClubs(){ return S.clubs.filter(function(c){ return can('seasonLic', { cid:c.id }); }); }
+/* date de naissance saisie à la main : JJ/MM/AAAA (les « / » se mettent tout seuls) → AAAA-MM-JJ, ou '' si elle n'est pas valide */
+function birthFmt(v){ var d = String(v || '').replace(/\D/g, '').slice(0, 8); return d.length > 4 ? d.slice(0, 2) + '/' + d.slice(2, 4) + '/' + d.slice(4) : (d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d); }
+function birthIso(v){
+  var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(v || '').trim()); if(!m) return '';
+  var d = +m[1], mo = +m[2], y = +m[3], t = new Date(y, mo - 1, d);
+  if(t.getFullYear() !== y || t.getMonth() !== mo - 1 || t.getDate() !== d || y < 1900 || t > new Date()) return '';
+  return m[3] + '-' + m[2] + '-' + m[1];
+}
 function ageFrom(d){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) return null;
   var b = toDate(d), n = new Date(), a = n.getFullYear() - b.getFullYear();
@@ -2497,7 +2505,7 @@ function requestSheet(sh){
   var dr = sh.draft;
   return '<h2>Demander à être licencié</h2><p class="hint2" style="margin-top:4px">Le président ou le responsable de votre club vérifie votre fiche. Votre date de naissance sert à cette vérification et n\'est pas conservée.</p>' +
     '<div class="row2"><div>' + rsField('rq_pre', 'Prénom', 'prenom', dr.prenom) + '</div><div>' + rsField('rq_nom', 'Nom', 'nom', dr.nom) + '</div></div>' +
-    rsField('rq_nai', 'Date de naissance', 'naiss', dr.naiss, 'date') + rsField('rq_lic', 'Numéro de licence', 'licence', dr.licence) +
+    '<label class="f" for="rq_nai">Date de naissance</label><input type="text" id="rq_nai" data-bind="rs" data-k="naiss" value="' + esc(dr.naiss || '') + '" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="JJ/MM/AAAA">' + rsField('rq_lic', 'Numéro de licence', 'licence', dr.licence) +
     rsSelect('rq_cid', 'Club', 'cid', clubItems(S.clubs), dr.cid, '— Choisir —') + (SB.status().logged ? '' : '<p class="hint2">Pour que votre demande arrive au club, connectez-vous d\'abord : Paramètres › Compte en ligne. Elle sera alors envoyée automatiquement.</p>') + sheetErr(sh) + btnRow('requestOk', 'Envoyer la demande');
 }
 function requestsSheet(){
@@ -6879,10 +6887,11 @@ document.addEventListener('click', function(e){
       var q_q = sh.draft, q_e = '';
       if(!(q_q.prenom || '').trim() || !(q_q.nom || '').trim()) q_e = 'Indiquez votre prénom et votre nom.';
       else if(!q_q.naiss) q_e = 'Indiquez votre date de naissance.';
+      else if(!birthIso(q_q.naiss)) q_e = 'Date de naissance non valide : écrivez par exemple 25/03/1998.';
       else if(!(q_q.licence || '').trim()) q_e = 'Indiquez votre numéro de licence.';
       else if(!q_q.cid) q_e = 'Choisissez votre club.';
       if(q_e){ sh.err = q_e; render(); break; }
-      var q_age = ageFrom(q_q.naiss), q_cl = clubById(q_q.cid);
+      var q_age = ageFrom(birthIso(q_q.naiss)), q_cl = clubById(q_q.cid);
       var q_m = q_cl && q_cl.members.filter(function(x){ return norm(x.licence) === norm(q_q.licence) && norm(x.nom) === norm(q_q.nom) && norm(x.prenom) === norm(q_q.prenom); })[0];
       DB.add('request', { id:uid(), dev:devId(), prenom:q_q.prenom.trim(), nom:q_q.nom.trim(), licence:q_q.licence.trim(), cid:q_q.cid, mid:q_m ? q_m.id : '', age:q_age, ageOk:(q_m && q_m.age !== '' && q_m.age != null && q_age != null) ? Math.abs(q_age - q_m.age) <= 1 : null, date:stamp(), state:'attente' });
       save(); ui.sheet = { kind:'info', title:'Demande envoyée', note:'Le président ou le responsable de ' + (q_cl ? q_cl.name : 'votre club') + ' va la traiter. Revenez dans votre profil pour activer votre accès.' };
@@ -7479,6 +7488,7 @@ document.addEventListener('input', function(e){
   else if(bind === 'rs'){
     if(ui.sheet && ui.sheet.draft){
       var q_dr = ui.sheet.draft, q_k = ds.k;
+      if(q_k === 'naiss'){ v = birthFmt(v); var q_ne = document.getElementById('rq_nai'); if(q_ne && q_ne.value !== v) q_ne.value = v; }
       q_dr[q_k] = v;
       if(ui.sheet.kind === 'roleAdd'){
         if(q_k === 'mcid'){ q_dr.mid = ''; if(!q_dr.cid) q_dr.cid = v; render(); }
