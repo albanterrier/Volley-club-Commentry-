@@ -5039,14 +5039,14 @@ function clubsEdit(){
   var c = clubById(ui.clubSel);
   if(!c || c.id !== ui.clubSel){ ui.clubView = 'list'; return clubsList(); }
   ensureTeams(c);
-  var tab = ui.clubTab, out = '<div class="stack">';
+  var tab = ui.clubTab || 'matches', out = '<div class="stack">';
   out += '<div class="clubhead">' + (can('clubEdit', { cid:c.id }) ? editBtnHtml() : '') + '<h2>' +
     (c.logo ? '<span class="hlg">' + logoHtml(c.id, 40) + '</span>' : (ui.edit ? '<span class="hlg"><span class="logo none" style="width:40px;height:40px;font-size:9px;line-height:1.1;text-align:center">Pas de logo</span></span>' : '')) + esc(c.name) + favStar('club', c.id) + '</h2></div>';
   if(ui.edit) out += '<div style="display:flex;gap:8px;margin:0"><button class="btn" style="flex:1 1 0;justify-content:center;text-align:center" data-act="clubLogo" aria-label="Logo, nom et couleurs de ' + esc(c.name) + '">Logo, nom et couleurs</button>' +
     (c.logo ? '<button class="btn" style="flex:1 1 0;justify-content:center;text-align:center" data-act="logoRemoveAsk" aria-label="Retirer le logo de ' + esc(c.name) + '">Retirer le logo</button>' : '') + '</div>';
-  out += '<div class="row2 row3 tabs2"><button class="btn wide ' + (tab === 'members' ? 'primary' : '') + '" data-act="clubTab" data-k="members" aria-pressed="' + (tab === 'members') + '">Membres</button>' +
-    '<button class="btn wide ' + (tab === 'teams' ? 'primary' : '') + '" data-act="clubTab" data-k="teams" aria-pressed="' + (tab === 'teams') + '">Équipe</button>' +
-    '<button class="btn wide ' + (tab === 'matches' ? 'primary' : '') + '" data-act="clubTab" data-k="matches" aria-pressed="' + (tab === 'matches') + '">Match</button></div>';
+  out += '<div class="row2 row3 tabs2"><button class="btn wide ' + (tab === 'matches' ? 'primary' : '') + '" data-act="clubTab" data-k="matches" aria-pressed="' + (tab === 'matches') + '">Événement</button>' +
+    '<button class="btn wide ' + (tab === 'members' ? 'primary' : '') + '" data-act="clubTab" data-k="members" aria-pressed="' + (tab === 'members') + '">Membres</button>' +
+    '<button class="btn wide ' + (tab === 'teams' ? 'primary' : '') + '" data-act="clubTab" data-k="teams" aria-pressed="' + (tab === 'teams') + '">Équipe</button></div>';
   if(tab === 'members'){
     var members = sortMembers(c.members);
     out += '<div class="clubhead"><h2>Membres (' + members.length + ')</h2>' + addBtn('Ajouter des membres') + '</div><section class="card">' + (members.length ? memberRows(members, !!ui.edit && can('memberEdit', { cid:c.id })) : '<p class="muted">Aucun membre existant</p>') + '</section>';
@@ -5059,9 +5059,10 @@ function clubsEdit(){
   else if(tab === 'matches'){
     var today = isoOf(new Date()), all = calEntries().filter(function(e){ return e.kind !== 'event' && e.home && e.away && (clubOfEntrant(e.home) === c.id || clubOfEntrant(e.away) === c.id); });
     var nxt = all.filter(function(e){ return !e.postponed && e.date >= today && !entryResult(e); })[0], lst = all.filter(function(e){ return entryResult(e); }).pop();
-    if(!nxt && !lst) out += '<section class="card"><p class="muted" style="margin:0">Aucun match de ce club au calendrier pour le moment.</p></section>';
+    var trn = calEntries().filter(function(e){ return e.kind === 'event' && e.f && e.f.train && e.f.club === c.id && !e.postponed && e.date >= today; })[0];
+    if(!nxt && !lst && !trn) out += '<section class="card"><p class="muted" style="margin:0">Aucun événement de ce club au calendrier pour le moment.</p></section>';
     else {
-      out += '<div class="homenext">' + (nxt ? '<h2>Prochain match</h2>' + calRow(nxt, today) : '<h2>Prochain match</h2><p class="muted">Aucun match à venir.</p>') + (lst ? '<h2>Dernier match</h2>' + calRow(lst, today) : '<h2>Dernier match</h2><p class="muted">Aucun match joué.</p>') + '</div>';
+      out += '<div class="homenext">' + (nxt ? '<h2>Prochain match</h2>' + calRow(nxt, today) : '<h2>Prochain match</h2><p class="muted">Aucun match à venir.</p>') + (lst ? '<h2>Dernier match</h2>' + calRow(lst, today) : '<h2>Dernier match</h2><p class="muted">Aucun match joué.</p>') + (trn ? '<h2>Prochain entraînement</h2>' + calRow(trn, today) : '') + '</div>';
     }
   }
   if(ui.edit) out += '<div class="btnrow"><button class="btn wide danger" data-act="delClubAsk">Supprimer ce club</button></div>';
@@ -7496,7 +7497,7 @@ document.addEventListener('click', function(e){
       if(d.v === 'create') ui.newClub = { name:'', logo:'' };
       render(); window.scrollTo(0,0); break;
     case 'clubEdit': ui.edit = false; if(ui.clubSel !== d.cid) ui.clubTab = null; ui.clubSel = d.cid; ui.clubView = 'edit'; ui.msg = ''; render(); window.scrollTo(0,0); break;
-    case 'clubTab': ui.clubTab = (ui.clubTab === d.k ? null : d.k); ui.msg = ''; render(); break;
+    case 'clubTab': ui.clubTab = d.k; ui.msg = ''; render(); break;
     case 'clubAddOpen': ui.sheet = { kind:'clubadd', what:ui.clubTab, mode:null }; ui.importCtx = ui.clubTab; ui.msg = ''; render(); break;
     case 'caMode': sh.mode = d.m; render(); break;
     case 'teamOpen': ui.edit = false; ui.champEdit = false; ui.teamSel = d.tid; ui.clubView = 'team'; ui.msg = ''; render(); window.scrollTo(0,0); break;
