@@ -3,7 +3,7 @@
      et mis à jour en arrière-plan quand il y a du réseau.
    - À CHAQUE nouvelle version déposée sur GitHub, changez le numéro VERSION ci-dessous (n'importe quel texte différent du précédent).
    - Notifications : le serveur envoie un message « push » ; ce fichier l'affiche, et ouvre l'application au toucher. */
-const VERSION = 'v3.026';
+const VERSION = 'v3.027';
 const CACHE = 'volley-' + VERSION;
 const FONTS = 'volley-fonts';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png'];
