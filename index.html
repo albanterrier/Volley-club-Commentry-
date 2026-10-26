@@ -2444,9 +2444,13 @@ function testSheet(sh){
 function profSheetHtml0(){
   var av = availRoles(), f = meInfo(), cur = profGet(), out = '<h2>Mon profil</h2>';
   if(av === null){
-    return out + '<div class="profid">' + avatar('', 64, 'Profil') + '<div><b>Installation</b><br><span class="muted">Aucun administrateur défini</span></div></div>' +
-      '<p class="hint2" style="margin-top:14px">Aucun administrateur n\'est désigné : toutes les fonctions sont ouvertes. Créez votre profil pour devenir l\'administrateur de cette installation ; les autres rôles se donnent ensuite depuis « Rôles et demandes ».</p>' +
-      '<div class="btnrow"><button class="btn wide primary" data-act="meCreate">Créer mon profil administrateur</button></div>';
+    var lg = SB.status().logged;
+    out += '<div class="profid">' + avatar('', 64, 'Visiteur') + '<div><b>Visiteur</b><br><span class="muted">' + (lg ? 'Connecté, pas encore licencié' : 'Non connecté') + '</span></div></div>';
+    if(!lg) return out + '<p class="hint2" style="margin-top:14px">Pour rattacher cet appareil à votre fiche de licencié, connectez-vous d\'abord avec votre adresse e-mail (un code vous est envoyé, pas de mot de passe). Vous pourrez ensuite demander votre accès à votre club.</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="sbOpen">Se connecter pour demander mon accès</button></div>';
+    return out + '<p class="hint2" style="margin-top:14px">Vous êtes connecté. Demandez votre accès : le président ou le responsable de votre club validera votre demande.</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="requestOpen">Demander à être licencié</button><button class="btn wide" data-act="invCodeOpen">J\'ai un code d\'invitation</button>' +
+      (!S.adminId ? '<button class="btn wide" data-act="sbClaimOpen">Je suis l\'administrateur (code de première connexion)</button>' : '') + '</div>';
   }
   if(!f){
     out += '<div class="profid">' + avatar('', 64, 'Visiteur') + '<div><b>Visiteur</b><br><span class="muted">Consultation</span></div></div>';
