@@ -373,7 +373,7 @@ header.top.ho{flex-direction:column;align-items:stretch}
 .lookgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .lookcard{border:2px solid var(--line);border-radius:12px;background:var(--surface);padding:8px;display:flex;flex-direction:column;gap:6px;text-align:left;font-weight:600;font-size:14px;min-width:0}
 .lookcard.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
-.lookcard .pv{display:block;height:52px;border-radius:8px;border:1px solid rgba(0,0,0,.15)}
+.lookcard .pv{display:block;width:100%;max-width:none;box-sizing:border-box;margin:0;padding:0;height:52px;border-radius:8px;border:1px solid rgba(0,0,0,.15);overflow:hidden;flex-direction:initial;gap:0}
 .lookprev{display:flex;gap:12px;align-items:stretch}
 .pvtile{flex:1;border-radius:14px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:116px;text-align:center}
 .pvtile .pvn{font-family:var(--font-d);font-weight:700;font-size:18px;line-height:1.1;overflow-wrap:anywhere}
@@ -4941,26 +4941,31 @@ function clubsCreated(){
     '<button class="btn wide primary" data-act="clubsGo" data-v="create">Créer un autre club</button>' +
     '</div></section></div>';
 }
+/* clubs favoris : affichés en premier, au-dessus de la recherche, et retirés de la liste du dessous */
+function favClubs(){ return S.clubs.filter(function(c){ return isFav('club', c.id); }).sort(function(a,b){ return a.name.localeCompare(b.name, 'fr'); }); }
+function clubRowHtml(c){
+  var n = c.members.length, nt = (c.teams && c.teams.length) || 1;
+  return '<div class="ritem"><button class="fx big" data-act="clubEdit" data-cid="' + c.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 36) + '<span class="nm">' + esc(c.name) + '</span>' + favStar('club', c.id) + '</span>' +
+    '<small>' + n + ' licencié' + (n > 1 ? 's' : '') + ' · ' + nt + ' équipe' + (nt > 1 ? 's' : '') + '</small></span><span class="rsc" aria-hidden="true">›</span></button></div>';
+}
 function clubRowsHtml(){
   var q = norm(ui.clq || '');
-  var l = S.clubs.slice().sort(function(a,b){ return a.name.localeCompare(b.name, 'fr'); }).filter(function(c){ return !q || norm(c.name).indexOf(q) >= 0 || (c.teams || []).some(function(t){ return norm(t.name).indexOf(q) >= 0; }); });
-  if(!l.length) return '<p class="muted">Aucun club ne correspond à « ' + esc(ui.clq) + ' ».</p>';
-  return l.map(function(c){
-    var n = c.members.length, nt = (c.teams && c.teams.length) || 1;
-    return '<div class="ritem"><button class="fx big" data-act="clubEdit" data-cid="' + c.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 36) + '<span class="nm">' + esc(c.name) + '</span>' + favStar('club', c.id) + '</span>' +
-      '<small>' + n + ' licencié' + (n > 1 ? 's' : '') + ' · ' + nt + ' équipe' + (nt > 1 ? 's' : '') + '</small></span><span class="rsc" aria-hidden="true">›</span></button></div>';
-  }).join('');
+  var l = S.clubs.slice().sort(function(a,b){ return a.name.localeCompare(b.name, 'fr'); }).filter(function(c){ return !isFav('club', c.id) && (!q || norm(c.name).indexOf(q) >= 0 || (c.teams || []).some(function(t){ return norm(t.name).indexOf(q) >= 0; })); });
+  if(!l.length) return q ? '<p class="muted">Aucun club ne correspond à « ' + esc(ui.clq) + ' ».</p>' : (favClubs().length ? '<p class="muted">Tous les clubs sont dans vos favoris.</p>' : '');
+  return l.map(clubRowHtml).join('');
 }
 function clubsList(){
   var out = '<div class="stack">' + licBannerHtml();
   if(!S.clubs.length) return out + '<section class="card"><h2>Clubs</h2><p class="muted" style="margin:6px 0 0">Aucun club pour l\'instant. Touchez le bouton « + » pour créer le premier.</p></section></div><button class="fab" data-act="clubsGo" data-v="create" aria-label="Créer un club">+</button>';
+  var fcl = favClubs();
+  if(fcl.length) out += '<section class="card" id="clfav"><h3 style="margin:0 0 4px">Mes clubs favoris</h3>' + fcl.map(clubRowHtml).join('') + '</section>';
   out += '<label class="vh" for="clq">Rechercher un club</label><input type="search" id="clq" data-clq="1" value="' + esc(ui.clq || '') + '" placeholder="Club ou équipe…" autocomplete="off" enterkeyhint="search">' +
     '<p class="cnt" id="clcnt">' + clubCountText() + '</p><section class="card"><div id="clublist">' + clubRowsHtml() + '</div></section>';
   return out + '</div>' + (can('clubCreate') ? '<button class="fab" data-act="clubsGo" data-v="create" aria-label="Créer un club">+</button>' : '');
 }
 function clubCountText(){
-  var q = norm(ui.clq || ''), n = S.clubs.filter(function(c){ return !q || norm(c.name).indexOf(q) >= 0 || (c.teams || []).some(function(t){ return norm(t.name).indexOf(q) >= 0; }); }).length;
-  return n + ' club' + (n > 1 ? 's' : '') + (q ? ' sur ' + S.clubs.length : '');
+  var q = norm(ui.clq || ''), n = S.clubs.filter(function(c){ return !isFav('club', c.id) && (!q || norm(c.name).indexOf(q) >= 0 || (c.teams || []).some(function(t){ return norm(t.name).indexOf(q) >= 0; })); }).length;
+  return n + ' club' + (n > 1 ? 's' : '') + (q ? ' sur ' + (S.clubs.length - favClubs().length) : '');
 }
 /* ---------- Voyant « rattaché à l'appli / en ligne » sur les membres du club (26/10/2026) ---------- */
 var memSt = { cid:'', at:0, map:null, busy:false };
