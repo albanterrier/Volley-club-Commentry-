@@ -442,6 +442,15 @@ header.top{border-bottom:1px solid rgba(255,255,255,.08)}
 .ibtn .dotred{position:absolute;top:7px;right:6px;width:12px;height:12px;border-radius:50%;background:#E53935;border:2px solid var(--bg,#0e1621);box-sizing:border-box}
 .ibtn{width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
 .ibtn:active{background:rgba(255,255,255,.14)}
+.editbtn.statbtn{left:auto;right:0}
+.chartcard select{margin-bottom:10px}
+.donutrow{display:flex;align-items:center;gap:14px}.donut{width:132px;height:132px;flex:0 0 132px;color:var(--ink)}
+.donutleg p{margin:4px 0;font-size:16px;display:flex;align-items:center;gap:8px}.donutleg i,.chartleg i{display:inline-block;width:12px;height:12px;border-radius:3px}
+.bars{display:block;width:100%;height:auto;color:var(--ink)}
+.chartleg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:6px 2px 4px;font-size:13px;color:var(--muted)}.chartleg span{display:inline-flex;align-items:center;gap:6px}
+.sq3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.sq3>div{border:1px solid var(--line);border-radius:12px;padding:12px 4px 10px;text-align:center;background:var(--surface2)}
+.sq3 b{display:block;font-size:30px;font-weight:800;line-height:1.1}.sq3 span{display:block;margin-top:4px;font-size:12px;color:var(--muted);line-height:1.2}
 .ibtn svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .ibtn.mbtn{background:transparent;border:0;color:inherit;border-radius:50%}
 /* Bouton Accueil (logo) : rond au contour blanc, relief et ombre — identique en mode sombre et clair */
@@ -841,6 +850,16 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 @media (prefers-reduced-motion:reduce){.livedot{animation:none}}
 
 .modecard{padding:12px}
+.modegrid{display:flex;gap:8px;align-items:stretch;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:2px 10% 8px;margin:0 -4px;scrollbar-width:none}
+.modegrid::-webkit-scrollbar{display:none}
+.modecol{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 10px 14px;border:2px solid var(--line);border-radius:14px;background:var(--surface);min-width:0;cursor:pointer}
+.modecol.sel{border-color:var(--acc)}
+.modetop{background:none;border:0;padding:6px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
+.modename{font-size:19px;font-weight:800;text-align:center}
+.modecol .pv{width:100%;max-width:200px}
+.modetag{color:var(--muted);font-size:13px;text-align:center;line-height:1.25}
+.modecol .modelist{margin:0;padding-left:16px;font-size:13px;line-height:1.3;align-self:stretch}
+.modecol .modelist li{margin-bottom:4px}
 .modecard.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
 .modesel,.modeopt{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;color:var(--ink);text-align:left;padding:4px 0;min-height:52px}
 .modesel .mt{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
@@ -1976,15 +1995,16 @@ var NAVICONS = {
   clubs:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
   champ:'<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M12 14v4M8 21h8M10 18h4"/>',
   cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  data:'<path d="M5 21V10M12 21V4M19 21v-7"/>'
+  data:'<path d="M5 21V10M12 21V4M19 21v-7"/>',
+  tournoi:'<rect x="8" y="3.5" width="8" height="5" rx="1.2"/><path d="M12 8.5v5M6 17v-3.5h12V17"/><rect x="2.5" y="17" width="7" height="4.5" rx="1.2"/><rect x="14.5" y="17" width="7" height="4.5" rx="1.2"/>'
 };
 function navOn(){ return true; }
 /* Petit voyant « en direct » : alterne du vert au bleu (fixe, vert, si l'animation est réduite) */
 function liveDot(corner){ return '<span class="livedot' + (corner ? ' corner' : '') + '" role="img" aria-label="Match en direct"></span>'; }
 function navHtml(){
-  var items = [['match','Match'],['clubs','Clubs'],['champ','Championnat'],['cal','Calendrier'],['data','Statistiques']];
+  var items = [['match','Match'],['clubs','Clubs'],['champ','Championnat'],['cal','Calendrier'],['tournoi','Tournoi']];
   return '<nav class="nav" aria-label="Navigation principale">' + items.map(function(it){
-    var on = ui.tab === it[0];
+    var on = ui.tab === it[0] || (it[0] === 'clubs' && ui.tab === 'data');
     return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length ? liveDot(true) : '') : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
   }).join('') + '</nav>';
 }
@@ -2650,6 +2670,7 @@ function dotsBtnHtml(){
 }
 function tabSub(){
   if(ui.tab === 'msg') return ui.msgThread ? msgTitle(ui.msgThread) : '';
+  if(ui.tab === 'data' && ui.statClub){ var sc = clubById(ui.statClub); return sc ? sc.name : ''; }
   if(ui.tab === 'clubs'){ var c = (ui.clubView === 'edit' || ui.clubView === 'team' || ui.clubView === 'logo' || ui.clubView === 'created') ? clubById(ui.clubSel) : null; return c ? c.name : ''; }
   if(ui.tab === 'champ'){ var ch = curChamp(); return ch ? ch.name : ''; }
   if(ui.tab === 'cal' && ui.calView === 'create') return ui.ev && ui.ev.kind === 'train' ? 'Nouvel entraînement' : (ui.ev && ui.ev.kind === 'event' ? 'Nouvel événement' : 'Nouvelle rencontre');
@@ -2658,16 +2679,16 @@ function tabSub(){
 }
 function settingsView(){
   var bk = bkStatus(), th = themeGet(), out = '<div class="stack">';
+  out += '<section class="card"><h2>Apparence</h2><div class="chips modes" style="margin-top:10px">' +
+    chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
+    '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
+  out += '<section class="card"><h2>Saison</h2><p class="muted" style="margin:6px 0 10px">Les championnats, le calendrier et les résultats dépendent de la saison choisie.</p>' + seasonBtn(true) + '</section>';
+  out += pushCardHtml();
   if(can('settings')) out += '<section class="card"><h2>Données</h2><div class="backupbox' + (bk.warn ? ' warn' : '') + '" style="margin:10px 0 0"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>' +
     '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, données officielles, cohérence…</button></div></section>';
   if(can('licFin')) out += '<section class="card"><h2>Fin de saison des licences</h2><p class="muted" style="margin:6px 0 0">Chaque année à cette date, le président peut démarrer une nouvelle saison de licences.</p><label class="f" for="licfin">Date de fin de saison</label><input type="date" id="licfin" data-bind="licfin" value="2000-' + esc(S.licFin || '07-15') + '"></section>';
   out += sbCardHtml();
   out += installCardHtml();
-  out += pushCardHtml();
-  out += '<section class="card"><h2>Apparence</h2><div class="chips modes" style="margin-top:10px">' +
-    chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
-    '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
-  out += '<section class="card"><h2>Saison</h2><p class="muted" style="margin:6px 0 10px">Les championnats, le calendrier et les résultats dépendent de la saison choisie.</p>' + seasonBtn(true) + '</section>';
   out += '<section class="card"><h2>À propos</h2><p class="muted" style="margin:6px 0 0">Volley-Club Commentry · feuille de match et suivi des rencontres. Les données restent sur cet appareil.</p></section>';
   return out + '</div>';
 }
@@ -2775,7 +2796,7 @@ function calHash(){
   return '#/calendrier?' + p.join('&');
 }
 /* adresse de l'écran courant (#/clubs/…, #/championnat/…, #/statistiques/…) : mise à jour sans ajouter d'entrée à l'historique */
-var ROUTE_TABS = { match:'match', clubs:'clubs', champ:'championnat', data:'statistiques', settings:'parametres', backup:'sauvegarde' };
+var ROUTE_TABS = { match:'match', clubs:'clubs', champ:'championnat', data:'statistiques', tournoi:'tournoi', settings:'parametres', backup:'sauvegarde' };
 function routeHash(){
   var t = ROUTE_TABS[ui.tab];
   if(!t) return '';
@@ -2794,9 +2815,9 @@ function routeHash(){
   return h;
 }
 function routeApply(hs){
-  var m = (hs || '').match(/^#\/(match|clubs|championnat|statistiques|parametres|sauvegarde|messages)((?:\/[^\/?#]*)*)$/);
+  var m = (hs || '').match(/^#\/(match|clubs|championnat|statistiques|tournoi|parametres|sauvegarde|messages)((?:\/[^\/?#]*)*)$/);
   if(!m) return false;
-  var tab = { match:'match', clubs:'clubs', championnat:'champ', statistiques:'data', parametres:'settings', sauvegarde:'backup', messages:'msg' }[m[1]];
+  var tab = { match:'match', clubs:'clubs', championnat:'champ', statistiques:'data', tournoi:'tournoi', parametres:'settings', sauvegarde:'backup', messages:'msg' }[m[1]];
   var seg = m[2].split('/').filter(Boolean).map(function(x){ try{ return decodeURIComponent(x); }catch(e){ return x; } });
   if(ui.tab !== tab) setTab(tab);
   ui.sheet = null; ui.edit = false; ui.msg = '';
@@ -3144,16 +3165,20 @@ function toggleClock(){ if(S.clock.running) stopClock(); else startClock(); save
 function autoClock(){ if(!S.clock.running && !S.finished) startClock(); }
 
 /* ---------- Actions de match ---------- */
+/* Serveur au moment du point (équipe et joueur au poste 1) : sert à la « meilleure série de service » */
+function srvInfo(){ var t = S.serving; if(t === null || t === undefined) return {}; return { st:t, sp:(S.lineup[t] && S.lineup[t][0]) || null }; }
 function commitPoint(team, how, pid){
   ui.msg = ''; snap(); autoClock();
+  var sv = srvInfo();
   scoreFor(team);
-  addEvent(Object.assign({ type:'point', team:team, how:how }, pinfo(findPlayer(team, pid))));
+  addEvent(Object.assign({ type:'point', team:team, how:how }, pinfo(findPlayer(team, pid)), sv));
   afterPoint();
 }
 function commitFault(team, kind, pid){
   ui.msg = ''; snap(); autoClock();
+  var sv = srvInfo();
   scoreFor(1 - team);
-  addEvent(Object.assign({ type:'fault', team:team, how:kind, pointFor:1 - team }, pinfo(findPlayer(team, pid))));
+  addEvent(Object.assign({ type:'fault', team:team, how:kind, pointFor:1 - team }, pinfo(findPlayer(team, pid)), sv));
   afterPoint();
 }
 function afterPoint(){
@@ -3253,8 +3278,9 @@ function commitCard(team, kind, pid, inId, exc){
   var p = pid ? findPlayer(team, pid) : null;
   snap(); autoClock();
   if(kind === 'rouge'){
+    var sv = srvInfo();
     scoreFor(1 - team);
-    addEvent(Object.assign({ type:'card', team:team, card:kind, how:CARDHOW[kind], pointFor:1 - team }, pinfo(p)));
+    addEvent(Object.assign({ type:'card', team:team, card:kind, how:CARDHOW[kind], pointFor:1 - team }, pinfo(p), sv));
     afterPoint(); return;
   }
   addEvent(Object.assign({ type:'card', team:team, card:kind, how:CARDHOW[kind] }, pinfo(p)));
@@ -3392,11 +3418,22 @@ function statsRowsOf(m){
   return Object.keys(map).map(function(k){ return map[k]; });
 }
 function playerStatOf(m, pid){
-  var r = { pts:0, attack:0, block:0, ace:0, relance:0, faults:0 };
+  var r = { pts:0, attack:0, block:0, ace:0, relance:0, faults:0, streak:0, wonBy:{ attack:0, block:0, ace:0, relance:0, none:0 }, lostBy:{} }, cur = 0, lastSet = null;
   m.events.forEach(function(e){
-    if(e.pid !== pid) return;
-    if(e.type === 'point'){ r.pts++; if(r[e.how] != null) r[e.how]++; }
-    else if(e.type === 'fault' || (e.type === 'card' && e.card === 'rouge')) r.faults++;
+    if(e.pid === pid){
+      if(e.type === 'point'){ r.pts++; if(r[e.how] != null) r[e.how]++; r.wonBy[HOW[e.how] ? e.how : 'none']++; }
+      else if(e.type === 'fault' || (e.type === 'card' && e.card === 'rouge')){
+        r.faults++;
+        var lk = e.type === 'card' ? 'Carton rouge' : (FAULT_SHORT[e.how] ? e.how : 'Autre');
+        r.lostBy[lk] = (r.lostBy[lk] || 0) + 1;
+      }
+    }
+    /* série de service : points d'affilée gagnés pendant que ce joueur sert */
+    var w = evWinner(e);
+    if(w !== null && w !== undefined && e.sp !== undefined){
+      if(e.set !== lastSet){ cur = 0; lastSet = e.set; }
+      if(e.sp === pid && e.st === w){ cur++; if(cur > r.streak) r.streak = cur; } else cur = 0;
+    }
   });
   return r;
 }
@@ -3655,6 +3692,8 @@ function allMatches(){
   return out.sort(function(a,b){ return String(matchDate(b)).localeCompare(String(matchDate(a))); });
 }
 function matchById(id){ return allMatches().filter(function(x){ return x.created === id; })[0] || S; }
+/* matchs concernés par les statistiques : tous, ou seulement ceux du club choisi */
+function statMatches(){ return allMatches().filter(function(m){ return !ui.statClub || teamKey(m, 0) === 'c:' + ui.statClub || teamKey(m, 1) === 'c:' + ui.statClub; }); }
 function teamKey(m, i){ var c = m.teams[i].clubId; return (c && clubById(c)) ? 'c:' + c : 'n:' + norm(tnOf(m, i)); }
 function teamLabel(m, i){ var id = m.teams[i].clubId; return (id && clubById(id)) ? clubName(id) : tnOf(m, i); }
 function teamLogoClub(m, i){ var c = clubById(m.teams[i].clubId); return c ? c.id : ''; }
@@ -3663,6 +3702,7 @@ function teamIndex(){
   allMatches().forEach(function(m){
     [0,1].forEach(function(t){
       var k = teamKey(m, t);
+      if(ui.statClub && k !== 'c:' + ui.statClub) return;
       var e = map[k] || (map[k] = { key:k, label:teamLabel(m, t), logo:teamLogoClub(m, t), items:[] });
       e.items.push({ m:m, t:t });
     });
@@ -3673,6 +3713,7 @@ function playerIndex(){
   var map = {};
   allMatches().forEach(function(m){
     [0,1].forEach(function(t){
+      if(ui.statClub && teamKey(m, t) !== 'c:' + ui.statClub) return;
       m.teams[t].players.forEach(function(p){
         var played = m.lineup[t].indexOf(p.id) >= 0 || m.events.some(function(e){ return e.pid === p.id; });
         if(!played) return;
@@ -4193,7 +4234,7 @@ function copyText(text){
 
 /* ---------- Vues : commun ---------- */
 function inSetup(){ return ui.tab === 'match' && (S.stage === 'setup' || (ui.showSetup && S.stage === 'play')); }
-function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', data:'Statistiques', backup:'Sauvegarde', settings:'Paramètres', msg:'Messages' }[ui.tab] || ''; }
+function tabTitle(){ return { match:'Match', clubs:'Clubs', champ:'Championnat', cal:'Calendrier', tournoi:'Tournoi', data:'Statistiques', backup:'Sauvegarde', settings:'Paramètres', msg:'Messages' }[ui.tab] || ''; }
 /* Rang du set en cours : « 1er set », « 2e set »… */
 function ordinalSet(n){ return n === 1 ? '1er set' : n + 'e set'; }
 /* En-tête de la saisie des points : replié = « domicile X – X extérieur » (score en sets) ; déplié = tableau des scores sans bordures
@@ -4267,7 +4308,7 @@ function prevAct(){
   if(t === 'msg') return ui.msgThread ? { act:'msgBack' } : null;
   if(t === 'backup') return { act:'tab', tab:'settings' };
   if(t === 'cal') return ui.calView === 'create' ? { act:'calBack' } : null;
-  if(t === 'data') return (ui.dataView === 'match' || (ui.dataView === 'teams' && ui.dataTeam) || (ui.dataView === 'players' && ui.dataPlayer)) ? { act:'dataBack' } : null;
+  if(t === 'data') return (ui.dataView === 'match' || (ui.dataView === 'teams' && ui.dataTeam) || (ui.dataView === 'players' && ui.dataPlayer)) ? { act:'dataBack' } : { act:'statBack' };
   return null;
 }
 function menuBtn(){
@@ -4530,14 +4571,16 @@ function modePreview(k){
   return '<div class="pv" aria-label="Aperçu de l\'écran de saisie en mode ' + MODES[k].name + '"><div class="pv-top"></div>' + tiles + clock + court + '<div class="pv-card">' + more + '</div></div>';
 }
 function modePickView(){
-  var sel = ui.modeSel, out = '<div class="stack modepick"><p class="hint2" style="margin:0 4px">Choisissez comment saisir ce match. Vous pourrez changer de mode en cours de match.' + (allowComplet() ? '' : ' Le mode Complet est réservé aux matchs officiels du calendrier (compteur désigné, staff de l\'équipe, administrateur).') + '</p>';
-  modeKeys().forEach(function(k){
+  if(!ui.modeSel || modeKeys().indexOf(ui.modeSel) < 0) ui.modeSel = 'normal';
+  var sel = ui.modeSel, keys = modeKeys(), out = '<div class="stack modepick"><p class="hint2" style="margin:0 4px">Choisissez comment saisir ce match. Vous pourrez changer de mode en cours de match.' + (allowComplet() ? '' : ' Le mode Complet est réservé aux matchs officiels du calendrier (compteur désigné, staff de l\'équipe, administrateur).') + '</p>' +
+    '<div class="modegrid" role="radiogroup" aria-label="Mode de saisie">';
+  keys.forEach(function(k){
     var m = MODES[k], on = sel === k;
-    out += '<section class="card modecard' + (on ? ' sel' : '') + '"><button class="modesel" role="radio" aria-checked="' + on + '" data-act="modeSel" data-v="' + k + '"><span class="radio" aria-hidden="true"></span><span class="mt"><b>' + m.name + '</b><small>' + m.tag + '</small></span></button>' +
-      '<ul class="modelist">' + m.feats.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></section>';
+    out += '<div class="modecol' + (on ? ' sel' : '') + '" data-act="modeSel" data-v="' + k + '"><button class="modetop" role="radio" aria-checked="' + on + '" aria-label="Mode ' + m.name + '" data-act="modeSel" data-v="' + k + '"><span class="radio" aria-hidden="true"></span></button>' +
+      '<b class="modename">' + m.name + '</b>' + modePreview(k) +
+      '<small class="modetag">' + esc(m.tag) + '</small><ul class="modelist">' + m.feats.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
   });
-  out += '<section class="card"><h3>Aperçu de l\'écran de saisie</h3>' + (MODES[sel] ? modePreview(sel) : '<p class="muted" style="margin:6px 0 0">Choisissez un mode pour voir son aperçu.</p>') + '</section>' +
-    '<div class="btnrow"><button class="btn wide primary" data-act="modeGo"' + (MODES[sel] ? '' : ' disabled') + '>' + (MODES[sel] ? 'Valider et commencer la saisie en mode ' + MODES[sel].name : 'Choisissez un mode') + '</button></div></div>';
+  out += '</div><div class="btnrow"><button class="btn wide primary" data-act="modeGo">Valider et commencer la saisie en mode ' + MODES[sel].name + '</button></div></div>';
   return out;
 }
 function modeBtnHtml(){ return '<button class="hmodebtn" data-act="modeChg">Mode de saisie : <b>' + MODES[modeOf()].name + '</b> <span aria-hidden="true">›</span></button>'; }
@@ -4842,6 +4885,9 @@ function setupView(){
 
 /* ---------- Vue : clubs ---------- */
 function clubsBack(label, v){ return ''; }
+function tournoiView(){
+  return '<div class="stack"><section class="card" style="text-align:center;padding:36px 16px"><p class="muted" style="margin:0;font-size:20px">En projet</p></section></div>';
+}
 function clubsView(){
   var v = ui.clubView;
   if(v === 'create') return clubsCreate();
@@ -4885,6 +4931,7 @@ function clubRowsHtml(){
   if(!l.length) return q ? '<p class="muted">Aucun club ne correspond à « ' + esc(ui.clq) + ' ».</p>' : (favClubs().length ? '<p class="muted">Tous les clubs sont dans vos favoris.</p>' : '');
   return l.map(clubRowHtml).join('');
 }
+function statBtnHtml(cid){ return '<button class="editbtn statbtn" data-act="statOpen" data-cid="' + esc(cid) + '" aria-label="Statistiques du club" title="Statistiques du club"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V10M12 21V4M19 21v-7"/></svg></button>'; }
 function clubsList(){
   var out = '<div class="stack">' + licBannerHtml();
   if(!S.clubs.length) return out + '<section class="card"><h2>Clubs</h2><p class="muted" style="margin:6px 0 0">Aucun club pour l\'instant. Touchez le bouton « + » pour créer le premier.</p></section></div><button class="fab" data-act="clubsGo" data-v="create" aria-label="Créer un club">+</button>';
@@ -4968,7 +5015,7 @@ function clubsEdit(){
   if(!c || c.id !== ui.clubSel){ ui.clubView = 'list'; return clubsList(); }
   ensureTeams(c);
   var tab = ui.clubTab || 'matches', out = '<div class="stack">';
-  out += '<div class="clubhead">' + (can('clubEdit', { cid:c.id }) ? editBtnHtml() : '') + '<h2>' +
+  out += '<div class="clubhead">' + (can('clubEdit', { cid:c.id }) ? editBtnHtml() : '') + statBtnHtml(c.id) + '<h2>' +
     (c.logo ? '<span class="hlg">' + logoHtml(c.id, 40) + '</span>' : (ui.edit ? '<span class="hlg"><span class="logo none" style="width:40px;height:40px;font-size:9px;line-height:1.1;text-align:center">Pas de logo</span></span>' : '')) + esc(c.name) + favStar('club', c.id) + '</h2></div>';
   if(ui.edit) out += '<div style="display:flex;gap:8px;margin:0"><button class="btn" style="flex:1 1 0;justify-content:center;text-align:center" data-act="clubLogo" aria-label="Logo, nom et couleurs de ' + esc(c.name) + '">Logo, nom et couleurs</button>' +
     (c.logo ? '<button class="btn" style="flex:1 1 0;justify-content:center;text-align:center" data-act="logoRemoveAsk" aria-label="Retirer le logo de ' + esc(c.name) + '">Retirer le logo</button>' : '') + '</div>';
@@ -5516,7 +5563,7 @@ function matchSlider(key, ents, start, today, favId, label){
   var play = (!entryResult(e) && e.kind !== 'event' && entryScoreOk(e) && e.home && e.away) ? '<button class="btn wide primary homeplay" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Saisir ce match</button>' : '';
   return '<div class="mcbox"><div class="slider slcol" data-sl="' + esc(key) + '">' +
     '<div class="slview">' + calRow(e, today, favId) + '</div>' +
-    (n > 1 ? '<div class="slnav">' + slArrow(key, n, -1) + '<span class="slcnt">' + (i + 1) + ' / ' + n + '</span>' + slArrow(key, n, 1) + '</div>' : '') + '</div></div>' + play;
+    (n > 1 ? '<div class="slnav">' + slArrow(key, n, -1, true) + '<span class="slcnt">' + (i + 1) + ' / ' + n + '</span>' + slArrow(key, n, 1, true) + '</div>' : '') + '</div></div>' + play;
 }
 /* Tableau de classement (maquette du 23/10/2026) : 1er en vert, dernier en rouge, équipes favorites en orange */
 function standHl(r, hi){ return (!!hi && r.id === hi) || isFav('team', r.id) || isFav('club', clubOfEntrant(r.id)); }
@@ -5598,6 +5645,8 @@ function menuView(){
 }
 /* Rebond en bout de liste */
 function homePost(){
+  var mg = document.querySelector('.modegrid'), mc = mg && mg.querySelector('.modecol.sel');
+  if(mc) mg.scrollLeft = Math.max(0, mc.getBoundingClientRect().left - mg.getBoundingClientRect().left + mg.scrollLeft - (mg.clientWidth - mc.offsetWidth) / 2);
   var b = ui.slBounce; ui.slBounce = null;
   if(!b) return;
   var els = document.querySelectorAll('.slider');
@@ -5833,7 +5882,7 @@ function shortDate(m){
 }
 function backBtn(label){ return ''; }
 function dataHomeView(){
-  var n = allMatches().length;
+  var n = statMatches().length;
   var out = '<div class="stack"><section class="card"><h2>Statistiques des matchs suivis</h2><p class="muted" style="margin:6px 0 16px">Que voulez-vous consulter ?</p>' +
     '<div class="btnrow" style="margin:0;gap:12px"><button class="bigbtn primary" data-act="dataTeams">Statistiques équipes</button><button class="bigbtn" data-act="dataPlayers">Statistiques joueurs</button></div>' +
     '<p class="hint2">' + (n ? n + ' match' + (n > 1 ? 's' : '') + ' suivi' + (n > 1 ? 's' : '') + ' en direct.' : 'Aucun match suivi en direct pour l\'instant.') + ' Les résultats saisis à la main ou importés du calendrier n\'ont pas de statistiques détaillées : ils ne figurent pas ici.</p></section>';
@@ -5844,7 +5893,7 @@ function dataHomeView(){
   return out + '</div>';
 }
 function dataTabsHtml(cur){
-  var n = allMatches().length, out = '<div class="sbar" role="group" aria-label="Statistiques">' + chip('dataTeams', {}, 'Équipes', cur === 'teams') + chip('dataPlayers', {}, 'Joueurs', cur === 'players') + '</div>';
+  var n = statMatches().length, out = '<div class="sbar" role="group" aria-label="Statistiques">' + chip('dataTeams', {}, 'Équipes', cur === 'teams') + chip('dataPlayers', {}, 'Joueurs', cur === 'players') + '</div>';
   out += '<p class="hint2" style="margin:0 2px">' + (n ? n + ' match' + (n > 1 ? 's' : '') + ' suivi' + (n > 1 ? 's' : '') + ' en direct.' : 'Aucun match suivi en direct pour l\'instant.') + ' Les résultats saisis à la main ou importés du calendrier n\'ont pas de statistiques détaillées : ils ne figurent pas ici.</p>';
   return out;
 }
@@ -5856,6 +5905,127 @@ function recordOf(items){
     if(w[it.t] > w[1 - it.t]) v++; else d++;
   });
   return v + 'V – ' + d + 'D';
+}
+/* ---------- Graphiques des statistiques (28/10/2026) : anneau victoires/défaites, histogrammes ---------- */
+var STCATS = [['attack', 'Attaque'], ['block', 'Bloc'], ['ace', 'Service'], ['relance', 'Relance'], ['faute', 'Fautes'], ['none', 'Non précisé']];
+var FAULT_SHORT = { 'Filet':'Filet', 'Ballon sorti':'Sorti', 'Double touche':'Double', 'Quatre touches':'4 touches', 'Faute de service':'Service', 'Faute de rotation':'Rotation', 'Pied sur la ligne':'Ligne', 'Autre':'Autre', 'Carton rouge':'Carton' };
+/* équipe qui gagne le point d'un événement (null si l'événement ne donne pas de point) et façon dont il est gagné */
+function evWinner(e){
+  if(e.type === 'point') return e.team;
+  if((e.type === 'fault' || e.type === 'card') && e.pointFor !== undefined && e.pointFor !== null) return e.pointFor;
+  return null;
+}
+function evKind(e){ return e.type === 'point' ? (HOW[e.how] ? e.how : 'none') : 'faute'; }
+function teamPtsBy(m, t){
+  var g = {}, l = {};
+  STCATS.forEach(function(c){ g[c[0]] = 0; l[c[0]] = 0; });
+  (m.events || []).forEach(function(e){
+    var w = evWinner(e); if(w === null || w === undefined) return;
+    var k = evKind(e); if(w === t) g[k]++; else l[k]++;
+  });
+  return { g:g, l:l };
+}
+function stSelGet(k, def){ return (ui.stSel && ui.stSel[k]) || def; }
+function stSelect(id, label, k, opts, val){
+  var out = '<label class="f" for="' + id + '">' + label + '</label><select id="' + id + '" data-bind="stsel" data-k="' + k + '">', grp = null;
+  opts.forEach(function(o){
+    if(o.g !== grp){ if(grp) out += '</optgroup>'; if(o.g) out += '<optgroup label="' + esc(o.g) + '">'; grp = o.g; }
+    out += '<option value="' + esc(o.v) + '"' + (o.v === val ? ' selected' : '') + '>' + esc(o.l) + '</option>';
+  });
+  if(grp) out += '</optgroup>';
+  return out + '</select>';
+}
+/* anneau : parts = [{ v, color, label }] ; texte au centre */
+function donutSvg(parts, center, sub){
+  var tot = parts.reduce(function(a, p){ return a + p.v; }, 0), R = 42, C = 2 * Math.PI * R, off = 0, segs = '';
+  if(tot > 0) parts.forEach(function(p){
+    if(!p.v) return;
+    var len = C * p.v / tot;
+    segs += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + p.color + '" stroke-width="18" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 60 60)"/>';
+    off += len;
+  });
+  else segs = '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="var(--line)" stroke-width="18"/>';
+  return '<svg class="donut" viewBox="0 0 120 120" role="img" aria-label="' + esc(parts.map(function(p){ return p.v + ' ' + p.label; }).join(', ')) + '">' + segs +
+    '<text x="60" y="' + (sub ? 59 : 66) + '" text-anchor="middle" font-size="26" font-weight="800" fill="currentColor">' + center + '</text>' +
+    (sub ? '<text x="60" y="76" text-anchor="middle" font-size="10" fill="var(--muted)">' + esc(sub) + '</text>' : '') + '</svg>';
+}
+/* histogramme : cats = [{ label, vals:[…] }] ; colors = une couleur par série */
+function barsSvg(cats, colors, alt){
+  var W = 340, H = 200, top = 20, bot = 40, n = cats.length, k = colors.length, max = 1, i, j, out = '';
+  cats.forEach(function(c){ c.vals.forEach(function(v){ if(v > max) max = v; }); });
+  var gw = (W - 8) / n, bw = Math.min(30, (gw - 6) / k), ph = H - top - bot, fs = n > 7 ? 9.5 : 11;
+  for(i = 0; i < n; i++){
+    var gx = 4 + gw * i + (gw - bw * k) / 2;
+    for(j = 0; j < k; j++){
+      var v = cats[i].vals[j], h = v ? Math.max(3, v / max * ph) : 0, x = gx + bw * j;
+      if(h) out += '<rect x="' + x.toFixed(1) + '" y="' + (top + ph - h).toFixed(1) + '" width="' + (bw - 2).toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3" fill="' + colors[j] + '"/>';
+      out += '<text x="' + (x + (bw - 2) / 2).toFixed(1) + '" y="' + (top + ph - h - 4).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor"' + (v ? '' : ' opacity=".45"') + '>' + v + '</text>';
+    }
+    out += '<text x="' + (4 + gw * i + gw / 2).toFixed(1) + '" y="' + (H - 18) + '" text-anchor="middle" font-size="' + fs + '" fill="var(--muted)">' + esc(cats[i].label) + '</text>';
+  }
+  return '<svg class="bars" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(alt || '') + '"><line x1="4" x2="' + (W - 4) + '" y1="' + (top + ph) + '" y2="' + (top + ph) + '" stroke="var(--line)" stroke-width="1.5"/>' + out + '</svg>';
+}
+function legendHtml(list){ return '<p class="chartleg">' + list.map(function(x){ return '<span><i style="background:' + x[0] + '"></i>' + esc(x[1]) + '</span>'; }).join('') + '</p>'; }
+function oppsOf(items){
+  var map = {}, out = [];
+  items.forEach(function(it){ var k = teamKey(it.m, 1 - it.t); if(!map[k]){ map[k] = 1; out.push({ key:k, label:teamLabel(it.m, 1 - it.t) }); } });
+  return out.sort(function(a, b){ return a.label.localeCompare(b.label, 'fr'); });
+}
+/* items = [{ m, t }] : les matchs suivis d'une équipe/d'un club (t = son côté) */
+function teamChartsHtml(items){
+  if(!items.length) return '';
+  var opps = oppsOf(items), cur = curSeason();
+  var sel1 = stSelGet('tv', 'season'), o1 = [{ v:'season', l:'Tous les matchs de la saison ' + cur.label }];
+  opps.forEach(function(o){ o1.push({ v:'o:' + o.key, l:o.label, g:'Contre une équipe (toutes saisons)' }); });
+  if(!o1.some(function(o){ return o.v === sel1; })) sel1 = 'season';
+  var list1 = items.filter(function(it){
+    if(!it.m.finished) return false;
+    if(sel1 === 'season') { var d = String(matchDate(it.m)).slice(0, 10); return d >= cur.debut && d <= cur.fin; }
+    return teamKey(it.m, 1 - it.t) === sel1.slice(2);
+  });
+  var v = 0, d2 = 0;
+  list1.forEach(function(it){ var w = setsWonOf(it.m); if(w[it.t] > w[1 - it.t]) v++; else d2++; });
+  var out = '<section class="card chartcard"><h3>Victoires et défaites</h3>' + stSelect('stv', 'Matchs pris en compte', 'tv', o1, sel1) +
+    '<div class="donutrow">' + donutSvg([{ v:v, color:'var(--ok)', label:'victoires' }, { v:d2, color:'var(--danger)', label:'défaites' }], list1.length, list1.length > 1 ? 'matchs' : 'match') +
+    '<div class="donutleg"><p><i style="background:var(--ok)"></i><b>' + v + '</b> victoire' + (v > 1 ? 's' : '') + '</p><p><i style="background:var(--danger)"></i><b>' + d2 + '</b> défaite' + (d2 > 1 ? 's' : '') + '</p>' +
+    (list1.length ? '' : '<p class="muted" style="margin:6px 0 0">Aucun match terminé.</p>') + '</div></div></section>';
+  var sel2 = stSelGet('th', 'all'), o2 = [{ v:'all', l:'Tous les matchs' }];
+  items.forEach(function(it){ o2.push({ v:'m:' + it.m.created, l:shortDate(it.m) + ' · ' + teamLabel(it.m, 1 - it.t), g:'Un match' }); });
+  opps.forEach(function(o){ o2.push({ v:'o:' + o.key, l:o.label, g:'Contre une équipe' }); });
+  if(!o2.some(function(o){ return o.v === sel2; })) sel2 = 'all';
+  var list2 = items.filter(function(it){
+    if(sel2 === 'all') return true;
+    if(sel2.slice(0, 2) === 'm:') return it.m.created === sel2.slice(2);
+    return teamKey(it.m, 1 - it.t) === sel2.slice(2);
+  });
+  var g = {}, l = {};
+  STCATS.forEach(function(c){ g[c[0]] = 0; l[c[0]] = 0; });
+  list2.forEach(function(it){ var r = teamPtsBy(it.m, it.t); STCATS.forEach(function(c){ g[c[0]] += r.g[c[0]]; l[c[0]] += r.l[c[0]]; }); });
+  var cats = STCATS.filter(function(c){ return c[0] !== 'none' || g.none || l.none; }).map(function(c){ return { label:c[1], vals:[g[c[0]], l[c[0]]] }; });
+  var totG = 0, totL = 0; STCATS.forEach(function(c){ totG += g[c[0]]; totL += l[c[0]]; });
+  out += '<section class="card chartcard"><h3>Façon de gagner et de perdre les points</h3>' + stSelect('sth', 'Matchs pris en compte', 'th', o2, sel2) +
+    (totG + totL ? barsSvg(cats, ['var(--ok)', 'var(--danger)'], 'Points gagnés et perdus par type : ' + cats.map(function(c){ return c.label + ' ' + c.vals[0] + ' gagnés, ' + c.vals[1] + ' perdus'; }).join(' ; ')) + legendHtml([['var(--ok)', 'Points gagnés (' + totG + ')'], ['var(--danger)', 'Points perdus (' + totL + ')']]) +
+      '<p class="hint2" style="margin:2px 0 0">« Fautes » : fautes de l\'adversaire (points gagnés) ou de l\'équipe (points perdus).</p>' : '<p class="muted">Aucun point enregistré pour cette sélection.</p>') + '</section>';
+  return out;
+}
+/* histogramme d'un joueur : matches = [{ m, t, st }] ; kind 'won' (façon de gagner) ou 'lost' (façon de perdre) */
+function playerChartHtml(p, kind){
+  var k = kind === 'won' ? 'ph1' : 'ph2', sel = stSelGet(k, 'all'), opts = [{ v:'all', l:'Tous les matchs' }];
+  p.matches.forEach(function(x){ opts.push({ v:'m:' + x.m.created, l:shortDate(x.m) + ' · ' + teamLabel(x.m, 1 - x.t), g:'Une rencontre' }); });
+  if(!opts.some(function(o){ return o.v === sel; })) sel = 'all';
+  var list = p.matches.filter(function(x){ return sel === 'all' || x.m.created === sel.slice(2); });
+  var cats, tot = 0, alt;
+  if(kind === 'won'){
+    cats = STCATS.filter(function(c){ return c[0] !== 'faute'; }).map(function(c){ var n = 0; list.forEach(function(x){ n += x.st.wonBy[c[0]] || 0; }); return { key:c[0], label:c[1], vals:[n] }; })
+      .filter(function(c){ return c.key !== 'none' || c.vals[0]; });
+  } else {
+    var names = FAULTS.concat(['Carton rouge']);
+    cats = names.map(function(nm){ var n = 0; list.forEach(function(x){ n += x.st.lostBy[nm] || 0; }); return { key:nm, label:FAULT_SHORT[nm] || nm, vals:[n] }; });
+  }
+  cats.forEach(function(c){ tot += c.vals[0]; });
+  alt = cats.map(function(c){ return c.label + ' ' + c.vals[0]; }).join(', ');
+  return '<section class="card chartcard"><h3>' + (kind === 'won' ? 'Façon dont il gagne les points' : 'Façon dont il perd les points') + '</h3>' + stSelect('st' + k, 'Matchs pris en compte', k, opts, sel) +
+    (tot ? barsSvg(cats, [kind === 'won' ? 'var(--ok)' : 'var(--danger)'], alt) : '<p class="muted">' + (kind === 'won' ? 'Aucun point enregistré pour cette sélection.' : 'Aucune faute enregistrée pour cette sélection.') + '</p>') + '</section>';
 }
 function dataTeamsView(){
   var teams = teamIndex(), tm = ui.dataTeam ? teams.filter(function(k){ return k.key === ui.dataTeam; })[0] : null;
@@ -5872,7 +6042,7 @@ function dataTeamsView(){
       }).join('') + '</div></section>';
     return out + '</div>';
   }
-  out += dataTabsHtml('teams') + '<section class="card"><h3>Équipes</h3>';
+  out += dataTabsHtml('teams') + (ui.statClub && teams.length ? teamChartsHtml(teams[0].items) : '') + '<section class="card"><h3>Équipes</h3>';
   if(!teams.length) out += '<p class="muted">Aucun match suivi en direct pour l\'instant.</p>';
   else out += '<p class="muted" style="margin:6px 0 4px">Choisissez une équipe pour voir ses matchs.</p>' + teams.map(function(k){
     return '<div class="ritem"><button class="fx" data-act="dataTeamSel" data-key="' + esc(k.key) + '"><span class="fxt"><span class="fxteam">' + logoHtml(k.logo, 28) + '<span class="nm">' + esc(k.label) + '</span></span><small>' + k.items.length + ' match' + (k.items.length > 1 ? 's' : '') + '</small></span><span class="rsc">' + recordOf(k.items) + '</span></button></div>';
@@ -6005,15 +6175,18 @@ function playerListHtml(idx){
   return out;
 }
 function dataPlayersView(){
-  var idx = playerIndex(), p = ui.dataPlayer ? idx.filter(function(x){ return x.key === ui.dataPlayer; })[0] : null;
+  var idx = playerIndex();
+  if(!ui.dataPlayer && ui.pAuto !== false){ var me = meInfo(); if(me && me.m){ var mine = idx.filter(function(x){ return x.key === 'm:' + me.m.id; })[0]; if(mine) ui.dataPlayer = mine.key; } }
+  var p = ui.dataPlayer ? idx.filter(function(x){ return x.key === ui.dataPlayer; })[0] : null;
   if(ui.dataPlayer && !p) ui.dataPlayer = null;
   var out = '<div class="stack">';
   if(p){
-    var tot = { pts:0, attack:0, block:0, ace:0, relance:0, faults:0 };
-    p.matches.forEach(function(x){ Object.keys(tot).forEach(function(k){ tot[k] += x.st[k]; }); });
-    var cells = [['Matchs', p.matches.length], ['Points', tot.pts], ['Attaques', tot.attack], ['Blocs', tot.block], ['Services', tot.ace], ['Relances', tot.relance], ['Fautes', tot.faults]];
+    var tot = { pts:0, attack:0, block:0, ace:0, relance:0, faults:0 }, best = 0;
+    p.matches.forEach(function(x){ Object.keys(tot).forEach(function(k){ tot[k] += x.st[k]; }); if(x.st.streak > best) best = x.st.streak; });
+    var cells = [['Matchs joués', p.matches.length], ['Points gagnés', tot.pts], ['Meilleure série de service', best]];
     out += backBtn('Tous les joueurs') + '<section class="card"><div class="pcell">' + avatar(p.photo, 72, p.name) + '<div><h2>' + esc(p.name) + '</h2><p class="muted" style="margin:4px 0 0">' + esc(p.team) + (p.num ? ' · #' + esc(p.num) : '') + (p.licence && profGet() !== 'visiteur' ? ' · licence ' + esc(p.licence) : '') + '</p></div></div>' +
-      '<div class="statgrid">' + cells.map(function(c){ return '<div><b>' + c[1] + '</b><span>' + c[0] + '</span></div>'; }).join('') + '</div></section>';
+      '<div class="sq3">' + cells.map(function(c){ return '<div><b>' + c[1] + '</b><span>' + c[0] + '</span></div>'; }).join('') + '</div></section>';
+    out += playerChartHtml(p, 'won') + playerChartHtml(p, 'lost');
     out += '<section class="card"><h3>Performances par match</h3><div class="tablewrap"><table><thead><tr><th>Match</th><th>Rés.</th><th title="Points marqués">Pts</th><th title="Attaques">Att.</th><th>Bloc</th><th title="Services gagnants">Ace</th><th title="Relances">Rel.</th><th>Fautes</th></tr></thead><tbody>' +
       p.matches.map(function(x){
         var w = setsWonOf(x.m), mine = w[x.t], opp = w[1 - x.t];
@@ -6462,7 +6635,7 @@ function render(){
     document.body.classList.remove('hasnav'); document.body.classList.remove('hasfab');
     return;
   }
-  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'settings' ? settingsView() : ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : (needsModePick() ? modePickView() : matchView()))) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : (ui.tab === 'backup' ? backupView() : (ui.tab === 'msg' ? msgView() : dataView()))))));
+  var main = ui.tab === 'menu' ? menuView() : (ui.tab === 'settings' ? settingsView() : ui.tab === 'match' ? (S.stage === 'home' ? homeView() : (inSetup() ? setupView() : (needsModePick() ? modePickView() : matchView()))) : (ui.tab === 'clubs' ? clubsView() : (ui.tab === 'champ' ? champView() : (ui.tab === 'cal' ? calendarView() : (ui.tab === 'backup' ? backupView() : (ui.tab === 'msg' ? msgView() : (ui.tab === 'tournoi' ? tournoiView() : dataView())))))));
   var warn = ui.warn ? '<div class="banner" role="alert">' + esc(ui.warn) + '</div>' : '';
   if(meTest()){ var tf = meInfo(); warn += '<div class="banner" role="status">Mode test : vous agissez comme ' + esc(tf ? memberName(tf.m) : '') + ' (' + esc(profLabel(profGet())) + ') <button class="mini" data-act="testOff">Quitter</button></div>'; }
   document.getElementById('app').innerHTML = header() + '<main>' + warn + main + menuBtn() + '</main>' + (navOn() ? navHtml() : '') + (ui.xchg ? '<div class="xshade" data-act="xCancel" aria-hidden="true"></div>' : '');
@@ -6486,7 +6659,7 @@ function render(){
   navSave();
 }
 /* Page courante conservée en cas d'actualisation (sessionStorage : propre à l'onglet / à la session) */
-var NAV_KEYS = ['tab','clubView','clubSel','teamSel','clubTab','champSel','champTab','calView','dataView','dataTeam','dataMatch','dataFrom','dataPlayer','resume','addRes','showSetup','prepTeam','calMode','calType','calHome','fil','calQ','calFOpen','favDone','clq'];
+var NAV_KEYS = ['tab','clubView','clubSel','teamSel','clubTab','statClub','champSel','champTab','calView','dataView','dataTeam','dataMatch','dataFrom','dataPlayer','resume','addRes','showSetup','prepTeam','calMode','calType','calHome','fil','calQ','calFOpen','favDone','clq'];
 function navSave(){
   try{
     var o = {}; NAV_KEYS.forEach(function(k){ if(ui[k] !== undefined) o[k] = ui[k]; });
@@ -6498,7 +6671,7 @@ function navRestore(){
   try{
     var o = JSON.parse(DB.session.get('volley-nav-v1') || 'null');
     if(!o || !o.tab || o.tab === 'menu') return 0;
-    if(['match','clubs','champ','cal','backup','data','settings'].indexOf(o.tab) < 0) return 0;
+    if(['match','clubs','champ','cal','backup','data','tournoi','settings'].indexOf(o.tab) < 0) return 0;
     if(o.calView === 'create') o.calView = 'list';
     NAV_KEYS.forEach(function(k){ if(o[k] !== undefined) ui[k] = o[k]; });
     if(ui.tab === 'match' && S.stage === 'play') ui.showSetup = !!o.showSetup;
@@ -6690,20 +6863,22 @@ document.addEventListener('click', function(e){
       break;
     }
     case 'tab':
-      ui.edit = false; ui.setBack = null;
+      ui.edit = false; ui.setBack = null; ui.statClub = null;
       setTab(d.tab); ui.showSetup = false; ui.prepTeam = null; ui.sheet = null; ui.msg = '';
       if(d.tab === 'clubs') ui.clubView = 'home';
       if(d.tab === 'cal'){ ui.calView = 'list'; ui.ev = null; }
       render(); window.scrollTo(0,0); break;
+    case 'statOpen': ui.edit = false; ui.sheet = null; ui.msg = ''; setTab('data'); ui.statClub = d.cid || null; ui.pAuto = undefined; ui.stSel = {}; ui.dataView = 'home'; ui.dataTeam = null; ui.dataPlayer = null; ui.dataMatch = null; render(); window.scrollTo(0,0); break;
+    case 'statBack': ui.statClub = ui.statClub || ''; ui.clubSel = ui.statClub; ui.clubView = ui.statClub ? 'edit' : 'home'; ui.clubTab = null; ui.edit = false; ui.sheet = null; setTab('clubs'); render(); window.scrollTo(0,0); break;
     case 'dataTeams': ui.dataView = 'teams'; ui.dataTeam = null; render(); window.scrollTo(0,0); break;
-    case 'dataPlayers': ui.dataView = 'players'; ui.dataPlayer = null; ui.pfilter = ''; render(); window.scrollTo(0,0); break;
+    case 'dataPlayers': ui.dataView = 'players'; ui.dataPlayer = null; ui.pAuto = undefined; ui.pfilter = ''; render(); window.scrollTo(0,0); break;
     case 'dataTeamSel': ui.dataTeam = d.key; render(); window.scrollTo(0,0); break;
     case 'dataPlayerSel': ui.dataPlayer = d.key; render(); window.scrollTo(0,0); break;
     case 'dataMatchOpen': ui.dataMatch = d.mid; ui.dataFrom = d.from; ui.dataView = 'match'; render(); window.scrollTo(0,0); break;
     case 'dataBack':
       if(ui.dataView === 'match'){ ui.dataView = ui.dataFrom === 'teams' ? 'teams' : 'home'; ui.dataMatch = null; }
       else if(ui.dataView === 'teams'){ ui.dataTeam = null; }
-      else if(ui.dataView === 'players'){ ui.dataPlayer = null; }
+      else if(ui.dataView === 'players'){ ui.dataPlayer = null; ui.pAuto = false; }
       render(); window.scrollTo(0,0); break;
     case 'editMember': {
       var fm = findMember(d.mid);
@@ -7569,6 +7744,7 @@ document.addEventListener('input', function(e){
   else if(bind === 'tmname'){ var tff = findTeam(ui.teamSel); if(tff) tff.t.name = v; save(); return; }
   else if(bind === 'cname'){ var c = curClub(); if(c){ var dt = defaultTeam(c); if(dt && dt.name === c.name) dt.name = v; c.name = v; } }
   else if(bind === 'champsel'){ ui.edit = false; ui.champSel = v; ui.mm = { a:'', b:'', homeIs:'a', res:'3-0' }; render(); return; }
+  else if(bind === 'stsel'){ ui.stSel = ui.stSel || {}; ui.stSel[ds.k] = v; render(); return; }
   else if(bind === 'calf'){ ui.fil[ds.k] = v; ui.calPast = false; render(); return; }
   else if(bind === 'sn'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
   else if(bind === 'cpon'){ var q_o = ui.sheet && ui.sheet.rows && ui.sheet.rows.filter(function(x){ return x.mid === ds.mid; })[0]; if(q_o){ q_o.on = !!e.target.checked; if(!q_o.on){ if(ui.sheet.cap === q_o.mid) ui.sheet.cap = ''; [1, 2, 3].forEach(function(k){ var a = ui.sheet.lu && ui.sheet.lu[k]; if(a) ui.sheet.lu[k] = a.map(function(m){ return m === q_o.mid ? '' : m; }); }); } render(); } return; }
