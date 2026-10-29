@@ -448,6 +448,9 @@ header.top{border-bottom:1px solid rgba(255,255,255,.08)}
 .donutleg p{margin:4px 0;font-size:16px;display:flex;align-items:center;gap:8px}.donutleg i,.chartleg i{display:inline-block;width:12px;height:12px;border-radius:3px}
 .bars{display:block;width:100%;height:auto;color:var(--ink)}
 .chartleg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:6px 2px 4px;font-size:13px;color:var(--muted)}.chartleg span{display:inline-flex;align-items:center;gap:6px}
+.jnumrow{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:13px;line-height:1.3}
+.profnext{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface2)}
+.profnext .muted{font-size:13px}
 .sq3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
 .sq3>div{border:1px solid var(--line);border-radius:12px;padding:12px 4px 10px;text-align:center;background:var(--surface2)}
 .sq3 b{display:block;font-size:30px;font-weight:800;line-height:1.1}.sq3 span{display:block;margin-top:4px;font-size:12px;color:var(--muted);line-height:1.2}
@@ -1786,7 +1789,7 @@ DB.rebase(S);
 function syncSquads(){
   S.teams.forEach(function(t,i){
     var f = findTeam(t.clubId);
-    if(f) f.t.squad = JSON.parse(JSON.stringify({ players:t.players, lineup:S.lineup[i] }));
+    if(f && t.players.length) f.t.squad = JSON.parse(JSON.stringify({ players:t.players, lineup:S.lineup[i] }));
   });
 }
 function save(){
@@ -1801,9 +1804,8 @@ function switchClub(t, newId){
   S.teams[t].clubId = newId;
   if(!nc) return;
   var ft = findTeam(newId), sq = ft ? ft.t.squad : nc.squad;
-  if(sq && sq.players && sq.players.length && !(!prevId && hadPlayers)){
-    S.teams[t].players = JSON.parse(JSON.stringify(sq.players));
-    S.lineup[t] = (sq.lineup || [null,null,null,null,null,null]).slice();
+  if(!(!prevId && hadPlayers)){
+    S.teams[t].players = []; S.teams[t].captain = ''; S.lineup[t] = [null,null,null,null,null,null];
   } else if(prevId){
     S.teams[t].players = []; S.lineup[t] = [null,null,null,null,null,null];
   }
@@ -2619,6 +2621,23 @@ function testSheet(sh){
     rsSelect('ts_c', 'Club', 'mcid', clubItems(S.clubs), dr.mcid, '— Choisir —') + rsSelect('ts_m', 'Licencié', 'mid', memberItems(mc), dr.mid, mc ? '— Choisir —' : 'Choisissez d\'abord le club') +
     '<div class="btnrow"><button class="btn wide primary" data-act="testOn">Agir comme cette personne</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
 }
+function profMeHtml(f){
+  var sv = ui.statClub; ui.statClub = null;
+  var idx; try{ idx = playerIndex(); }finally{ ui.statClub = sv; }
+  var mine = idx.filter(function(x){ return x.key === 'm:' + f.m.id; })[0], out = '';
+  var pts = 0, best = 0, nb = 0;
+  if(mine){ nb = mine.matches.length; mine.matches.forEach(function(x){ pts += x.st.pts; if(x.st.streak > best) best = x.st.streak; }); }
+  out += '<div class="sq3">' + [['Matchs joués', nb], ['Points gagnés', pts], ['Meilleure série de service', best]].map(function(c){ return '<div><b>' + c[1] + '</b><span>' + c[0] + '</span></div>'; }).join('') + '</div>' +
+    '<div class="jnumrow"><span class="shirt"><input class="snum" type="text" inputmode="numeric" maxlength="3" placeholder="N°" id="mejnum" data-bind="mejnum" value="' + esc(f.m.jnum || '') + '" aria-label="Mon numéro de maillot"' + (meTest() ? ' disabled' : '') + '></span><span class="muted">Mon numéro de maillot<br>Proposé automatiquement dans les compositions.</span></div>' +
+    '<div class="btnrow"><button class="btn wide" data-act="profStats" data-cid="' + esc(f.club.id) + '">Mes statistiques détaillées</button></div>';
+  var today = isoOf(new Date()), nx = null;
+  calEntries().some(function(e){ if(e && e.date >= today && !e.postponed && !entryResult(e) && presCan(e, today)){ nx = e; return true; } return false; });
+  if(nx){
+    var ttl = nx.kind === 'event' ? (nx.title || (nx.f && nx.f.trainName) || 'Événement') : clubName(nx.home) + ' – ' + clubName(nx.away);
+    out += '<p class="hint2" style="margin:16px 0 6px">Mon prochain rendez-vous</p><div class="profnext"><div><b>' + esc(ttl) + '</b><br><span class="muted">' + esc(fmtDay(nx.date)) + (nx.time ? ' · ' + esc(nx.time) : '') + (nx.place ? ' · ' + esc(nx.place) : '') + '</span></div>' + presBtn(nx, today) + '</div>';
+  }
+  return out;
+}
 function profSheetHtml0(){
   var av = availRoles(), f = meInfo(), cur = profGet(), out = '<h2>Mon profil</h2>';
   if(av === null){
@@ -2645,7 +2664,7 @@ function profSheetHtml0(){
   out += '<div class="profid">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div></div>' +
     (av.length > 1 ? '<p class="hint2" style="margin:14px 0 6px">Changer de rôle</p>' : '') + '<div class="btnrow">';
   if(av.length > 1) PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
-  out += '</div>';
+  out += '</div>' + profMeHtml(f);
   var due = licClubs().some(licDue);
   if(nominable().length || can('licValidate') || licClubs().length){
     out += '<div class="btnrow">';
@@ -3371,9 +3390,25 @@ function keepShared(){
   return { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(x){ return x.slice(); }), cfg:S.cfg,
     clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, pres:S.pres, msgs:S.msgs, msgSeen:S.msgSeen, reports:S.reports, licFin:S.licFin, sync:S.sync, sb:S.sb };
 }
+/* Nouveau match : composition vide par défaut (la dernière composition enregistrée reste disponible par le bouton « Utiliser la dernière composition ») */
+function clearComp(){
+  [0, 1].forEach(function(t){ S.teams[t].players = []; S.teams[t].captain = ''; S.lineup[t] = [null, null, null, null, null, null]; });
+}
+function lastSquad(t){
+  var id = S.teams[t].clubId, f = id ? findTeam(id) : null, c = id ? clubById(id) : null, sq = f ? f.t.squad : (c ? c.squad : null);
+  return sq && sq.players && sq.players.length ? sq : null;
+}
+function lastCompoBtn(t){
+  if(matchStarted() || compoLock(t)) return '';
+  var sq = lastSquad(t); if(!sq) return '';
+  var cur = S.teams[t].players.map(function(p){ return p.id; }).sort().join(','), old = sq.players.map(function(p){ return p.id; }).sort().join(',');
+  if(cur === old) return '';
+  return '<div class="btnrow"><button class="btn wide" data-act="useLast" data-team="' + t + '">Utiliser la dernière composition</button></div>';
+}
 function resetForNew(){
   stopClock(); archiveCurrent();
   S = Object.assign(newState(), keepShared());
+  clearComp();
   S.stage = 'setup';
   ui.teamOther = [false, false]; ui.prepTeam = null;
 }
@@ -3381,6 +3416,7 @@ function resetForNew(){
 function discardCurrent(){
   stopClock();
   S = Object.assign(newState(), keepShared());
+  clearComp();
   S.stage = 'home';
 }
 function newMatch(){
@@ -4803,7 +4839,7 @@ function teamCard(t){
   var role = t ? 'Adversaire' : 'Notre équipe', nm = tn(t);
   return '<section class="card ' + (t ? 'b' : 'a') + '"><h2>' + esc(role) + (nm && nm !== role ? ' <span class="tnm">· ' + esc(nm) + '</span>' : '') + ' <span class="tnm">· ' + (t ? 'Extérieur' : 'Domicile') + '</span></h2>' +
     (team.clubId && clubName(team.clubId) !== nm ? '<p class="muted" style="margin:4px 0 0">' + esc(clubName(team.clubId)) + '</p>' : '') +
-    (compoLock(t) ? '<p class="hint2">La composition est fixée par le responsable d\'équipe.</p>' : '') +
+    (compoLock(t) ? '<p class="hint2">La composition est fixée par le responsable d\'équipe.</p>' : '') + lastCompoBtn(t) +
     '<div class="memhead"><h3 style="margin:0"><button class="linkbtn" data-act="memToggle" aria-expanded="' + (memHide() ? 'false' : 'true') + '" style="font:inherit;color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px">Membres de l\'équipe <span aria-hidden="true">' + (memHide() ? '▾' : '▴') + '</span></button></h3>' + (compoLock(t) ? '' : '<button class="addbtn" data-act="addPlayerOpen" data-team="' + t + '" aria-label="Ajouter un joueur" title="Ajouter un joueur"><span class="ico-plus" aria-hidden="true"></span></button>') + '</div>' +
     (matchStarted() ? '<p class="hint2">Le match a commencé : les joueurs ne peuvent plus être retirés de la feuille.</p>' : '') +
     (memHide() ? '' : '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
@@ -6526,6 +6562,7 @@ function sheetView(){
       '<label class="f" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-bind="emfpub"' + (dr.photoPublic ? ' checked' : '') + '> Photo visible par les visiteurs</label>' +
       '<div class="row2"><div><label class="f" for="em_lic">Licence</label><input type="text" id="em_lic" data-bind="emf" data-k="licence" value="' + esc(dr.licence) + '" autocomplete="off"></div>' +
       '<div><label class="f" for="em_age">Âge</label><input type="text" inputmode="numeric" id="em_age" maxlength="3" data-bind="emf" data-k="age" value="' + esc(dr.age) + '"></div></div>' +
+      '<label class="f" for="em_jn">N° de maillot</label><span class="shirt"><input class="snum" type="text" inputmode="numeric" id="em_jn" maxlength="3" placeholder="N°" data-bind="emf" data-k="jnum" value="' + esc(dr.jnum || '') + '"></span>' +
       '<div class="row2"><div><label class="f" for="em_nom">Nom</label><input type="text" id="em_nom" data-bind="emf" data-k="nom" value="' + esc(dr.nom) + '" autocomplete="off"></div>' +
       '<div><label class="f" for="em_pre">Prénom</label><input type="text" id="em_pre" data-bind="emf" data-k="prenom" value="' + esc(dr.prenom) + '" autocomplete="off"></div></div>' +
       (sh.err ? '<p class="hint2" style="color:var(--danger)" role="alert">' + esc(sh.err) + '</p>' : '') +
@@ -6871,6 +6908,7 @@ document.addEventListener('click', function(e){
     case 'statOpen': ui.edit = false; ui.sheet = null; ui.msg = ''; setTab('data'); ui.statClub = d.cid || null; ui.pAuto = undefined; ui.stSel = {}; ui.dataView = 'home'; ui.dataTeam = null; ui.dataPlayer = null; ui.dataMatch = null; render(); window.scrollTo(0,0); break;
     case 'statBack': ui.statClub = ui.statClub || ''; ui.clubSel = ui.statClub; ui.clubView = ui.statClub ? 'edit' : 'home'; ui.clubTab = null; ui.edit = false; ui.sheet = null; setTab('clubs'); render(); window.scrollTo(0,0); break;
     case 'dataTeams': ui.dataView = 'teams'; ui.dataTeam = null; render(); window.scrollTo(0,0); break;
+    case 'profStats': ui.sheet = null; ui.edit = false; ui.msg = ''; setTab('data'); ui.statClub = d.cid || null; ui.pAuto = undefined; ui.stSel = {}; ui.dataView = 'players'; ui.dataTeam = null; ui.dataPlayer = null; ui.dataMatch = null; ui.pfilter = ''; render(); window.scrollTo(0,0); break;
     case 'dataPlayers': ui.dataView = 'players'; ui.dataPlayer = null; ui.pAuto = undefined; ui.pfilter = ''; render(); window.scrollTo(0,0); break;
     case 'dataTeamSel': ui.dataTeam = d.key; render(); window.scrollTo(0,0); break;
     case 'dataPlayerSel': ui.dataPlayer = d.key; render(); window.scrollTo(0,0); break;
@@ -6882,7 +6920,7 @@ document.addEventListener('click', function(e){
       render(); window.scrollTo(0,0); break;
     case 'editMember': {
       var fm = findMember(d.mid);
-      if(fm){ ui.sheet = { kind:'editmember', mid:d.mid, err:'', draft:{ licence:fm.m.licence || '', nom:fm.m.nom || '', prenom:fm.m.prenom || '', age:fm.m.age === '' || fm.m.age == null ? '' : String(fm.m.age), photo:fm.m.photo || '', photoPublic:!!fm.m.photoPublic } }; render(); }
+      if(fm){ ui.sheet = { kind:'editmember', mid:d.mid, err:'', draft:{ licence:fm.m.licence || '', nom:fm.m.nom || '', prenom:fm.m.prenom || '', age:fm.m.age === '' || fm.m.age == null ? '' : String(fm.m.age), photo:fm.m.photo || '', photoPublic:!!fm.m.photoPublic, jnum:fm.m.jnum || '' } }; render(); }
       break;
     }
     case 'memMergeOpen': { var mm_f = findMember(sh.mid); if(mm_f && can('memberEdit', { cid:mm_f.club.id })){ ui.sheet = { kind:'memmerge', mid:sh.mid, err:'', draft:{ b:'', keep:'a' } }; render(); } break; }
@@ -6911,6 +6949,7 @@ document.addEventListener('click', function(e){
       ef.m.licence = (dr2.licence || '').trim(); ef.m.nom = (dr2.nom || '').trim(); ef.m.prenom = (dr2.prenom || '').trim(); ef.m.age = isNaN(ag) ? '' : ag;
       if(dr2.photo) ef.m.photo = dr2.photo; else delete ef.m.photo;
       ef.m.photoPublic = !!dr2.photoPublic;
+      var jn2 = String(dr2.jnum || '').replace(/\D/g, '').slice(0, 3); if(jn2) ef.m.jnum = jn2; else delete ef.m.jnum;
       var nm2 = memberName(ef.m);
       function upd(p){ if(p.mid === ef.m.id){ p.name = nm2; p.licence = ef.m.licence; } }
       S.teams.forEach(function(tm){ tm.players.forEach(upd); });
@@ -7297,12 +7336,13 @@ document.addEventListener('click', function(e){
       S.lineup[t] = S.lineup[t].map(function(id){ return id === d.pid ? null : id; });
       save(); render(); break;
     case 'addP': addPlayer(t); break;
+    case 'useLast': { var q_sq = lastSquad(t); if(q_sq && !matchStarted() && !compoLock(t)){ S.teams[t].players = JSON.parse(JSON.stringify(q_sq.players)); S.lineup[t] = (q_sq.lineup || [null,null,null,null,null,null]).slice(); S.history = []; save(); } render(); break; }
     case 'pickMember': {
       var club = clubById(S.teams[t].clubId);
       var m = club && club.members.filter(function(x){ return x.id === d.mid; })[0];
       if(!m) break;
       var num = document.getElementById('newnum' + t).value.trim();
-      placeNew(t, { id:uid(), num:num, name:memberName(m), licence:m.licence, mid:m.id });
+      placeNew(t, { id:uid(), num:num || (m.jnum && !numTaken(t, m.jnum) ? m.jnum : ''), name:memberName(m), licence:m.licence, mid:m.id });
       /* pas de clavier : on ne redonne pas le focus au champ de recherche, et on ferme celui qui serait resté ouvert */
       ui.find[t] = ''; ui.focus = null; ui.sheet = null;
       try{ if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); }catch(err){}
@@ -7735,7 +7775,7 @@ document.addEventListener('input', function(e){
     if(m2){
       var nn = document.getElementById('newnum' + t), nv = nn ? nn.value.trim() : '';
       if(numTaken(t, nv)){ showNumErr(t, 'Le numéro ' + nv + ' existe déjà dans cette équipe.'); var pk = document.getElementById('pickm' + t); if(pk) pk.value = ''; return; }
-      placeNew(t, { id:uid(), num:nv, name:memberName(m2), licence:m2.licence, mid:m2.id }, postChoice(t));
+      placeNew(t, { id:uid(), num:nv || (m2.jnum && !numTaken(t, m2.jnum) ? m2.jnum : ''), name:memberName(m2), licence:m2.licence, mid:m2.id }, postChoice(t));
       ui.sheet = null;
     }
     render(); return;
@@ -7767,6 +7807,7 @@ document.addEventListener('input', function(e){
     return;
   }
   else if(bind === 'licclub'){ if(ui.sheet){ ui.sheet.cid = v; render(); } return; }
+  else if(bind === 'mejnum'){ var q_jm = meInfo(); if(q_jm && !meTest()){ var jv = v.replace(/\D/g, '').slice(0, 3); if(e.target.value !== jv) e.target.value = jv; if(jv) q_jm.m.jnum = jv; else delete q_jm.m.jnum; save(); } return; }
   else if(bind === 'photopub'){ var q_pm = meInfo(); if(q_pm && !meTest()){ q_pm.m.photoPublic = !!e.target.checked; save(); } return; }
   else if(bind === 'emfpub'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft.photoPublic = !!e.target.checked; return; }
   else if(bind === 'licfin'){ if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ S.licFin = v.slice(5); save(); SB.setting('lic_fin', S.licFin); } return; }
