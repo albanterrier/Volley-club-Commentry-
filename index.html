@@ -667,7 +667,7 @@ svg.flow{display:block;width:100%;height:72px;background:var(--surface2);border-
 .profpick .stack{width:100%;margin-top:12px}
 .profpick .bigbtn{font-size:22px;padding:14px 12px;line-height:1.2}
 .profpick .bigbtn small{display:block;font-size:15px;font-weight:500;opacity:.85;margin-top:6px}
-.avlab{position:relative;display:inline-block;cursor:pointer;line-height:0;flex-shrink:0}.avplus{position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:flex;align-items:center;justify-content:center;font:700 16px/1 var(--font-d);border:2px solid var(--surface)}
+.avlab{position:relative;display:inline-block;cursor:pointer;line-height:0;flex-shrink:0}.avlab{background:none;border:0;padding:0}.avplus{position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border-radius:50%;background:#fff;display:flex;box-shadow:0 0 0 2px var(--surface)}.avplus svg{display:block}
 .profid{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:18px}
 
 header.top.hc{padding:6px 8px 6px 4px}
@@ -2787,7 +2787,7 @@ function profSheetHtml0(){
     return out + '<div class="btnrow"><button class="btn wide" data-act="invCodeOpen">J\'ai un code d\'invitation</button></div>';
   }
   var sc = scopeTxtFor(cur);
-  out += '<div class="profid">' + (meTest() ? avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) : '<label class="avlab" for="mephoto" title="' + (f.m.photo ? 'Changer ma photo' : 'Ajouter ma photo') + '">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true">' + (f.m.photo ? '✎' : '+') + '</span></label>') + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div></div>' +
+  out += '<div class="profid">' + (meTest() ? avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) : f.m.photo ? '<button type="button" class="avlab" data-act="mePhotoView" title="Voir ma photo" aria-label="Voir ma photo en grand">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M3.8 12c2-3.4 4.8-5 8.2-5s6.2 1.6 8.2 5c-2 3.4-4.800 5-8.2 5s-6.200-1.600-8.200-5z" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg></span></button>' : '<label class="avlab" for="mephoto" title="Ajouter ma photo">' + avatar('', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M12 6.5v11M6.5 12h11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></span></label>') + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div></div>' +
     (av.length > 1 ? '<p class="hint2" style="margin:14px 0 6px">Changer de rôle</p>' : '') + '<div class="btnrow">';
   if(av.length > 1) PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
   out += '</div>' + profMeHtml(f);
@@ -7570,6 +7570,9 @@ function sheetView(){
   } else if(sh.kind === 'request'){ inner = requestSheet(sh);
   } else if(sh.kind === 'requests'){ inner = requestsSheet();
   } else if(sh.kind === 'licseason'){ inner = licSheet(sh);
+  } else if(sh.kind === 'mephoto'){ var q_pv = meInfo();
+    inner = '<h2>Ma photo</h2>' + (q_pv && q_pv.m.photo ? '<div style="text-align:center;margin-top:10px"><img src="' + esc(q_pv.m.photo) + '" alt="Ma photo" style="max-width:100%;max-height:60vh;border-radius:14px"></div>' : '<p class="muted">Aucune photo.</p>') +
+      '<div class="btnrow"><label class="btn wide primary" for="mephoto" style="text-align:center;cursor:pointer">Modifier la photo</label><button class="btn wide" data-act="closeSheet">Fermer</button></div>';
   } else if(sh.kind === 'testas'){ inner = testSheet(sh);
   } else if(sh.kind === 'info'){ inner = '<h2>' + esc(sh.title) + '</h2><p class="hint2">' + esc(sh.note) + '</p>';
   } else if(sh.kind === 'profile'){
@@ -8187,6 +8190,7 @@ document.addEventListener('click', function(e){
     case 'licRenew': { var q_lf = findMember(d.mid); if(q_lf){ q_lf.m.licSeason = licYear(q_lf.club); save(); } render(); break; }
     case 'licRenewAll': { var q_la = clubById(sh.cid) || licClubs()[0]; if(q_la){ licToRenew(q_la).forEach(function(m){ m.licSeason = licYear(q_la); }); save(); } render(); break; }
     case 'licDel': { var q_ld = clubById(sh.cid) || licClubs()[0]; if(q_ld){ ui.clubSel = q_ld.id; ui.sheet = { kind:'delmember', mid:d.mid }; } render(); break; }
+    case 'mePhotoView': ui.sheet = { kind:'mephoto' }; render(); break;
     case 'testOpen': ui.sheet = { kind:'testas', draft:{ mcid:'', mid:'' } }; render(); break;
     case 'testOn': { if(sh.draft.mid && meReal() === S.adminId){ lsSet(TESTKEY, sh.draft.mid); ui.sheet = null; render(); } break; }
     case 'testOff': lsSet(TESTKEY, ''); ui.sheet = null; render(); break;
@@ -8824,7 +8828,7 @@ document.addEventListener('change', function(e){
     if(pc){ if(!lookOf(pc)) startCustom(pc); pc.look.colors[si] = String(e.target.value).toUpperCase(); save(); render(); }
   }
   else if(id === 'memphoto' && f) readPhoto(f, function(url){ if(ui.sheet && ui.sheet.kind === 'editmember') ui.sheet.draft.photo = url; render(); });
-  else if(id === 'mephoto' && f) readPhoto(f, function(url){ var q_mp = meInfo(); if(q_mp && !meTest()){ q_mp.m.photo = url; save(); } render(); });
+  else if(id === 'mephoto' && f) readPhoto(f, function(url){ var q_mp = meInfo(); if(q_mp && !meTest()){ q_mp.m.photo = url; save(); } ui.sheet = q_mp && q_mp.m.photo ? { kind:'mephoto' } : null; render(); });
   else if(id === 'pphoto' && f && ui.photoTarget){
     var tg = ui.photoTarget;
     readPhoto(f, function(url){ var pp = findPlayer(tg.t, tg.pid); if(pp){ pp.photo = url; save(); } render(); });
