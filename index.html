@@ -667,6 +667,7 @@ svg.flow{display:block;width:100%;height:72px;background:var(--surface2);border-
 .profpick .stack{width:100%;margin-top:12px}
 .profpick .bigbtn{font-size:22px;padding:14px 12px;line-height:1.2}
 .profpick .bigbtn small{display:block;font-size:15px;font-weight:500;opacity:.85;margin-top:6px}
+.avlab{position:relative;display:inline-block;cursor:pointer;line-height:0;flex-shrink:0}.avplus{position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:flex;align-items:center;justify-content:center;font:700 16px/1 var(--font-d);border:2px solid var(--surface)}
 .profid{display:flex;align-items:center;gap:14px;margin-top:10px;font-size:18px}
 
 header.top.hc{padding:6px 8px 6px 4px}
@@ -949,6 +950,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 <div id="sheet"></div>
 <div id="toast" aria-live="polite" aria-atomic="true"></div>
 <input type="file" id="pphoto" class="vh" accept="image/*" tabindex="-1" aria-hidden="true">
+<input type="file" id="mephoto" class="vh" accept="image/*" tabindex="-1" aria-hidden="true">
 
 <script>
 (function(){
@@ -1275,6 +1277,7 @@ var SB = (function(){
         S.sb = S.sb || {}; S.sb.trn = a[17].map(function(x){ return { tid:x.tid, role:x.role, team:x.team_id || '' }; });
         if(!lsGet(MEKEY) && !(S.sb && S.sb.at) && S.adminId && findMember(S.adminId)) meSet(S.adminId);
         merge(build(R));
+        try{ SB.jqApply(); }catch(e){}
         var set = {}; R.settings.forEach(function(r){ set[r.k] = r.v; });
         S.adminId = typeof set.admin_id === 'string' ? set.admin_id : '';
         if(typeof set.lic_fin === 'string') S.licFin = set.lic_fin;
@@ -1307,6 +1310,7 @@ var SB = (function(){
           var rows = rowsOf(x.c, h.o, parent), res = [];
           p = rows.reduce(function(chain, rw){
             if(TRNC[x.c] && x.op === 'mod'){ var pb = Object.assign({}, rw[1]); delete pb.id; return chain.then(function(){ return req('PATCH', '/rest/v1/' + rw[0] + '?id=eq.' + encodeURIComponent(x.id), pb, { Prefer:'return=minimal' }).then(function(r){ res.push(r); }); }); }
+            if(rw[0] === 'members' && x.c === 'member' && parent && !can('memberEdit', { cid:parent.id })) return chain;
             if(rw[0] === 'requests') return chain.then(function(){ return req('POST', '/rest/v1/requests', rw[1], { Prefer:'return=minimal' }).then(function(r){ if(r.status === 409) r.ok = true; res.push(r); }); });
             return chain.then(function(){ return req('POST', '/rest/v1/' + rw[0] + '?on_conflict=' + (rw[0] === 'member_private' || rw[0] === 'member_photos' ? 'member_id' : 'id'), rw[1], { Prefer:'resolution=merge-duplicates,return=minimal' }).then(function(r){ res.push(r); }); });
           }, Promise.resolve()).then(function(){ return res; });
@@ -1435,14 +1439,30 @@ var SB = (function(){
   function staff(){
     return req('POST', '/rest/v1/rpc/v2c_staff_list', {}).then(function(r){ return r.ok ? (r.json || []) : []; }, function(){ return []; });
   }
+  function jqList(){ var q = (S.sb && S.sb.jq) || {}; return Object.keys(q); }
+  function flushJq(){
+    var ks = jqList();
+    if(!ks.length) return Promise.resolve();
+    return ks.reduce(function(chain, mid){
+      return chain.then(function(){
+        var num = S.sb.jq[mid];
+        return req('POST', '/rest/v1/rpc/v2c_set_jnum', { p_mid:mid, p_num:num || '' }).then(function(r){
+          if(r.ok || r.status === 400 || r.status === 403){ delete S.sb.jq[mid]; }
+          else if(r.status === 404){ delete S.sb.jq[mid]; st.msg = 'Numéro de maillot : le script SQL 15 n\'est pas encore installé sur le serveur.'; }
+        }, function(){});
+      });
+    }, Promise.resolve());
+  }
   function sync(){
     if(busy || !ses()) return Promise.resolve(false);
     busy = true;
-    return push().then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); if(typeof reqCheck === 'function') reqCheck(); if(typeof invAuto === 'function') invAuto(); return r; }, function(){ busy = false; });
+    return flushJq().then(push).then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); if(typeof reqCheck === 'function') reqCheck(); if(typeof invAuto === 'function') invAuto(); return r; }, function(){ busy = false; });
   }
   return {
     status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length + ((S.sb && S.sb.pq) ? S.sb.pq.length : 0), busy:busy, msg:st.msg }; },
-    kick:function(){ if(!ses() || !(S.sync.out.length || (S.sb && S.sb.pq && S.sb.pq.length) || (S.sb && S.sb.md && S.sb.md.length) || (S.msgs || []).some(function(m){ return m.p; }) || (S.reports || []).some(function(m){ return m.p; }) || (S.sb && S.sb.rq && S.sb.rq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
+    kick:function(){ if(!ses() || !(S.sync.out.length || jqList().length || (S.sb && S.sb.pq && S.sb.pq.length) || (S.sb && S.sb.md && S.sb.md.length) || (S.msgs || []).some(function(m){ return m.p; }) || (S.reports || []).some(function(m){ return m.p; }) || (S.sb && S.sb.rq && S.sb.rq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
+    setJnum:function(mid, num){ S.sb = S.sb || {}; S.sb.jq = S.sb.jq || {}; S.sb.jq[mid] = num || ''; },
+    jqApply:function(){ jqList().forEach(function(mid){ var f = findMember(mid); if(f){ if(S.sb.jq[mid]) f.m.jnum = S.sb.jq[mid]; else delete f.m.jnum; } }); },
     trnMakeCode:function(tid, role, team){
       return req('POST', '/rest/v1/rpc/v2c_trn_make_code', { p_tid:tid, p_role:role, p_team:team || null }).then(function(r){ return r.ok ? { ok:true, code:r.json } : { ok:false, msg:errTxt(r.json, 'Refusé') }; }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
     },
@@ -2705,6 +2725,28 @@ function testSheet(sh){
     rsSelect('ts_c', 'Club', 'mcid', clubItems(S.clubs), dr.mcid, '— Choisir —') + rsSelect('ts_m', 'Licencié', 'mid', memberItems(mc), dr.mid, mc ? '— Choisir —' : 'Choisissez d\'abord le club') +
     '<div class="btnrow"><button class="btn wide primary" data-act="testOn">Agir comme cette personne</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
 }
+function jnumPropagate(mid, oldN, newN){
+  oldN = String(oldN || ''); newN = String(newN || '');
+  if(oldN === newN) return;
+  function fix(p){ if(p && p.mid === mid){ var c = String(p.num || ''); if(!c || c === oldN) p.num = newN; } }
+  if(!matchStarted()) S.teams.forEach(function(tm){ tm.players.forEach(fix); });
+  S.clubs.forEach(function(cl){ (cl.teams || []).forEach(function(tt){ if(tt.squad && tt.squad.players) tt.squad.players.forEach(fix); }); });
+  if(!SB.status().logged){
+    var today = isoOf(new Date());
+    function cmp(e){ if(!e || e.locked || (e.date && e.date < today) || !e.compo) return; Object.keys(e.compo).forEach(function(k){ ((e.compo[k] && e.compo[k].pl) || []).forEach(fix); }); }
+    S.champs.forEach(function(ch){ (ch.fixtures || []).forEach(cmp); });
+    (S.agenda || []).forEach(cmp);
+  }
+}
+var jnumTimer = null;
+function jnumSet(f, jv){
+  var old = f.m.jnum || '';
+  if(jv === old) return;
+  if(jv) f.m.jnum = jv; else delete f.m.jnum;
+  jnumPropagate(f.m.id, old, jv);
+  SB.setJnum(f.m.id, jv);
+  save();
+}
 function profMeHtml(f){
   var sv = ui.statClub; ui.statClub = null;
   var idx; try{ idx = playerIndex(); }finally{ ui.statClub = sv; }
@@ -2745,7 +2787,7 @@ function profSheetHtml0(){
     return out + '<div class="btnrow"><button class="btn wide" data-act="invCodeOpen">J\'ai un code d\'invitation</button></div>';
   }
   var sc = scopeTxtFor(cur);
-  out += '<div class="profid">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div></div>' +
+  out += '<div class="profid">' + (meTest() ? avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) : '<label class="avlab" for="mephoto" title="' + (f.m.photo ? 'Changer ma photo' : 'Ajouter ma photo') + '">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true">' + (f.m.photo ? '✎' : '+') + '</span></label>') + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div></div>' +
     (av.length > 1 ? '<p class="hint2" style="margin:14px 0 6px">Changer de rôle</p>' : '') + '<div class="btnrow">';
   if(av.length > 1) PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
   out += '</div>' + profMeHtml(f);
@@ -7862,7 +7904,7 @@ document.addEventListener('click', function(e){
       ef.m.licence = (dr2.licence || '').trim(); ef.m.nom = (dr2.nom || '').trim(); ef.m.prenom = (dr2.prenom || '').trim(); ef.m.age = isNaN(ag) ? '' : ag;
       if(dr2.photo) ef.m.photo = dr2.photo; else delete ef.m.photo;
       ef.m.photoPublic = !!dr2.photoPublic;
-      var jn2 = String(dr2.jnum || '').replace(/\D/g, '').slice(0, 3); if(jn2) ef.m.jnum = jn2; else delete ef.m.jnum;
+      var jn2 = String(dr2.jnum || '').replace(/\D/g, '').slice(0, 3), jo2 = ef.m.jnum || ''; if(jn2) ef.m.jnum = jn2; else delete ef.m.jnum; if(jn2 !== jo2){ jnumPropagate(ef.m.id, jo2, jn2); SB.setJnum(ef.m.id, jn2); }
       var nm2 = memberName(ef.m);
       function upd(p){ if(p.mid === ef.m.id){ p.name = nm2; p.licence = ef.m.licence; } }
       S.teams.forEach(function(tm){ tm.players.forEach(upd); });
@@ -8721,7 +8763,7 @@ document.addEventListener('input', function(e){
     return;
   }
   else if(bind === 'licclub'){ if(ui.sheet){ ui.sheet.cid = v; render(); } return; }
-  else if(bind === 'mejnum'){ var q_jm = meInfo(); if(q_jm && !meTest()){ var jv = v.replace(/\D/g, '').slice(0, 3); if(e.target.value !== jv) e.target.value = jv; if(jv) q_jm.m.jnum = jv; else delete q_jm.m.jnum; save(); } return; }
+  else if(bind === 'mejnum'){ var q_jm = meInfo(); if(q_jm && !meTest()){ var jv = v.replace(/\D/g, '').slice(0, 3); if(e.target.value !== jv) e.target.value = jv; jnumSet(q_jm, jv); } return; }
   else if(bind === 'photopub'){ var q_pm = meInfo(); if(q_pm && !meTest()){ q_pm.m.photoPublic = !!e.target.checked; save(); } return; }
   else if(bind === 'emfpub'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft.photoPublic = !!e.target.checked; return; }
   else if(bind === 'licfin'){ if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ S.licFin = v.slice(5); save(); SB.setting('lic_fin', S.licFin); } return; }
@@ -8782,6 +8824,7 @@ document.addEventListener('change', function(e){
     if(pc){ if(!lookOf(pc)) startCustom(pc); pc.look.colors[si] = String(e.target.value).toUpperCase(); save(); render(); }
   }
   else if(id === 'memphoto' && f) readPhoto(f, function(url){ if(ui.sheet && ui.sheet.kind === 'editmember') ui.sheet.draft.photo = url; render(); });
+  else if(id === 'mephoto' && f) readPhoto(f, function(url){ var q_mp = meInfo(); if(q_mp && !meTest()){ q_mp.m.photo = url; save(); } render(); });
   else if(id === 'pphoto' && f && ui.photoTarget){
     var tg = ui.photoTarget;
     readPhoto(f, function(url){ var pp = findPlayer(tg.t, tg.pid); if(pp){ pp.photo = url; save(); } render(); });
@@ -8794,7 +8837,7 @@ document.addEventListener('change', function(e){
     }
     ui.pendingRestore = obj; ui.sheet = { kind:'restore' }; render();
   });
-  if(id === 'csvfile' || id === 'logofile' || id === 'nclogo' || id === 'memphoto' || id === 'pphoto' || id === 'restorefile'){ try{ e.target.value = ''; }catch(err){} }
+  if(id === 'csvfile' || id === 'logofile' || id === 'nclogo' || id === 'memphoto' || id === 'pphoto' || id === 'mephoto' || id === 'restorefile'){ try{ e.target.value = ''; }catch(err){} }
 });
 document.addEventListener('focusout', function(e){
   var tg = e.target;
