@@ -449,6 +449,26 @@ header.top{border-bottom:1px solid rgba(255,255,255,.08)}
 .bars{display:block;width:100%;height:auto;color:var(--ink)}
 .chartleg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:6px 2px 4px;font-size:13px;color:var(--muted)}.chartleg span{display:inline-flex;align-items:center;gap:6px}
 .jnumrow{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:13px;line-height:1.3}
+.trncard{display:flex;flex-direction:column;gap:4px;text-align:left;width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.trnbadge{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+.trnbadge.s-cours,.trnbadge.s-inscriptions{color:var(--acc-text);border-color:var(--acc)}.trnbadge.s-termine{color:var(--ok);border-color:var(--ok)}.trnbadge.s-attente{color:var(--danger);border-color:var(--danger)}
+.tdot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:7px;vertical-align:-1px;flex:none;border:1px solid rgba(0,0,0,.25)}
+.tnm2{font-weight:600}.trntabs{margin:0 0 4px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.trntabs .chip{flex:none}
+.trnlist{list-style:none;margin:8px 0 0;padding:0}.trnlist li{margin:4px 0}.trnrow{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--line);border-radius:12px;background:var(--surface2);color:var(--ink);padding:10px 12px;font:inherit;cursor:pointer}
+.trnpl{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.trnadd{border:1px dashed var(--line-ui,var(--line));border-radius:12px;padding:4px 12px 12px;margin-top:10px}
+.trnchk{display:flex;align-items:center;gap:10px;margin-top:12px}.trncols{display:flex;flex-wrap:wrap;gap:8px}.tcol{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}.tcol.sel{border-color:var(--ink);box-shadow:0 0 0 2px var(--bg) inset}
+.trnh{margin:14px 0 4px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.trnmatches{list-style:none;margin:0;padding:0}.trnm{border:1px solid var(--line);border-radius:12px;margin:6px 0;padding:8px 10px;background:var(--surface2)}.trnm.mine{border-color:var(--acc)}.trnm.done{opacity:.95}
+.trnmrow{display:flex;align-items:center;gap:10px}.trnmt{width:46px;font-weight:700;text-align:center;font-size:14px;line-height:1.2;flex:none}.trnmx{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.trnmx .win{font-weight:800}.trnms{text-align:center;min-width:44px}
+.trnbtn{min-height:34px;padding:0 12px;font-size:13px}.trnref{font-size:12px;margin:4px 0 0 56px}
+.trnform{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}.trnset{display:flex;align-items:center;gap:8px;margin:4px 0}.trnset input{width:64px;text-align:center}.trnset span:first-child{width:46px;font-size:13px;color:var(--muted)}
+.trntbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}.trntbl th,.trntbl td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--line)}.trntbl .l{text-align:left}.trntbl th{color:var(--muted);font-weight:600;font-size:12px}
+.pods{display:flex;gap:10px;justify-content:space-around;align-items:flex-end}.pod{flex:1;text-align:center;border:1px solid var(--line);border-radius:12px;padding:10px 4px;background:var(--surface2);display:flex;flex-direction:column;gap:4px;align-items:center}.pod.p1{padding-top:22px;border-color:var(--gold)}.pm{font-size:30px}
+.trnslot{display:flex;gap:10px;margin:8px 0;border-top:1px solid var(--line);padding-top:8px}.trnst{width:52px;flex:none}.trnsc{flex:1;display:flex;flex-direction:column;gap:6px}.trnsm{font-size:14px}.trnsm.mine{border-left:3px solid var(--acc);padding-left:6px}.trnsm.done{opacity:.7}
+.trncode{font-family:monospace;letter-spacing:.12em;font-size:16px}
+.trntv{position:fixed;inset:0;z-index:50;background:var(--bg);color:var(--ink);overflow:auto;padding:16px 20px calc(24px + env(safe-area-inset-bottom,0px))}.trntv h1{font-size:30px;margin:0}.trntv h2{font-size:20px;margin:22px 0 8px;color:var(--muted)}
+.tvm{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0;background:var(--surface)}.tvm .tvx{font-size:26px;font-weight:700}.tvm.small .tvx{font-size:20px}.tvm .tvt{color:var(--acc-text);font-weight:700;font-size:16px}.tvpod{font-size:26px;font-weight:700}
 .profnext{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface2)}
 .profnext .muted{font-size:13px}
 .sq3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
@@ -941,7 +961,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
    Le jour où Supabase est branché, seul ce module change : les écrans ne savent pas où sont stockées les données. */
 var DB = (function(){
   var known = {}, MAXOUT = 2000;
-  var SKIP = { cb:1, ca:1, ub:1, ua:1, members:1, teams:1, squad:1, fixtures:1, matches:1 };
+  var SKIP = { cb:1, ca:1, ub:1, ua:1, members:1, teams:1, squad:1, fixtures:1, matches:1, codes:1 };
   function sigRep(k, v){
     if(SKIP[k]) return undefined;
     if(typeof v === 'string' && v.length > 200) return v.length + ':' + v.slice(0, 40) + v.slice(-40);
@@ -962,6 +982,11 @@ var DB = (function(){
     (s.agenda || []).forEach(function(a){ fn('agenda', a, s.agenda); });
     (s.roles || []).forEach(function(r){ fn('role', r, s.roles); });
     (s.requests || []).forEach(function(r){ fn('request', r, s.requests); });
+    (s.tournois || []).forEach(function(T){
+      fn('tournoi', T, s.tournois);
+      (T.teams || []).forEach(function(t){ fn('trnteam', t, T.teams, T); });
+      (T.matches || []).forEach(function(m){ fn('trnmatch', m, T.matches, T); });
+    });
   }
   function actor(){ try{ return meReal() || ''; }catch(e){ return ''; } }
   function note(s, c, id, op, at, by){
@@ -1077,10 +1102,11 @@ var SB = (function(){
       });
     });
   }
-  function all(table, order){
+  function all(table, order, soft){
     var out = [], off = 0;
     function next(){
       return req('GET', '/rest/v1/' + table + '?select=*&order=' + order + '.asc', undefined, { Range:off + '-' + (off + 999) }).then(function(r){
+        if(!r.ok && soft && r.status === 404){ st.trnMissing = true; return []; }
         if(!r.ok) throw new Error(table + ' : ' + errTxt(r.json, r.status));
         out = out.concat(r.json || []);
         if((r.json || []).length >= 1000){ off += 1000; return next(); }
@@ -1109,14 +1135,22 @@ var SB = (function(){
     if(c === 'result') return [['results', { id:o.id, champ_id:pid, fid:o.fid || null, home:o.home, away:o.away, home_sets:o.hs, away_sets:o['as'], data:strip(o, ['id', 'home', 'away', 'hs', 'as', 'fid']) }]];
     if(c === 'agenda') return [['agenda', { id:o.id, kind:o.kind === 'event' ? 'event' : 'amical', title:o.title || '', home:o.home || null, away:o.away || null, date:o.date || null, time:o.time || '', place:o.place || '', postponed:!!o.postponed, result:o.result || null, locked:o.locked || null, compo:o.compo || {}, data:strip(o, ['id', 'kind', 'title', 'home', 'away', 'date', 'time', 'place', 'postponed', 'result', 'locked', 'compo']) }]];
     if(c === 'request') return [['requests', { id:o.id, dev:o.dev || '', prenom:o.prenom, nom:o.nom, licence:o.licence, cid:o.cid, age:o.age == null ? null : o.age, data:{ age:o.age == null ? null : o.age, date:o.date || '' } }]];
+    if(c === 'tournoi') return [['tournois', { id:o.id, name:o.name || '', club_id:o.clubId || null, vis:(o.cfg && o.cfg.vis) || 'prive', status:o.status || 'brouillon', date:o.date || null, data:strip(o, ['id', 'name', 'clubId', 'status', 'date', 'teams', 'matches', 'codes', 'orgCode', 'remote']) }]];
+    if(c === 'trnteam') return [['trn_teams', { id:o.id, tid:pid, name:o.name || '', color:o.color || '', club_id:o.clubId || null, state:o.state === 'attente' ? 'attente' : 'ok', here:!!o.here, cap:o.cap || '', players:o.players || [], data:strip(o, ['id', 'name', 'color', 'clubId', 'state', 'here', 'cap', 'players', 'code']) }]];
+    if(c === 'trnmatch') return [['trn_matches', { id:o.id, tid:pid, phase:o.phase || 'poule', grp:o.grp == null ? null : o.grp, round:o.round || 1, idx:o.idx || 0, a:o.a || null, b:o.b || null, src_a:o.srcA || null, src_b:o.srcB || null, res:o.res || null, forfeit:o.forfeit || '', done:!!o.done, bye:!!o.bye, court:o.court || 0, slot:o.slot == null ? -1 : o.slot, time:o.time || '', ref:o.ref || '', data:{} }]];
     if(c === 'role') return [['roles', { id:o.id, mid:o.mid, role:o.role, cid:o.cid || null, tid:o.tid || null, ref:o.ref || null, state:o.state || 'actif', code:o.code || null, exp:o.exp || null, data:{ by:o.by || '', date:o.date || '' } }]];
     return [];
   }
-  var TABLE = { club:'clubs', team:'teams', member:'members', champ:'champs', fixture:'fixtures', result:'results', agenda:'agenda', role:'roles', request:'requests' };
-  var ORDER = ['club', 'team', 'member', 'champ', 'fixture', 'result', 'agenda', 'role', 'request'];
+  var TABLE = { club:'clubs', team:'teams', member:'members', champ:'champs', fixture:'fixtures', result:'results', agenda:'agenda', role:'roles', request:'requests', tournoi:'tournois', trnteam:'trn_teams', trnmatch:'trn_matches' };
+  var ORDER = ['club', 'team', 'member', 'champ', 'fixture', 'result', 'agenda', 'role', 'request', 'tournoi', 'trnteam', 'trnmatch'];
+  var TRNC = { tournoi:1, trnteam:1, trnmatch:1 };
+  /* tournois : lignes de la base -> local */
+  function bTrn(r){ return meta(Object.assign({}, r.data, { id:r.id, name:r.name, clubId:r.club_id || '', status:r.status, date:r.date || '', teams:[], matches:[] }), r); }
+  function bTeam(r){ return meta(Object.assign({}, r.data, { id:r.id, name:r.name, color:r.color, clubId:r.club_id || '', state:r.state, here:!!r.here, cap:r.cap || '', players:r.players || [] }), r); }
+  function bMatch(r){ return meta({ id:r.id, phase:r.phase, grp:r.grp, round:r.round, idx:r.idx, a:r.a, b:r.b, srcA:r.src_a, srcB:r.src_b, res:r.res, forfeit:r.forfeit || '', done:!!r.done, bye:!!r.bye, court:r.court, slot:r.slot, time:r.time, ref:r.ref }, r); }
   /* lignes de la base -> local */
   function build(R){
-    var L = { club:[], team:[], member:[], champ:[], fixture:[], result:[], agenda:[], role:[], request:[] }, mp = {}, mph = {};
+    var L = { club:[], team:[], member:[], champ:[], fixture:[], result:[], agenda:[], role:[], request:[], tournoi:[], trnteam:[], trnmatch:[] }, mp = {}, mph = {};
     R.mp.forEach(function(r){ mp[r.member_id] = r; });
     R.mph.forEach(function(r){ mph[r.member_id] = r; });
     R.clubs.forEach(function(r){ L.club.push({ o:meta(Object.assign({}, r.data, { id:r.id, name:r.name, members:[], teams:[] }), r), pid:'' }); });
@@ -1144,6 +1178,9 @@ var SB = (function(){
       if(r.compo && Object.keys(r.compo).length) o.compo = r.compo;
       L.agenda.push({ o:meta(o, r), pid:'' });
     });
+    (R.tournois || []).forEach(function(r){ L.tournoi.push({ o:bTrn(r), pid:'' }); });
+    (R.trnTeams || []).forEach(function(r){ L.trnteam.push({ o:bTeam(r), pid:r.tid }); });
+    (R.trnMatches || []).forEach(function(r){ L.trnmatch.push({ o:bMatch(r), pid:r.tid }); });
     R.roles.forEach(function(r){
       var o = { id:r.id, mid:r.mid, role:r.role, cid:r.cid || '', tid:r.tid || '', state:r.state, by:(r.data && r.data.by) || '', date:(r.data && r.data.date) || (r.ca || '').slice(0, 10) };
       if(r.ref) o.ref = r.ref; if(r.code) o.code = r.code; if(r.exp) o.exp = r.exp;
@@ -1188,6 +1225,10 @@ var SB = (function(){
     S.agenda = M.agenda.map(function(x){ return x.o; });
     S.roles = M.role.map(function(x){ return x.o; });
     S.requests = M.request.map(function(x){ return x.o; });
+    var tmap = {};
+    S.tournois = (M.tournoi || []).map(function(x){ x.o.teams = []; x.o.matches = []; tmap[x.o.id] = x.o; return x.o; });
+    (M.trnteam || []).forEach(function(x){ if(tmap[x.pid]) tmap[x.pid].teams.push(x.o); });
+    (M.trnmatch || []).forEach(function(x){ if(tmap[x.pid]) tmap[x.pid].matches.push(x.o); });
     S.sb = S.sb || {}; S.sb.ids = ids;
   }
   /* Présences : file d'envoi S.sb.pq = [{e: événement, m: licencié, s: 'p' | 'a' | '' (retirer)}]. Les réponses en attente l'emportent sur le serveur. */
@@ -1228,9 +1269,10 @@ var SB = (function(){
   function pull(){
     return ensure().then(function(s){
       if(!s) return false;
-      var T = [['settings', 'k'], ['clubs', 'id'], ['teams', 'id'], ['members', 'id'], ['member_private', 'member_id'], ['member_photos', 'member_id'], ['champs', 'id'], ['fixtures', 'id'], ['results', 'id'], ['agenda', 'id'], ['roles', 'id'], ['requests', 'id'], ['profiles', 'user_id'], ['presences', 'entry_id,member_id']];
-      return Promise.all(T.map(function(t){ return all(t[0], t[1]); })).then(function(a){
-        var R = { settings:a[0], clubs:a[1], teams:a[2], members:a[3], mp:a[4], mph:a[5], champs:a[6], fixtures:a[7], results:a[8], agenda:a[9], roles:a[10], requests:a[11] }, prof = a[12];
+      var T = [['settings', 'k'], ['clubs', 'id'], ['teams', 'id'], ['members', 'id'], ['member_private', 'member_id'], ['member_photos', 'member_id'], ['champs', 'id'], ['fixtures', 'id'], ['results', 'id'], ['agenda', 'id'], ['roles', 'id'], ['requests', 'id'], ['profiles', 'user_id'], ['presences', 'entry_id,member_id'], ['tournois', 'id', 1], ['trn_teams', 'id', 1], ['trn_matches', 'id', 1]];
+      return Promise.all(T.map(function(t){ return all(t[0], t[1], t[2]); }).concat([req('POST', '/rest/v1/rpc/v2c_trn_mine', {}).then(function(r){ return r.ok && Array.isArray(r.json) ? r.json : []; }, function(){ return []; })])).then(function(a){
+        var R = { settings:a[0], clubs:a[1], teams:a[2], members:a[3], mp:a[4], mph:a[5], champs:a[6], fixtures:a[7], results:a[8], agenda:a[9], roles:a[10], requests:a[11], tournois:a[14], trnTeams:a[15], trnMatches:a[16] }, prof = a[12];
+        S.sb = S.sb || {}; S.sb.trn = a[17].map(function(x){ return { tid:x.tid, role:x.role, team:x.team_id || '' }; });
         if(!lsGet(MEKEY) && !(S.sb && S.sb.at) && S.adminId && findMember(S.adminId)) meSet(S.adminId);
         merge(build(R));
         var set = {}; R.settings.forEach(function(r){ set[r.k] = r.v; });
@@ -1241,6 +1283,7 @@ var SB = (function(){
         presFromRows(a[13] || []);
         S.sb.at = new Date().toISOString(); S.sb.email = s.email;
         DB.rebase(S);
+        try{ trnAfterPull(); }catch(e){}
         st.msg = ''; save(); return true;
       });
     }).catch(function(e){ st.msg = (navigator.onLine === false) ? 'Hors ligne : les changements seront envoyés au retour du réseau.' : 'Synchronisation impossible : ' + e.message; return false; });
@@ -1263,6 +1306,7 @@ var SB = (function(){
           var parent = null; DB.walk(S, function(c, o, arr, par){ if(c === x.c && o === h.o) parent = par; });
           var rows = rowsOf(x.c, h.o, parent), res = [];
           p = rows.reduce(function(chain, rw){
+            if(TRNC[x.c] && x.op === 'mod'){ var pb = Object.assign({}, rw[1]); delete pb.id; return chain.then(function(){ return req('PATCH', '/rest/v1/' + rw[0] + '?id=eq.' + encodeURIComponent(x.id), pb, { Prefer:'return=minimal' }).then(function(r){ res.push(r); }); }); }
             if(rw[0] === 'requests') return chain.then(function(){ return req('POST', '/rest/v1/requests', rw[1], { Prefer:'return=minimal' }).then(function(r){ if(r.status === 409) r.ok = true; res.push(r); }); });
             return chain.then(function(){ return req('POST', '/rest/v1/' + rw[0] + '?on_conflict=' + (rw[0] === 'member_private' || rw[0] === 'member_photos' ? 'member_id' : 'id'), rw[1], { Prefer:'resolution=merge-duplicates,return=minimal' }).then(function(r){ res.push(r); }); });
           }, Promise.resolve()).then(function(){ return res; });
@@ -1270,6 +1314,7 @@ var SB = (function(){
         return p.then(function(res){
           var bad = res.filter(function(r){ return !r.ok; });
           if(bad.some(function(r){ return r.status === 401 || r.status >= 500; })){ stop = true; st.msg = 'Envoi interrompu, nouvel essai plus tard.'; return; }
+          if(TRNC[x.c] && bad.some(function(r){ return r.status === 404; })){ stop = true; st.msg = 'Tournois : le script SQL 14 n\'est pas encore installé sur le serveur.'; return; }
           if(bad.length){ rejected++; st.msg = 'Le serveur a refusé une modification : ' + errTxt(bad[0].json, bad[0].status); }
           done(x); return one(i + 1);
         });
@@ -1398,6 +1443,45 @@ var SB = (function(){
   return {
     status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length + ((S.sb && S.sb.pq) ? S.sb.pq.length : 0), busy:busy, msg:st.msg }; },
     kick:function(){ if(!ses() || !(S.sync.out.length || (S.sb && S.sb.pq && S.sb.pq.length) || (S.sb && S.sb.md && S.sb.md.length) || (S.msgs || []).some(function(m){ return m.p; }) || (S.reports || []).some(function(m){ return m.p; }) || (S.sb && S.sb.rq && S.sb.rq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
+    trnMakeCode:function(tid, role, team){
+      return req('POST', '/rest/v1/rpc/v2c_trn_make_code', { p_tid:tid, p_role:role, p_team:team || null }).then(function(r){ return r.ok ? { ok:true, code:r.json } : { ok:false, msg:errTxt(r.json, 'Refusé') }; }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
+    },
+    trnCodes:function(tid){
+      return req('POST', '/rest/v1/rpc/v2c_trn_codes', { p_tid:tid }).then(function(r){ return r.ok && Array.isArray(r.json) ? { ok:true, list:r.json } : { ok:false }; }, function(){ return { ok:false }; });
+    },
+    trnRedeem:function(code){
+      return req('POST', '/rest/v1/rpc/v2c_trn_redeem', { p_code:String(code).trim() }).then(function(r){
+        if(!r.ok) return { ok:false, msg:errTxt(r.json, 'Code inconnu') };
+        var j = r.json || {};
+        return pull().then(function(){ return { ok:true, tid:j.tid, role:j.role, team:j.team }; });
+      }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
+    },
+    /* Relit un tournoi (avec ou sans compte : les tournois publics se lisent sans compte) et le fusionne, sans écraser ce qui attend d'être envoyé */
+    trnRefresh:function(tid){
+      var q = encodeURIComponent(tid);
+      return Promise.all([req('GET', '/rest/v1/tournois?select=*&id=eq.' + q), req('GET', '/rest/v1/trn_teams?select=*&tid=eq.' + q + '&order=id.asc'), req('GET', '/rest/v1/trn_matches?select=*&tid=eq.' + q + '&order=id.asc')]).then(function(a){
+        if(!a[0].ok || !a[1].ok || !a[2].ok) return { ok:false };
+        var rt = a[0].json || [];
+        if(!rt.length) return { ok:true, found:false };
+        var pend = {}; S.sync.out.forEach(function(x){ pend[x.c + ':' + x.id] = x.op; });
+        var T = (S.tournois || []).filter(function(x){ return x.id === tid; })[0], before = T ? JSON.stringify(T) : '';
+        var nt = bTrn(rt[0]);
+        if(!T){ T = nt; if(!ses()) T.remote = true; S.tournois = S.tournois || []; S.tournois.push(T); }
+        else if(!pend['tournoi:' + tid]){ var tm = T.teams, mt = T.matches, cd = T.codes, rm = T.remote; Object.keys(T).forEach(function(k){ delete T[k]; }); Object.assign(T, nt); T.teams = tm; T.matches = mt; if(cd) T.codes = cd; if(rm) T.remote = true; }
+        function kids(cur, rows, fn, cls){
+          var out = [], seen = {}, byId = {};
+          cur.forEach(function(o){ byId[o.id] = o; });
+          rows.forEach(function(r){ var p = pend[cls + ':' + r.id]; seen[r.id] = 1; if(p === 'del') return; out.push((p === 'mod' || p === 'add') ? (byId[r.id] || fn(r)) : fn(r)); });
+          cur.forEach(function(o){ if(!seen[o.id] && pend[cls + ':' + o.id] === 'add') out.push(o); });
+          return out;
+        }
+        T.teams = kids(T.teams || [], a[1].json || [], bTeam, 'trnteam');
+        T.matches = kids(T.matches || [], a[2].json || [], bMatch, 'trnmatch');
+        var changed = JSON.stringify(T) !== before;
+        if(changed){ DB.rebase(S); try{ trnAfterPull(); }catch(e){} save(); }
+        return { ok:true, found:true, changed:changed };
+      }, function(){ return { ok:false }; });
+    },
     pushRegister:function(ep, p256, auth, prefs){ return req('POST', '/rest/v1/rpc/v2c_push_register', { p_endpoint:ep, p_p256dh:p256, p_auth:auth, p_prefs:prefs || {} }); },
     pushUnregister:function(ep){ return req('POST', '/rest/v1/rpc/v2c_push_unregister', { p_endpoint:ep }); },
     sync:sync, msgSync:msgSync, staff:staff,
@@ -1716,13 +1800,13 @@ function newState(){
     sets:[], cur:[0,0], serving:null, timeouts:[0,0], subs:[0,0],
     events:[], history:[], finished:false,
     clock:{running:false, since:0, acc:0}, tc:null,
-    clubs:[], champs:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], pres:{}, msgs:[], msgSeen:{}, reports:[], sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], plan:[{},{}], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
+    clubs:[], champs:[], tournois:[], champAdded:null, fixtureRef:null, prepared:false, matchChamp:'', stage:'home', library:[], homeClub:'', agenda:[], roles:[], requests:[], pres:{}, msgs:[], msgSeen:{}, reports:[], sync:{ out:[] }, sb:{ ids:[], at:'', email:'' }, licFin:'07-15', swap:false, midSwap:false, firstSrv:null, starters:[[],[]], plan:[{},{}], subPairs:[[],[]], sanc:[{},{}], titleAuto:true,
     prefs:{ schema:true, table:false, players:false, sheet:false }
   };
 }
 function migrate(s){
   var d = newState();
-  s.clubs = s.clubs || []; s.champs = s.champs || [];
+  s.clubs = s.clubs || []; s.champs = s.champs || []; s.tournois = s.tournois || [];
   s.champs.forEach(function(c){ var pm = /^PH ([ABC])$/.exec(c.name || ''); if(pm) c.name = 'Promotion Honneur ' + pm[1]; });
   s.clubs.forEach(function(c){ if(c.members === undefined) c.members = []; if(!c.teams){ c.teams = [{ id:c.id, name:c.name, memberIds:c.members.map(function(m){ return m.id; }), squad:c.squad || null }]; delete c.squad; } if(!c.teams.some(function(t){ return t.id === c.id; })) c.teams.unshift({ id:c.id, name:c.name, memberIds:[], squad:null }); c.teams.forEach(function(t){ if(!t.memberIds) t.memberIds = []; }); });
   s.champs.forEach(function(c){
@@ -2068,7 +2152,7 @@ var RIGHTS = {
   licValidate:{ admin:1, pres:'club', rclub:'club' },
   seasonLic:{ admin:1, pres:'club' },
   evCreate:{ admin:1, fede:1, pres:'club', rclub:'club', requ:'team' },
-  trainCreate:{ admin:1, pres:'club', rclub:'club' },
+  trainCreate:{ admin:1, pres:'club', rclub:'club' }, trnCreate:{ admin:1, fede:1, pres:'club', rclub:'club' },
   designate:{ admin:1, fede:1, pres:'club', rclub:'club' },
   compo:{ admin:1, pres:'club', rclub:'club', requ:'team' },
   score:{ admin:1, compteur:'match' }, validate:{ admin:1, arbitre:'match' }, unlock:{ admin:1, fede:1 },
@@ -2830,6 +2914,8 @@ function routeHash(){
     if(ui.champSel){ h += '/' + encodeURIComponent(ui.champSel); if(ui.champTab) h += '/' + ui.champTab; }
   } else if(ui.tab === 'data'){
     if(ui.dataView === 'teams' || ui.dataView === 'players') h += '/' + (ui.dataView === 'teams' ? 'equipes' : 'joueurs');
+  } else if(ui.tab === 'tournoi'){
+    if(ui.trn && ui.trn.view === 'detail' && ui.trn.id) h += '/' + encodeURIComponent(ui.trn.id);
   }
   return h;
 }
@@ -2851,6 +2937,13 @@ function routeApply(hs){
     }
   } else if(tab === 'champ'){
     if(seg[0] && champById(seg[0])){ ui.champSel = seg[0]; if(['teams','agenda','results'].indexOf(seg[1]) >= 0) ui.champTab = seg[1]; }
+  } else if(tab === 'tournoi'){
+    ui.trn = Object.assign(trnU(), { view:'list', id:null, tv:false, joinOpen:false, join:'' });
+    if(seg[1] === 'code' && seg[2]){ ui.trn.joinOpen = true; ui.trn.join = seg[2].toUpperCase(); }
+    else if(seg[0]){
+      if(trnById(seg[0])) ui.trn = Object.assign(ui.trn, { view:'detail', id:seg[0], tab:'infos' });
+      else trnOpenRemote(seg[0]);
+    }
   } else if(tab === 'data'){
     ui.dataTeam = null; ui.dataPlayer = null; ui.dataMatch = null;
     ui.dataView = seg[0] === 'joueurs' ? 'players' : 'teams';
@@ -3388,7 +3481,7 @@ function loadMatch(created){
 }
 function keepShared(){
   return { teams:JSON.parse(JSON.stringify(S.teams)), lineup:S.lineup.map(function(x){ return x.slice(); }), cfg:S.cfg,
-    clubs:S.clubs, champs:S.champs, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, pres:S.pres, msgs:S.msgs, msgSeen:S.msgSeen, reports:S.reports, licFin:S.licFin, sync:S.sync, sb:S.sb };
+    clubs:S.clubs, champs:S.champs, tournois:S.tournois, prefs:S.prefs, library:S.library, homeClub:S.homeClub, adminId:S.adminId, fav:S.fav, agenda:S.agenda, seasons:S.seasons, season:S.season, roles:S.roles, requests:S.requests, pres:S.pres, msgs:S.msgs, msgSeen:S.msgSeen, reports:S.reports, licFin:S.licFin, sync:S.sync, sb:S.sb };
 }
 /* Nouveau match : composition vide par défaut (la dernière composition enregistrée reste disponible par le bouton « Utiliser la dernière composition ») */
 function clearComp(){
@@ -4921,8 +5014,827 @@ function setupView(){
 
 /* ---------- Vue : clubs ---------- */
 function clubsBack(label, v){ return ''; }
+/* ================= TOURNOIS ================= */
+var TRN_COL = ['#e8590c', '#1c7ed6', '#2f9e44', '#c2255c', '#7048e8', '#f59f00', '#0c8599', '#e03131', '#5c940d', '#364fc7', '#d6336c', '#495057'];
+var TRN_STATUS = [['brouillon', 'Brouillon'], ['inscriptions', 'Inscriptions ouvertes'], ['cours', 'En cours'], ['termine', 'Terminé']];
+function trnList(){ if(!S.tournois) S.tournois = []; return S.tournois; }
+function trnById(id){ return trnList().filter(function(x){ return x.id === id; })[0] || null; }
+function trnNew(draft){
+  return { id:uid(), name:draft.name, date:draft.date, date2:draft.date2 || '', time:draft.time || '', place:draft.place || '', desc:'', clubId:draft.clubId || '', status:'brouillon', created:stamp(),
+    cfg:{ courts:2, setsToWin:2, pts:25, ptsLast:15, minutes:40, bareme:'fivb', cat:draft.cat || 'mixte', vis:draft.vis || 'prive', maxTeams:0, ref:true, start:draft.time || '09:00' },
+    fmt:{ type:'both', groups:0, legs:1, qual:2, wild:0, third:true, consol:false, seed:'tirage' },
+    teams:[], free:[], orgs:[], news:[], matches:[], groupsOf:[], generated:false, agendaId:'', codes:{ org:'', teams:{} }, by:meGet() || '' };
+}
+function trnTeam(T, id){ return T.teams.filter(function(x){ return x.id === id; })[0] || null; }
+function trnTeamName(T, id){ var t = id ? trnTeam(T, id) : null; return t ? t.name : ''; }
+function trnPlayerKey(p){ return p.mid ? 'm:' + p.mid : 'n:' + norm(p.name); }
+function trnAcc(T){ return ((S.sb && S.sb.trn) || []).filter(function(x){ return x.tid === T.id; }); }
+function trnCanEdit(T){
+  if(T.remote) return false;
+  if(availRoles() === null || profGet() === 'admin') return true;
+  var me = meGet();
+  if(me && (T.orgs || []).indexOf(me) >= 0) return true;
+  if(me && T.by === me && can('trnCreate')) return true;
+  if(trnAcc(T).some(function(x){ return x.role === 'orga'; })) return true;
+  return !!T.clubId && can('trnCreate', { cid:T.clubId });
+}
+/* capitaine d'une équipe : par code d'invitation (serveur) ou désigné parmi les joueurs */
+function trnIsCap(T, t){
+  if(!t) return false;
+  if(trnAcc(T).some(function(x){ return x.role === 'cap' && x.team === t.id; })) return true;
+  var me = meGet(); return !!me && !!t.cap && t.players.some(function(p){ return p.id === t.cap && p.mid === me; });
+}
+function trnCanScore(T, m){ return trnCanEdit(T) || trnIsCap(T, trnTeam(T, m.a)) || trnIsCap(T, trnTeam(T, m.b)) || (!!m.ref && trnIsCap(T, trnTeam(T, m.ref))); }
+function trnLogged(){ try{ return SB.status().logged; }catch(e){ return false; } }
+function trnCaptainOf(T){ var me = meGet(); if(!me) return null; return T.teams.filter(function(t){ return t.cap && t.players.some(function(p){ return p.id === t.cap && p.mid === me; }); })[0] || null; }
+function trnMyTeams(T){ var me = meGet(); if(!me) return []; return T.teams.filter(function(t){ return t.players.some(function(p){ return p.mid === me; }); }); }
+/* ---- synchronisation du tournoi avec une entrée du calendrier ---- */
+function trnSyncAgenda(T){
+  var a = T.agendaId ? S.agenda.filter(function(x){ return x.id === T.agendaId; })[0] : null;
+  if(!a){ a = { id:uid(), kind:'event' }; S.agenda.push(a); T.agendaId = a.id; }
+  a.title = 'Tournoi · ' + T.name; a.date = T.date; a.time = T.time || ''; a.place = T.place || ''; a.trn = T.id;
+  if(T.clubId) a.club = T.clubId; else delete a.club;
+}
+/* ---- format : tailles de poules et aperçu ---- */
+function trnAutoGroups(N){ return N <= 5 ? 1 : Math.max(2, Math.round(N / 4)); }
+function trnGroupSizes(N, g){ var out = [], i; for(i = 0; i < g; i++) out.push(Math.floor(N / g) + (i < N % g ? 1 : 0)); return out; }
+function trnPow2(n){ var p = 1; while(p < n) p *= 2; return p; }
+function trnPreview(T){
+  var N = T.teams.length, f = T.fmt, c = T.cfg, out = { N:N, groups:0, sizes:[], poolM:0, qual:0, bracketM:0, total:0, minutes:0, txt:'' };
+  if(N < 2){ out.txt = 'Ajoutez au moins 2 équipes pour voir l\'aperçu.'; return out; }
+  if(f.type !== 'elim'){
+    out.groups = Math.min(f.groups || trnAutoGroups(N), Math.floor(N / 2)) || 1;
+    out.sizes = trnGroupSizes(N, out.groups);
+    out.sizes.forEach(function(s){ out.poolM += s * (s - 1) / 2 * (f.legs === 2 ? 2 : 1); });
+  }
+  if(f.type === 'both') out.qual = Math.min(N, out.groups * Math.min(f.qual, Math.min.apply(null, out.sizes)) + (f.wild || 0));
+  if(f.type === 'elim') out.qual = N;
+  if(f.type !== 'poules' && out.qual >= 2){
+    out.bracketM = out.qual - 1 + (f.third && out.qual >= 4 ? 1 : 0);
+    if(f.consol){ var l1 = out.qual - trnPow2(out.qual) / 2; out.bracketM += Math.max(0, l1 - 1); }
+  }
+  out.total = out.poolM + out.bracketM;
+  out.minutes = Math.ceil(out.total / Math.max(1, c.courts)) * c.minutes;
+  var parts = [];
+  if(out.groups) parts.push(out.groups + ' poule' + (out.groups > 1 ? 's' : '') + ' (' + out.sizes.join(' + ') + ' équipes) : ' + out.poolM + ' matchs');
+  if(out.bracketM) parts.push((f.type === 'both' ? out.qual + ' qualifiés, ' : '') + 'phase finale : ' + out.bracketM + ' matchs');
+  out.txt = N + ' équipes → ' + parts.join(' · ') + '. Total ' + out.total + ' matchs, environ ' + Math.floor(out.minutes / 60) + ' h ' + ('0' + (out.minutes % 60)).slice(-2) + ' sur ' + c.courts + ' terrain' + (c.courts > 1 ? 's' : '') + '.';
+  return out;
+}
+/* ---- tirage / répartition ---- */
+function trnShuffle(a){ a = a.slice(); var i, j, x; for(i = a.length - 1; i > 0; i--){ j = Math.floor(Math.random() * (i + 1)); x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+function trnSnake(ids, g){
+  var gr = [], i; for(i = 0; i < g; i++) gr.push([]);
+  ids.forEach(function(id, k){ var r = Math.floor(k / g), c = k % g; gr[r % 2 === 0 ? c : g - 1 - c].push(id); });
+  return gr;
+}
+function trnRoundRobin(ids, legs){
+  var t = ids.slice(), out = [], n, r, i;
+  if(t.length % 2) t.push(null);
+  n = t.length;
+  for(r = 0; r < n - 1; r++){
+    for(i = 0; i < n / 2; i++){
+      var a = t[i], b = t[n - 1 - i];
+      if(a && b) out.push({ round:r + 1, a:(r % 2 && i === 0) ? b : a, b:(r % 2 && i === 0) ? a : b });
+    }
+    t.splice(1, 0, t.pop());
+  }
+  if(legs === 2){ var k = out.length, rmax = n - 1; for(i = 0; i < k; i++) out.push({ round:out[i].round + rmax, a:out[i].b, b:out[i].a }); }
+  return out;
+}
+function trnMk(T, o){
+  var m = { id:uid(), phase:o.phase, grp:o.grp == null ? null : o.grp, round:o.round, idx:o.idx || 0, a:o.a || null, b:o.b || null, srcA:o.srcA || null, srcB:o.srcB || null, res:null, court:0, slot:-1, time:'', ref:'', forfeit:'', done:false };
+  T.matches.push(m); return m;
+}
+/* Génère poules et/ou tableau. Pour « poules puis phase finale », le tableau est créé quand les poules sont terminées (trnAdvance). */
+function trnGenerate(T){
+  var f = T.fmt, ids = T.teams.filter(function(t){ return t.state !== 'attente'; }).map(function(t){ return t.id; });
+  if(f.seed === 'tirage') ids = trnShuffle(ids);
+  T.matches = []; T.groupsOf = []; T.generated = true;
+  if(f.type === 'elim'){ trnBuildBracket(T, ids, 'tab'); }
+  else {
+    var g = Math.min(f.groups || trnAutoGroups(ids.length), Math.floor(ids.length / 2)) || 1;
+    T.groupsOf = trnSnake(ids, g);
+    T.groupsOf.forEach(function(gr, gi){ trnRoundRobin(gr, f.legs).forEach(function(r, k){ trnMk(T, { phase:'poule', grp:gi, round:r.round, idx:k, a:r.a, b:r.b }); }); });
+  }
+  trnPlan(T); trnAdvance(T);
+}
+function trnSeedOrder(P){
+  var o = [1, 2], n;
+  while(o.length < P){ n = o.length * 2; o = o.reduce(function(acc, x){ acc.push(x, n + 1 - x); return acc; }, []); }
+  return o;
+}
+function trnBuildBracket(T, seeds, ph){
+  var Q = seeds.length; if(Q < 2) return;
+  var P = trnPow2(Q), order = trnSeedOrder(P), rounds = Math.log2 ? Math.round(Math.log2(P)) : 0, r, i, prev = [], cur;
+  var first = [];
+  for(i = 0; i < P / 2; i++){
+    var sa = order[2 * i], sb = order[2 * i + 1], a = seeds[sa - 1] || null, b = seeds[sb - 1] || null;
+    first.push(trnMk(T, { phase:ph, round:1, idx:i, a:a, b:b }));
+  }
+  prev = first;
+  for(r = 2; r <= rounds; r++){
+    cur = [];
+    for(i = 0; i < prev.length / 2; i++) cur.push(trnMk(T, { phase:ph, round:r, idx:i, srcA:{ m:prev[2 * i].id, w:'W' }, srcB:{ m:prev[2 * i + 1].id, w:'W' } }));
+    prev = cur;
+  }
+  if(ph === 'tab' && T.fmt.third && rounds >= 2){
+    var semis = T.matches.filter(function(m){ return m.phase === 'tab' && m.round === rounds - 1; });
+    trnMk(T, { phase:'3e', round:rounds, idx:0, srcA:{ m:semis[0].id, w:'L' }, srcB:{ m:semis[1].id, w:'L' } });
+  }
+}
+/* ---- résultats ---- */
+function trnWinner(T, m){
+  if(!m || !m.done) return null;
+  if(m.forfeit) return m.forfeit === 'a' ? m.b : m.a;
+  if(m.bye) return m.a || m.b;
+  if(!m.res) return null;
+  return m.res.a > m.res.b ? m.a : (m.res.b > m.res.a ? m.b : null);
+}
+function trnLoser(T, m){ var w = trnWinner(T, m); if(!w || m.bye) return null; return w === m.a ? m.b : m.a; }
+function trnResolve(T){
+  var changed = true, guard = 0;
+  while(changed && guard++ < 20){
+    changed = false;
+    T.matches.forEach(function(m){
+      ['A', 'B'].forEach(function(s){
+        var src = m['src' + s], key = s === 'A' ? 'a' : 'b';
+        if(!src || m[key]) return;
+        var sm = T.matches.filter(function(x){ return x.id === src.m; })[0];
+        if(!sm || !sm.done) return;
+        var tid = src.w === 'W' ? trnWinner(T, sm) : trnLoser(T, sm);
+        if(tid){ m[key] = tid; changed = true; }
+      });
+      if(!m.done && m.phase !== 'poule' && m.round === 1 && !m.srcA && !m.srcB && ((m.a && !m.b) || (!m.a && m.b))){ m.bye = true; m.done = true; m.res = null; changed = true; }
+    });
+  }
+}
+function trnScoreOf(T, m, side){ return m.res ? (side === 'a' ? m.res.a : m.res.b) : 0; }
+function trnPts(T, m, side){
+  var c = T.cfg, w = trnWinner(T, m), me = side === 'a' ? m.a : m.b;
+  if(!w) return 0;
+  var win = w === me, ow = side === 'a' ? (m.res ? m.res.b : 0) : (m.res ? m.res.a : 0);
+  if(m.forfeit) return win ? 3 : 0;
+  if(c.bareme === 'v3') return win ? 3 : 0;
+  if(c.bareme === 'v2') return win ? 2 : 1;
+  var tight = c.setsToWin > 1 && ow >= c.setsToWin - 1;
+  return win ? (tight ? 2 : 3) : (tight ? 1 : 0);
+}
+function trnStand(T, teamIds, matches){
+  var row = {}, order = {};
+  teamIds.forEach(function(id, i){ order[id] = i; row[id] = { id:id, j:0, v:0, d:0, pts:0, sf:0, sa:0, pf:0, pa:0 }; });
+  matches.forEach(function(m){
+    if(!m.done || !m.a || !m.b || !row[m.a] || !row[m.b]) return;
+    var ra = row[m.a], rb = row[m.b], r = m.res || { a:0, b:0, pa:0, pb:0 };
+    if(m.forfeit){ r = { a:m.forfeit === 'a' ? 0 : (T.cfg.setsToWin), b:m.forfeit === 'a' ? T.cfg.setsToWin : 0, pa:0, pb:0 }; }
+    ra.j++; rb.j++; ra.sf += r.a; ra.sa += r.b; rb.sf += r.b; rb.sa += r.a; ra.pf += r.pa || 0; ra.pa += r.pb || 0; rb.pf += r.pb || 0; rb.pa += r.pa || 0;
+    var w = trnWinner(T, m); if(w === m.a){ ra.v++; rb.d++; } else if(w === m.b){ rb.v++; ra.d++; }
+    ra.pts += trnPts(T, m, 'a'); rb.pts += trnPts(T, m, 'b');
+  });
+  var arr = Object.keys(row).map(function(k){ return row[k]; });
+  arr.sort(function(x, y){ return y.pts - x.pts || (y.sf - y.sa) - (x.sf - x.sa) || (y.pf - y.pa) - (x.pf - x.pa) || order[x.id] - order[y.id]; });
+  /* confrontation directe pour les égalités de points */
+  var i = 0, res = [];
+  while(i < arr.length){
+    var j = i; while(j + 1 < arr.length && arr[j + 1].pts === arr[i].pts) j++;
+    var grp = arr.slice(i, j + 1);
+    if(grp.length > 1){
+      var gid = grp.map(function(x){ return x.id; }), mini = {};
+      gid.forEach(function(id){ mini[id] = { pts:0, sd:0, pd:0 }; });
+      matches.forEach(function(m){
+        if(!m.done || gid.indexOf(m.a) < 0 || gid.indexOf(m.b) < 0) return;
+        var r = m.res || { a:0, b:0, pa:0, pb:0 };
+        mini[m.a].pts += trnPts(T, m, 'a'); mini[m.b].pts += trnPts(T, m, 'b');
+        mini[m.a].sd += r.a - r.b; mini[m.b].sd += r.b - r.a; mini[m.a].pd += (r.pa || 0) - (r.pb || 0); mini[m.b].pd += (r.pb || 0) - (r.pa || 0);
+      });
+      grp.sort(function(x, y){ return mini[y.id].pts - mini[x.id].pts || mini[y.id].sd - mini[x.id].sd || mini[y.id].pd - mini[x.id].pd || (y.sf - y.sa) - (x.sf - x.sa) || (y.pf - y.pa) - (x.pf - x.pa) || order[x.id] - order[y.id]; });
+    }
+    res = res.concat(grp); i = j + 1;
+  }
+  return res;
+}
+function trnGroupStand(T, gi){ return trnStand(T, T.groupsOf[gi], T.matches.filter(function(m){ return m.phase === 'poule' && m.grp === gi; })); }
+function trnPoolsDone(T){ var p = T.matches.filter(function(m){ return m.phase === 'poule'; }); return p.length > 0 && p.every(function(m){ return m.done; }); }
+/* Après chaque résultat : fait avancer le tableau, crée la phase finale et la consolante quand c'est le moment */
+function trnAdvance(T){
+  if(!T.generated || !trnCanEdit(T)) return;
+  if(T.fmt.type === 'both' && trnPoolsDone(T) && !T.matches.some(function(m){ return m.phase === 'tab'; })){
+    var f = T.fmt, sizes = T.groupsOf.map(function(g){ return g.length; }), q = Math.min(f.qual, Math.min.apply(null, sizes)), seeds = [], rest = [], r, gi;
+    for(r = 0; r < q; r++){
+      var lvl = T.groupsOf.map(function(g, i){ var st = trnGroupStand(T, i); return st[r] ? Object.assign({ g:i }, st[r]) : null; }).filter(Boolean);
+      lvl.sort(function(x, y){ return y.pts - x.pts || (y.sf - y.sa) - (x.sf - x.sa) || (y.pf - y.pa) - (x.pf - x.pa); });
+      seeds = seeds.concat(lvl.map(function(x){ return x.id; }));
+    }
+    if(f.wild > 0){
+      var pool = []; T.groupsOf.forEach(function(g, i){ var st = trnGroupStand(T, i); st.slice(q).forEach(function(x){ pool.push(x); }); });
+      pool.sort(function(x, y){ return y.pts - x.pts || (y.sf - y.sa) - (x.sf - x.sa) || (y.pf - y.pa) - (x.pf - x.pa); });
+      seeds = seeds.concat(pool.slice(0, f.wild).map(function(x){ return x.id; }));
+    }
+    trnBuildBracket(T, seeds, 'tab'); trnPlan(T);
+  }
+  trnResolve(T);
+  /* consolante : perdants du 1er tour réellement joué */
+  if(T.fmt.consol && !T.matches.some(function(m){ return m.phase === 'cons'; })){
+    var r1 = T.matches.filter(function(m){ return m.phase === 'tab' && m.round === 1; });
+    if(r1.length && r1.every(function(m){ return m.done; })){
+      var losers = r1.map(function(m){ return trnLoser(T, m); }).filter(Boolean);
+      if(losers.length >= 2){ trnBuildBracket(T, losers, 'cons'); trnPlan(T); trnResolve(T); }
+    }
+  }
+  trnResolve(T);
+  var finished = T.matches.length > 0 && T.matches.every(function(m){ return m.done; });
+  if(finished) T.status = 'termine';
+  else if(T.status !== 'cours') T.status = 'cours';
+}
+function trnSetResult(T, m, a, b, pa, pb, sets){
+  m.res = { a:a, b:b, pa:pa || 0, pb:pb || 0, sets:sets || null }; m.forfeit = ''; m.done = true;
+  trnAdvance(T);
+}
+function trnClearResult(T, m){
+  m.res = null; m.forfeit = ''; m.done = false;
+  /* un résultat effacé annule les matchs suivants qui en dépendent */
+  T.matches.forEach(function(x){
+    ['A', 'B'].forEach(function(s){
+      var src = x['src' + s]; if(!src || src.m !== m.id) return;
+      if(x.done) trnClearResult(T, x);
+      x[s === 'A' ? 'a' : 'b'] = null;
+    });
+  });
+  if(m.phase === 'tab' && m.round === 1 && T.fmt.consol){ T.matches = T.matches.filter(function(x){ return x.phase !== 'cons'; }); }
+  if(m.phase === 'poule'){ T.matches = T.matches.filter(function(x){ return x.phase !== 'tab' && x.phase !== '3e' && x.phase !== 'cons'; }); }
+  trnAdvance(T);
+}
+/* ---- planning ---- */
+function trnTimeAdd(start, mins){ var p = (start || '09:00').split(':'), t = (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0) + mins; t = ((t % 1440) + 1440) % 1440; return ('0' + Math.floor(t / 60)).slice(-2) + ':' + ('0' + (t % 60)).slice(-2); }
+function trnPlan(T){
+  var C = Math.max(1, T.cfg.courts), mins = Math.max(5, T.cfg.minutes), start = T.cfg.start || T.time || '09:00', slot = 0, used = {}, last = {}, refN = {};
+  T.matches.forEach(function(m){ if(m.done && m.slot >= 0) return; m.slot = -1; m.court = 0; m.time = ''; m.ref = m.ref && m.done ? m.ref : ''; });
+  var todo = T.matches.filter(function(m){ return !m.done && !m.bye; });
+  var pools = todo.filter(function(m){ return m.phase === 'poule'; }).sort(function(x, y){ return x.round - y.round || x.grp - y.grp || x.idx - y.idx; });
+  var rest = todo.filter(function(m){ return m.phase !== 'poule'; });
+  var phOrd = { cons:0, tab:0, '3e':1 };
+  rest.sort(function(x, y){ var px = x.phase === '3e' ? 99 : x.round, py = y.phase === '3e' ? 99 : y.round; return (x.phase === 'cons' ? 0.5 : 0) + px - ((y.phase === 'cons' ? 0.5 : 0) + py) || x.idx - y.idx; });
+  var baseSlot = 0;
+  T.matches.forEach(function(m){ if(m.done && m.slot >= 0) baseSlot = Math.max(baseSlot, m.slot + 1); });
+  slot = baseSlot;
+  function place(list, strict){
+    var q = list.slice();
+    while(q.length){
+      var inSlot = {}, courtsFree = C, picked = [], pass, k;
+      for(pass = 0; pass < 2 && courtsFree > 0; pass++){
+        for(k = 0; k < q.length && courtsFree > 0; k++){
+          var m = q[k]; if(!m) continue;
+          var ta = m.a || ('?' + m.id + 'a'), tb = m.b || ('?' + m.id + 'b');
+          if(inSlot[ta] || inSlot[tb]) continue;
+          if(pass === 0 && (last[ta] === slot - 1 || last[tb] === slot - 1) && q.length > 1) continue;
+          inSlot[ta] = 1; inSlot[tb] = 1; courtsFree--; picked.push(m); q[k] = null;
+        }
+      }
+      picked.forEach(function(m, ci){
+        m.slot = slot; m.court = ci + 1; m.time = trnTimeAdd(start, slot * mins);
+        if(m.a) last[m.a] = slot; if(m.b) last[m.b] = slot;
+        if(T.cfg.ref){
+          var idle = T.teams.filter(function(t){ return t.state !== 'attente' && !inSlot[t.id]; }).sort(function(x, y){ return (refN[x.id] || 0) - (refN[y.id] || 0); });
+          var pref = idle.filter(function(t){ return last[t.id] === slot - 1; })[0] || idle[0];
+          if(pref){ m.ref = pref.id; refN[pref.id] = (refN[pref.id] || 0) + 1; inSlot[pref.id] = 1; }
+        }
+      });
+      q = q.filter(Boolean); slot++;
+      if(!picked.length) break;
+    }
+  }
+  place(pools);
+  /* phases finales : un tour après l'autre */
+  var byRound = {}; rest.forEach(function(m){ var k = (m.phase === '3e' ? 'z' : (m.phase === 'cons' ? 'c' : 't')) + ('0' + m.round).slice(-2); (byRound[k] = byRound[k] || []).push(m); });
+  Object.keys(byRound).sort().forEach(function(k){ last = {}; place(byRound[k]); });
+}
+/* ---- classement final / podium ---- */
+function trnPodium(T){
+  var tab = T.matches.filter(function(m){ return m.phase === 'tab'; });
+  if(T.fmt.type === 'poules'){
+    if(!T.groupsOf.length || !trnPoolsDone(T)) return null;
+    var all = T.groupsOf.length === 1 ? trnGroupStand(T, 0) : null;
+    return all ? all.slice(0, 3).map(function(r){ return r.id; }) : null;
+  }
+  if(!tab.length) return null;
+  var maxR = Math.max.apply(null, tab.map(function(m){ return m.round; })), fin = tab.filter(function(m){ return m.round === maxR; })[0];
+  if(!fin || !fin.done) return null;
+  var out = [trnWinner(T, fin), trnLoser(T, fin)], th = T.matches.filter(function(m){ return m.phase === '3e'; })[0];
+  if(th && th.done) out.push(trnWinner(T, th));
+  return out;
+}
+/* ---- vues ---- */
+function trnU(){ if(!ui.trn) ui.trn = { view:'list', id:null, tab:'infos', team:null, add:null, edit:null, draft:null, tv:false }; return ui.trn; }
+function trnDot(col){ return '<i class="tdot" style="background:' + esc(col || '#888') + '"></i>'; }
+function trnTeamChip(T, id, ph){
+  var t = id ? trnTeam(T, id) : null;
+  return t ? trnDot(t.color) + '<span class="tnm2">' + esc(t.name) + '</span>' : '<span class="muted">' + esc(ph || 'À déterminer') + '</span>';
+}
+function trnStatusLabel(s){ var r = TRN_STATUS.filter(function(x){ return x[0] === s; })[0]; return r ? r[1] : s; }
+function trnDateLabel(T){ return T.date ? fmtDay(T.date) + (T.date2 && T.date2 !== T.date ? ' → ' + fmtDay(T.date2) : '') + (T.time ? ' · ' + T.time : '') : ''; }
+function trnInput(T, g, k, label, o){
+  o = o || {}; var obj = g ? T[g] : T, ro = o.ro, id = 'trn_' + (g || 'r') + '_' + k;
+  return '<label class="f" for="' + id + '">' + esc(label) + '</label><input id="' + id + '" type="' + (o.type || 'text') + '"' + (o.num ? ' inputmode="numeric"' : '') + ' data-bind="trnf" data-g="' + g + '" data-k="' + k + '"' + (o.num ? ' data-n="1"' : '') + (o.min != null ? ' data-min="' + o.min + '"' : '') + (o.sync ? ' data-sync="1"' : '') + ' value="' + esc(obj[k] == null ? '' : obj[k]) + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + (ro ? ' disabled' : '') + ' autocomplete="off">';
+}
+function trnSelect(T, g, k, label, opts, o){
+  o = o || {}; var obj = g ? T[g] : T, id = 'trn_' + (g || 'r') + '_' + k, cur = String(obj[k] == null ? '' : obj[k]);
+  return '<label class="f" for="' + id + '">' + esc(label) + '</label><select id="' + id + '" data-bind="trnf" data-g="' + g + '" data-k="' + k + '"' + (o.num ? ' data-n="1"' : '') + (o.sync ? ' data-sync="1"' : '') + (o.r ? ' data-r="1"' : '') + (o.ro ? ' disabled' : '') + '>' +
+    opts.map(function(x){ return '<option value="' + esc(x[0]) + '"' + (String(x[0]) === cur ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select>';
+}
+function trnCheck(T, g, k, label, ro){
+  var obj = g ? T[g] : T;
+  return '<label class="f trnchk"><input type="checkbox" data-bind="trnf" data-g="' + g + '" data-k="' + k + '" data-c="1" data-r="1"' + (obj[k] ? ' checked' : '') + (ro ? ' disabled' : '') + '> ' + esc(label) + '</label>';
+}
 function tournoiView(){
-  return '<div class="stack"><section class="card" style="text-align:center;padding:36px 16px"><p class="muted" style="margin:0;font-size:20px">En projet</p></section></div>';
+  var u = trnU(), T = u.id ? trnById(u.id) : null;
+  if(u.tv && T) return trnTvView(T);
+  if(u.view === 'create') return trnCreateView();
+  if(u.view === 'detail' && T) return trnDetailView(T);
+  u.view = 'list'; return trnListView();
+}
+function trnListView(){
+  var list = trnList().slice().sort(function(a, b){ return (b.date || '').localeCompare(a.date || ''); });
+  var out = '<div class="stack"><section class="card"><h2 style="margin:0">Tournois</h2><p class="hint2" style="margin:6px 0 0">Poules, élimination directe ou les deux : créez un tournoi, ajoutez les équipes, partagez les invitations et suivez les résultats en direct.</p>' +
+    (can('trnCreate') ? '<div class="btnrow"><button class="btn wide primary" data-act="trnNewOpen">Créer un tournoi</button></div>' : '<p class="hint2">Seuls les responsables de club peuvent créer un tournoi. Vous pouvez rejoindre un tournoi avec un code d\'invitation.</p>') +
+    '<div class="btnrow"><button class="btn wide" data-act="trnJoinOpen">J\'ai un code d\'invitation</button></div></section>';
+  if(trnU().joinOpen){
+    out += '<section class="card"><h3 style="margin:0">Rejoindre un tournoi</h3>' + (trnLogged() ? '' : '<p class="hint2">Connectez-vous d\'abord : le code donne un accès temporaire à votre compte.</p><div class="btnrow"><button class="btn wide" data-act="sbOpen">Se connecter</button></div>') +
+      '<label class="f" for="trn_jc">Code d\'invitation</label><input id="trn_jc" type="text" autocomplete="off" autocapitalize="characters" maxlength="8" value="' + esc(trnU().join || '') + '" data-enter="trnjoin"><p class="numerr" id="trnjerr" role="alert" style="display:none"></p><div class="btnrow"><button class="btn wide primary" data-act="trnJoinGo">Rejoindre</button></div></section>';
+  }
+  if(!list.length) out += '<section class="card"><p class="muted" style="margin:0">Aucun tournoi pour le moment.</p></section>';
+  list.forEach(function(T){
+    var np = T.matches.filter(function(m){ return m.done && !m.bye; }).length, nt = T.matches.filter(function(m){ return !m.bye; }).length;
+    out += '<button class="card trncard" data-act="trnOpen" data-id="' + T.id + '"><span class="fx" style="justify-content:space-between;gap:8px"><b>' + esc(T.name) + '</b><span class="trnbadge s-' + T.status + '">' + esc(trnStatusLabel(T.status)) + '</span></span>' +
+      '<span class="muted">' + esc(trnDateLabel(T)) + (T.place ? ' · ' + esc(T.place) : '') + '</span><span class="muted">' + T.teams.length + ' équipe' + (T.teams.length > 1 ? 's' : '') + (nt ? ' · ' + np + '/' + nt + ' matchs joués' : '') + '</span></button>';
+  });
+  return out + '</div>';
+}
+function trnCreateView(){
+  var u = trnU(), d = u.draft || (u.draft = { name:'', date:isoOf(new Date()), date2:'', time:'09:00', place:'', clubId:'', cat:'mixte', vis:'prive' });
+  var cl = allowedClubs();
+  if(!d.clubId && cl.length === 1) d.clubId = cl[0].id;
+  function fld(k, label, type, ph){ return '<label class="f" for="trnd_' + k + '">' + label + '</label><input id="trnd_' + k + '" type="' + (type || 'text') + '" data-bind="trnd" data-k="' + k + '" value="' + esc(d[k]) + '"' + (ph ? ' placeholder="' + esc(ph) + '"' : '') + ' autocomplete="off">'; }
+  function sel(k, label, opts){ return '<label class="f" for="trnd_' + k + '">' + label + '</label><select id="trnd_' + k + '" data-bind="trnd" data-k="' + k + '">' + opts.map(function(x){ return '<option value="' + esc(x[0]) + '"' + (d[k] === x[0] ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select>'; }
+  return '<div class="stack"><section class="card"><h2 style="margin:0">Nouveau tournoi</h2>' + fld('name', 'Nom du tournoi', 'text', 'Ex. Tournoi de la Saint-Valentin') +
+    '<div class="row2"><div>' + fld('date', 'Date', 'date') + '</div><div>' + fld('date2', 'Date de fin (facultatif)', 'date') + '</div></div>' +
+    '<div class="row2"><div>' + fld('time', 'Heure de début', 'time') + '</div><div>' + fld('place', 'Lieu', 'text', 'Gymnase…') + '</div></div>' +
+    sel('clubId', 'Club organisateur', [['', '— Aucun (indépendant) —']].concat(cl.map(function(c){ return [c.id, c.name]; }))) +
+    sel('cat', 'Catégorie', [['mixte', 'Mixte'], ['m', 'Masculin'], ['f', 'Féminin'], ['jeunes', 'Jeunes'], ['loisir', 'Loisir']]) +
+    sel('vis', 'Visibilité', [['prive', 'Privé : sur invitation'], ['public', 'Public : consultation libre'], ['libre', 'Public avec inscription libre']]) +
+    '<p class="numerr" id="trnerr" role="alert" style="display:none"></p><div class="btnrow"><button class="btn wide primary" data-act="trnCreate">Créer le tournoi</button><button class="btn wide" data-act="trnBack">Annuler</button></div></section></div>';
+}
+var TRN_TABS = [['infos', 'Infos'], ['equipes', 'Équipes'], ['format', 'Format'], ['matchs', 'Matchs'], ['classement', 'Classement'], ['planning', 'Planning'], ['partage', 'Partage']];
+function trnDetailView(T){
+  var u = trnU(), ed = trnCanEdit(T), out = '<div class="stack">';
+  out += '<section class="card"><div class="fx" style="justify-content:space-between;gap:8px;align-items:flex-start"><div><h2 style="margin:0">' + esc(T.name) + '</h2><p class="muted" style="margin:4px 0 0">' + esc(trnDateLabel(T)) + (T.place ? ' · ' + esc(T.place) : '') + '</p></div><span class="trnbadge s-' + T.status + '">' + esc(trnStatusLabel(T.status)) + '</span></div>' +
+    '<div class="btnrow" style="margin-top:10px"><button class="btn" data-act="trnBack">‹ Tous les tournois</button><button class="btn" data-act="trnTv">Écran géant</button></div></section>';
+  out += '<div class="chips trntabs" role="tablist" aria-label="Sections du tournoi">' + TRN_TABS.map(function(x){ return '<button class="chip' + (u.tab === x[0] ? ' sel' : '') + '" role="tab" aria-selected="' + (u.tab === x[0]) + '" data-act="trnTab" data-k="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+  if(u.tab === 'equipes') out += trnTeamsTab(T, ed);
+  else if(u.tab === 'format') out += trnFormatTab(T, ed);
+  else if(u.tab === 'matchs') out += trnMatchsTab(T, ed);
+  else if(u.tab === 'classement') out += trnRankTab(T);
+  else if(u.tab === 'planning') out += trnPlanTab(T, ed);
+  else if(u.tab === 'partage') out += trnShareTab(T, ed);
+  else out += trnInfosTab(T, ed);
+  return out + '</div>';
+}
+/* ---- Infos ---- */
+function trnNextOf(T, tid){
+  return T.matches.filter(function(m){ return !m.done && !m.bye && (m.a === tid || m.b === tid); }).sort(function(x, y){ return (x.slot < 0 ? 999 : x.slot) - (y.slot < 0 ? 999 : y.slot); })[0] || null;
+}
+function trnMatchLine(T, m, mine){
+  var o = mine ? (m.a === mine ? m.b : m.a) : null;
+  return mine ? '<b>' + trnTeamChip(T, mine) + '</b> contre ' + trnTeamChip(T, o, 'adversaire à déterminer') : trnTeamChip(T, m.a) + ' – ' + trnTeamChip(T, m.b);
+}
+function trnInfosTab(T, ed){
+  var out = '';
+  var my = trnMyTeams(T);
+  my.forEach(function(t){
+    var nx = trnNextOf(T, t.id);
+    out += '<section class="card"><h3 style="margin:0">Mon équipe · ' + trnDot(t.color) + esc(t.name) + '</h3>' + (nx ? '<p style="margin:8px 0 0">Prochain match : ' + trnMatchLine(T, nx, t.id) + '</p><p class="muted" style="margin:4px 0 0">' + (nx.time ? 'À ' + esc(nx.time) + (nx.court ? ' · terrain ' + nx.court : '') : 'Horaire à venir') + '</p>' : '<p class="muted" style="margin:8px 0 0">' + (T.generated ? 'Plus de match à jouer pour le moment.' : 'Le programme n\'est pas encore publié.') + '</p>') + '</section>';
+  });
+  if(T.news && T.news.length){
+    out += '<section class="card"><h3 style="margin:0 0 6px">Annonces</h3>' + T.news.slice().reverse().slice(0, 5).map(function(n){ return '<p style="margin:6px 0"><span class="muted">' + esc(n.at) + '</span> · ' + esc(n.text) + (ed ? ' <button class="linkbtn" data-act="trnNewsDel" data-id="' + n.id + '">Retirer</button>' : '') + '</p>'; }).join('') + '</section>';
+  }
+  if(ed) out += '<section class="card"><h3 style="margin:0">Informations</h3>' + trnInput(T, '', 'name', 'Nom', { sync:1 }) + '<div class="row2"><div>' + trnInput(T, '', 'date', 'Date', { type:'date', sync:1 }) + '</div><div>' + trnInput(T, '', 'date2', 'Date de fin', { type:'date' }) + '</div></div>' +
+    '<div class="row2"><div>' + trnInput(T, '', 'time', 'Heure de début', { type:'time', sync:1 }) + '</div><div>' + trnInput(T, '', 'place', 'Lieu', { sync:1 }) + '</div></div>' +
+    '<label class="f" for="trn_r_desc">Description</label><textarea id="trn_r_desc" rows="3" data-bind="trnf" data-g="" data-k="desc">' + esc(T.desc || '') + '</textarea>' +
+    trnSelect(T, '', 'status', 'Statut', TRN_STATUS) + '</section>' +
+    '<section class="card"><h3 style="margin:0">Règles sportives</h3><div class="row2"><div>' + trnInput(T, 'cfg', 'courts', 'Terrains', { num:1, min:1 }) + '</div><div>' + trnInput(T, 'cfg', 'minutes', 'Minutes par match', { num:1, min:5 }) + '</div></div>' +
+    '<div class="row2"><div>' + trnSelect(T, 'cfg', 'setsToWin', 'Sets gagnants', [[1, '1 set sec'], [2, '2 sets gagnants'], [3, '3 sets gagnants']], { num:1 }) + '</div><div>' + trnSelect(T, 'cfg', 'bareme', 'Barème des points', [['fivb', 'Victoire 3-2-1-0'], ['v3', 'Victoire 3, défaite 0'], ['v2', 'Victoire 2, défaite 1']]) + '</div></div>' +
+    '<div class="row2"><div>' + trnInput(T, 'cfg', 'pts', 'Points par set', { num:1, min:5 }) + '</div><div>' + trnInput(T, 'cfg', 'ptsLast', 'Points du dernier set', { num:1, min:5 }) + '</div></div>' +
+    '<div class="row2"><div>' + trnInput(T, 'cfg', 'maxTeams', 'Équipes max (0 = illimité)', { num:1, min:0 }) + '</div><div>' + trnSelect(T, 'cfg', 'cat', 'Catégorie', [['mixte', 'Mixte'], ['m', 'Masculin'], ['f', 'Féminin'], ['jeunes', 'Jeunes'], ['loisir', 'Loisir']]) + '</div></div>' +
+    trnCheck(T, 'cfg', 'ref', 'Une équipe arbitre chaque match (équipe au repos)') + '</section>' +
+    '<section class="card"><h3 style="margin:0">Annonce</h3><label class="f" for="trn_news">Message à tous les participants</label><input id="trn_news" type="text" autocomplete="off" placeholder="Ex. Pause repas à 12h30"><div class="btnrow"><button class="btn wide" data-act="trnNewsAdd">Publier l\'annonce</button></div></section>' +
+    '<section class="card"><h3 style="margin:0">Gérer le tournoi</h3><div class="btnrow"><button class="btn wide" data-act="trnDup">Dupliquer (nouvelle date, mêmes équipes et réglages)</button><button class="btn wide danger" data-act="trnDelAsk">Supprimer le tournoi</button></div>' +
+    (trnU().confirmDel ? '<p class="hint2" role="alert">Supprimer définitivement « ' + esc(T.name) + ' » et ses résultats ?</p><div class="btnrow"><button class="btn wide danger" data-act="trnDelOk">Oui, supprimer</button><button class="btn wide" data-act="trnDelNo">Annuler</button></div>' : '') + '</section>';
+  else out += '<section class="card">' + (T.desc ? '<p style="margin:0 0 8px">' + esc(T.desc) + '</p>' : '') + '<p class="muted" style="margin:0">' + T.teams.length + ' équipe' + (T.teams.length > 1 ? 's' : '') + ' · ' + T.cfg.courts + ' terrain' + (T.cfg.courts > 1 ? 's' : '') + ' · ' + T.cfg.setsToWin + ' set' + (T.cfg.setsToWin > 1 ? 's' : '') + ' gagnant' + (T.cfg.setsToWin > 1 ? 's' : '') + '</p></section>';
+  return out;
+}
+/* ---- Équipes ---- */
+function trnPlayerLine(T, t, p, ed){
+  var f = p.mid ? findMember(p.mid) : null;
+  return '<li class="trnpl"><span style="flex:1">' + esc(p.name) + (p.mid ? ' <small class="muted">licencié' + (f && f.club ? ' · ' + esc(f.club.name) : '') + '</small>' : ' <small class="muted">extérieur</small>') + (t && t.cap === p.id ? ' <span class="trnbadge">Capitaine</span>' : '') + '</span>' +
+    (ed ? (t ? '<button class="linkbtn" data-act="trnCap" data-pid="' + p.id + '">' + (t.cap === p.id ? 'Retirer capitaine' : 'Capitaine') + '</button>' : '') + '<button class="del" data-act="trnPlayerDel" data-pid="' + p.id + '" aria-label="Retirer ' + esc(p.name) + '">' + xIcon(22) + '</button>' : '') + '</li>';
+}
+function trnMemberSelect(id, act){
+  var u = trnU(), cid = u.pickClub || '', opts = '<option value="">— Club —</option>' + S.clubs.map(function(c){ return '<option value="' + c.id + '"' + (c.id === cid ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
+  var c = cid ? clubById(cid) : null;
+  return '<select data-bind="trnpick" data-k="club" aria-label="Club du licencié">' + opts + '</select>' + (c ? '<select data-bind="trnpick" data-k="member" aria-label="Licencié">' + '<option value="">— Licencié —</option>' + c.members.map(function(m){ return '<option value="' + m.id + '">' + esc(memberName(m)) + '</option>'; }).join('') + '</select>' : '');
+}
+function trnTeamsTab(T, ed){
+  var u = trnU(), t = u.team ? trnTeam(T, u.team) : null, out = '';
+  if(t) return trnTeamDetail(T, t, ed, ed || trnIsCap(T, t));
+  out += '<section class="card"><h3 style="margin:0">Équipes (' + T.teams.length + (T.cfg.maxTeams ? '/' + T.cfg.maxTeams : '') + ')</h3>';
+  if(!T.teams.length) out += '<p class="muted">Aucune équipe pour le moment.</p>';
+  out += '<ul class="trnlist">' + T.teams.map(function(x){ return '<li><button class="trnrow" data-act="trnTeamOpen" data-id="' + x.id + '">' + trnDot(x.color) + '<span style="flex:1;text-align:left"><b>' + esc(x.name) + '</b><br><small class="muted">' + x.players.length + ' joueur' + (x.players.length > 1 ? 's' : '') + (x.clubId ? ' · ' + esc(clubName(x.clubId)) : '') + '</small></span>' + (x.state === 'attente' ? '<span class="trnbadge s-attente">En attente</span>' : (x.here ? '<span class="trnbadge s-cours">Présente</span>' : '')) + '</button></li>'; }).join('') + '</ul>';
+  var reg = !ed && T.cfg.vis === 'libre' && !T.generated && (T.status === 'brouillon' || T.status === 'inscriptions') && trnLogged();
+  if(reg) out += '<div class="btnrow"><button class="btn wide primary" data-act="trnAddOpen" data-k="libre">Inscrire mon équipe</button></div>' + (u.add === 'libre' ? '<div class="trnadd"><label class="f" for="trn_an">Nom de l\'équipe</label><input id="trn_an" type="text" autocomplete="off" data-enter="trnteam"><div class="btnrow"><button class="btn wide primary" data-act="trnTeamFree">Envoyer l\'inscription</button></div><p class="hint2">L\'organisateur validera votre équipe.</p></div>' : '');
+  if(ed && !T.generated){
+    out += '<div class="btnrow"><button class="btn wide primary" data-act="trnAddOpen" data-k="club">+ Équipe d\'un club</button><button class="btn wide" data-act="trnAddOpen" data-k="libre">+ Équipe libre</button></div>';
+    if(u.add === 'club'){
+      var cs = S.clubs, cid = u.addClub || '', c = cid ? clubById(cid) : null;
+      out += '<div class="trnadd"><label class="f" for="trn_ac">Club</label><select id="trn_ac" data-bind="trnadd" data-k="club"><option value="">— Choisir —</option>' + cs.map(function(x){ return '<option value="' + x.id + '"' + (x.id === cid ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
+      if(c){ ensureTeams(c); out += '<label class="f" for="trn_at">Équipe du club</label><select id="trn_at" data-bind="trnadd" data-k="team"><option value="">Tout le club</option>' + c.teams.map(function(x){ return '<option value="' + x.id + '"' + (x.id === u.addTeam ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select><div class="btnrow"><button class="btn wide primary" data-act="trnTeamFromClub">Ajouter cette équipe</button></div>'; }
+      out += '</div>';
+    }
+    if(u.add === 'libre') out += '<div class="trnadd"><label class="f" for="trn_an">Nom de l\'équipe</label><input id="trn_an" type="text" autocomplete="off" data-enter="trnteam"><div class="btnrow"><button class="btn wide primary" data-act="trnTeamFree">Créer l\'équipe</button></div></div>';
+  } else if(ed && T.generated) out += '<p class="hint2">Le tournoi est lancé : les équipes ne peuvent plus être ajoutées. Régénérez le tournoi depuis « Matchs » pour changer les équipes.</p>';
+  out += '</section>';
+  if(!T.generated || T.free.length){
+    out += '<section class="card"><h3 style="margin:0">Joueurs sans équipe (' + T.free.length + ')</h3><p class="hint2" style="margin:4px 0 0">Pour un tournoi de loisir : inscrivez les joueurs un par un, puis tirez-les au sort en équipes.</p><ul class="trnlist">' + T.free.map(function(p){ return trnPlayerLine(T, null, p, ed); }).join('') + '</ul>';
+    if(ed){
+      out += '<label class="f" for="trn_fn">Nom du joueur (extérieur)</label><div class="fx" style="gap:8px"><input id="trn_fn" type="text" autocomplete="off" style="flex:1" data-enter="trnfree"><button class="btn" data-act="trnFreeAdd">Ajouter</button></div>' +
+        '<label class="f">Ou un licencié</label><div class="fx" style="gap:8px;flex-wrap:wrap">' + trnMemberSelect() + '</div>' +
+        (T.free.length >= 2 ? '<label class="f" for="trn_dn">Nombre d\'équipes à former</label><div class="fx" style="gap:8px"><input id="trn_dn" type="text" inputmode="numeric" value="' + Math.max(2, Math.round(T.free.length / 6)) + '" style="width:80px"><button class="btn wide primary" data-act="trnDraw">Tirer au sort les équipes</button></div>' : '') + '';
+    }
+    out += '</section>';
+  }
+  return out;
+}
+function trnTeamDetail(T, t, ed, ct){
+  var out = '<section class="card"><button class="btn" data-act="trnTeamBack">‹ Toutes les équipes</button><h3 style="margin:12px 0 0">' + trnDot(t.color) + esc(t.name) + '</h3>';
+  if(ct){
+    out += trnTeamInput(t, 'name', 'Nom de l\'équipe') + '<p class="hint2" style="margin:10px 0 4px">Couleur</p><div class="trncols">' + TRN_COL.map(function(c){ return '<button class="tcol' + (t.color === c ? ' sel' : '') + '" style="background:' + c + '" data-act="trnColor" data-c="' + c + '" aria-label="Couleur ' + c + '"></button>'; }).join('') + '</div>';
+    if(ed) out += '<label class="f trnchk"><input type="checkbox" data-bind="trnteamck" data-k="here"' + (t.here ? ' checked' : '') + '> Équipe arrivée (pointage)</label>' +
+      '<label class="f trnchk"><input type="checkbox" data-bind="trnteamck" data-k="ok"' + (t.state !== 'attente' ? ' checked' : '') + '> Inscription validée</label>';
+    else if(t.state === 'attente') out += '<p class="hint2">Inscription en attente de validation par l\'organisateur.</p>';
+  } else out += '<p class="muted">' + (t.clubId ? esc(clubName(t.clubId)) : 'Équipe libre') + '</p>';
+  out += '<h3 style="margin:16px 0 0">Joueurs (' + t.players.length + ')</h3><ul class="trnlist">' + (t.players.map(function(p){ return trnPlayerLine(T, t, p, ct); }).join('') || '<li class="muted">Aucun joueur.</li>') + '</ul>';
+  if(ct && !T.generated){
+    out += '<label class="f" for="trn_pn">Ajouter une personne extérieure</label><div class="fx" style="gap:8px"><input id="trn_pn" type="text" autocomplete="off" style="flex:1" placeholder="Prénom Nom" data-enter="trnplayer"><button class="btn" data-act="trnPlayerAdd">Ajouter</button></div>' +
+      '<label class="f">Ou un licencié (de n\'importe quel club)</label><div class="fx" style="gap:8px;flex-wrap:wrap">' + trnMemberSelect() + '</div>';
+  }
+  if(ed) out += '<div class="btnrow"><button class="btn wide danger" data-act="trnTeamDelAsk">Supprimer l\'équipe</button></div>' + (trnU().confirmTeamDel ? '<p class="hint2" role="alert">Supprimer l\'équipe « ' + esc(t.name) + ' » ?</p><div class="btnrow"><button class="btn wide danger" data-act="trnTeamDelOk">Oui, supprimer</button><button class="btn wide" data-act="trnTeamDelNo">Annuler</button></div>' : '');
+  return out + '</section>';
+}
+function trnTeamInput(t, k, label){ return '<label class="f" for="trnt_' + k + '">' + esc(label) + '</label><input id="trnt_' + k + '" type="text" data-bind="trntf" data-k="' + k + '" value="' + esc(t[k] || '') + '" autocomplete="off">'; }
+/* ---- Format ---- */
+function trnFormatTab(T, ed){
+  var f = T.fmt, pv = trnPreview(T), lock = !ed || T.generated, out = '<section class="card"><h3 style="margin:0">Format du tournoi</h3><div class="chips" role="radiogroup" aria-label="Type de tournoi" style="margin-top:10px">';
+  [['poules', 'Poules'], ['elim', 'Élimination directe'], ['both', 'Poules + phase finale']].forEach(function(x){ out += '<button class="chip' + (f.type === x[0] ? ' sel' : '') + '" role="radio" aria-checked="' + (f.type === x[0]) + '" data-act="trnFmt" data-v="' + x[0] + '"' + (lock ? ' disabled' : '') + '>' + x[1] + '</button>'; });
+  out += '</div>';
+  if(f.type !== 'elim') out += '<div class="row2"><div>' + trnSelect(T, 'fmt', 'groups', 'Nombre de poules', [[0, 'Automatique']].concat([1, 2, 3, 4, 5, 6, 7, 8].map(function(n){ return [n, String(n)]; })), { num:1, r:1, ro:lock }) + '</div><div>' + trnSelect(T, 'fmt', 'legs', 'Matchs', [[1, 'Aller simple'], [2, 'Aller-retour']], { num:1, r:1, ro:lock }) + '</div></div>';
+  if(f.type === 'both') out += '<div class="row2"><div>' + trnSelect(T, 'fmt', 'qual', 'Qualifiés par poule', [1, 2, 3, 4].map(function(n){ return [n, String(n)]; }), { num:1, r:1, ro:lock }) + '</div><div>' + trnSelect(T, 'fmt', 'wild', 'Meilleurs suivants en plus', [0, 1, 2, 3, 4].map(function(n){ return [n, String(n)]; }), { num:1, r:1, ro:lock }) + '</div></div>';
+  if(f.type !== 'poules') out += trnCheck(T, 'fmt', 'third', 'Match pour la 3e place', lock) + trnCheck(T, 'fmt', 'consol', 'Tableau de consolation (les perdants du 1er tour rejouent)', lock);
+  out += trnSelect(T, 'fmt', 'seed', 'Répartition des équipes', [['tirage', 'Tirage au sort'], ['ordre', 'Têtes de série : ordre d\'inscription']], { ro:lock });
+  out += '</section><section class="card"><h3 style="margin:0">Aperçu</h3><p style="margin:8px 0 0">' + esc(pv.txt) + '</p>' + (T.cfg.minutes ? '' : '') + '</section>';
+  if(T.generated) out += '<section class="card"><p class="hint2" style="margin:0">Le tournoi est lancé : le format est verrouillé. Pour le modifier, régénérez le tournoi depuis « Matchs » (les résultats seront effacés).</p></section>';
+  return out;
+}
+/* ---- Matchs ---- */
+function trnRoundName(T, m){
+  if(m.phase === '3e') return 'Match pour la 3e place';
+  if(m.phase === 'poule') return 'Journée ' + m.round;
+  var ph = m.phase, rs = T.matches.filter(function(x){ return x.phase === ph; }).map(function(x){ return x.round; }), mx = Math.max.apply(null, rs), left = mx - m.round;
+  var pre = ph === 'cons' ? 'Consolante · ' : '';
+  return pre + (left === 0 ? 'Finale' : (left === 1 ? 'Demi-finales' : (left === 2 ? 'Quarts de finale' : (left === 3 ? 'Huitièmes de finale' : 'Tour ' + m.round))));
+}
+function trnScoreHtml(T, m){
+  if(!m.done || m.bye) return '<span class="muted">–</span>';
+  if(m.forfeit) return '<b>Forfait</b>';
+  return '<b>' + m.res.a + ' – ' + m.res.b + '</b>' + (m.res.sets && m.res.sets.length ? '<br><small class="muted">' + m.res.sets.map(function(s){ return s[0] + '-' + s[1]; }).join(' · ') + '</small>' : '');
+}
+function trnMatchRow(T, m, ed){
+  var u = trnU(), cs = ed || trnCanScore(T, m), open = u.edit === m.id, w = trnWinner(T, m), me = trnMyTeams(T).map(function(t){ return t.id; });
+  var mine = me.indexOf(m.a) >= 0 || me.indexOf(m.b) >= 0;
+  var out = '<li class="trnm' + (mine ? ' mine' : '') + (m.done ? ' done' : '') + '"><div class="trnmrow"><span class="trnmt">' + (m.time ? esc(m.time) : '--:--') + (m.court ? '<br><small>T' + m.court + '</small>' : '') + '</span>' +
+    '<span class="trnmx"><span class="' + (w && w === m.a ? 'win' : '') + '">' + trnTeamChip(T, m.a) + '</span><span class="' + (w && w === m.b ? 'win' : '') + '">' + trnTeamChip(T, m.b) + '</span></span>' +
+    '<span class="trnms">' + trnScoreHtml(T, m) + '</span>' + (cs && m.a && m.b ? '<button class="btn trnbtn" data-act="trnEdit" data-id="' + m.id + '" aria-expanded="' + open + '">' + (m.done ? 'Modifier' : 'Saisir') + '</button>' : '') + '</div>';
+  if(m.ref && T.cfg.ref) out += '<div class="trnref muted">Arbitre : ' + esc(trnTeamName(T, m.ref)) + '</div>';
+  if(open && cs) out += trnScoreForm(T, m, ed);
+  return out + '</li>';
+}
+function trnScoreForm(T, m, ed){
+  var n = T.cfg.setsToWin, max = 2 * n - 1, i, q = '', sets = (m.res && m.res.sets) || [];
+  var out = '<div class="trnform"><p class="hint2" style="margin:0 0 6px">Résultat en sets</p><div class="fx" style="gap:6px;flex-wrap:wrap">';
+  for(i = 0; i < n; i++){ out += '<button class="btn" data-act="trnQuick" data-id="' + m.id + '" data-a="' + n + '" data-b="' + i + '">' + n + ' – ' + i + '</button>'; }
+  for(i = n - 1; i >= 0; i--){ out += '<button class="btn" data-act="trnQuick" data-id="' + m.id + '" data-a="' + i + '" data-b="' + n + '">' + i + ' – ' + n + '</button>'; }
+  out += '</div><p class="hint2" style="margin:10px 0 6px">Ou détaillez les points de chaque set</p>';
+  for(i = 0; i < max; i++) out += '<div class="trnset"><span>Set ' + (i + 1) + '</span><input type="text" inputmode="numeric" id="ts_' + i + '_a" value="' + (sets[i] ? sets[i][0] : '') + '" aria-label="Points ' + esc(trnTeamName(T, m.a)) + ' set ' + (i + 1) + '"><span>–</span><input type="text" inputmode="numeric" id="ts_' + i + '_b" value="' + (sets[i] ? sets[i][1] : '') + '" aria-label="Points ' + esc(trnTeamName(T, m.b)) + ' set ' + (i + 1) + '"></div>';
+  out += '<p class="numerr" id="trnserr" role="alert" style="display:none"></p><div class="btnrow"><button class="btn wide primary" data-act="trnSets" data-id="' + m.id + '">Valider le score</button></div>' +
+    '<div class="fx" style="gap:6px;flex-wrap:wrap"><button class="btn" data-act="trnForfeit" data-id="' + m.id + '" data-s="a">Forfait ' + esc(trnTeamName(T, m.a)) + '</button><button class="btn" data-act="trnForfeit" data-id="' + m.id + '" data-s="b">Forfait ' + esc(trnTeamName(T, m.b)) + '</button>' + (m.done && ed ? '<button class="btn danger" data-act="trnClear" data-id="' + m.id + '">Effacer le résultat</button>' : '') + '</div>' +
+    (ed ? '<div class="row2" style="margin-top:8px"><div><label class="f" for="tm_time">Heure</label><input id="tm_time" type="time" value="' + esc(m.time || '') + '" data-bind="trnmf" data-id="' + m.id + '" data-k="time"></div><div><label class="f" for="tm_court">Terrain</label><input id="tm_court" type="text" inputmode="numeric" value="' + (m.court || '') + '" data-bind="trnmf" data-id="' + m.id + '" data-k="court"></div></div>' : '') + '</div>';
+  return out;
+}
+function trnPhaseList(T, list, ed, title){
+  if(!list.length) return '';
+  var byR = {}, order = [];
+  list.sort(function(x, y){ return x.round - y.round || x.idx - y.idx; }).forEach(function(m){ var k = m.phase + m.round; if(!byR[k]){ byR[k] = []; order.push(k); } byR[k].push(m); });
+  var out = '';
+  order.forEach(function(k){
+    var ms = byR[k].filter(function(m){ return !m.bye; }); if(!ms.length) return;
+    out += '<h4 class="trnh">' + esc(title || trnRoundName(T, ms[0])) + '</h4><ul class="trnmatches">' + ms.map(function(m){ return trnMatchRow(T, m, ed); }).join('') + '</ul>';
+  });
+  return out;
+}
+function trnStandTable(T, st){
+  return '<table class="trntbl"><thead><tr><th></th><th>Équipe</th><th>Pts</th><th>J</th><th>V</th><th>D</th><th>Sets</th></tr></thead><tbody>' + st.map(function(r, i){ return '<tr><td>' + (i + 1) + '</td><td class="l">' + trnTeamChip(T, r.id) + '</td><td><b>' + r.pts + '</b></td><td>' + r.j + '</td><td>' + r.v + '</td><td>' + r.d + '</td><td>' + r.sf + '-' + r.sa + '</td></tr>'; }).join('') + '</tbody></table>';
+}
+function trnMatchsTab(T, ed){
+  var N = T.teams.filter(function(t){ return t.state !== 'attente'; }).length, out = '';
+  if(!T.generated){
+    out += '<section class="card"><h3 style="margin:0">Lancer le tournoi</h3><p class="hint2" style="margin:6px 0 0">' + esc(trnPreview(T).txt) + '</p>' +
+      (ed ? '<div class="btnrow"><button class="btn wide primary" data-act="trnGen"' + (N < 2 ? ' disabled' : '') + '>Générer les matchs et le planning</button></div>' + (N < 2 ? '<p class="hint2">Il faut au moins 2 équipes validées.</p>' : '') : '<p class="muted">Le programme n\'est pas encore publié.</p>') + '</section>';
+    return out;
+  }
+  if(T.groupsOf.length){
+    T.groupsOf.forEach(function(g, gi){
+      out += '<section class="card"><h3 style="margin:0">' + (T.groupsOf.length > 1 ? 'Poule ' + String.fromCharCode(65 + gi) : 'Poule unique') + '</h3>' + trnStandTable(T, trnGroupStand(T, gi)) +
+        trnPhaseList(T, T.matches.filter(function(m){ return m.phase === 'poule' && m.grp === gi; }), ed) + '</section>';
+    });
+  }
+  var tab = T.matches.filter(function(m){ return m.phase === 'tab' || m.phase === '3e'; });
+  if(tab.length){
+    out += '<section class="card"><h3 style="margin:0">Phase finale</h3>' + trnPhaseList(T, tab.filter(function(m){ return m.phase === 'tab'; }), ed) + trnPhaseList(T, tab.filter(function(m){ return m.phase === '3e'; }), ed) + '</section>';
+  } else if(T.fmt.type === 'both') out += '<section class="card"><h3 style="margin:0">Phase finale</h3><p class="muted" style="margin:6px 0 0">Elle sera créée automatiquement quand tous les matchs de poule seront joués.</p></section>';
+  var cons = T.matches.filter(function(m){ return m.phase === 'cons'; });
+  if(cons.length) out += '<section class="card"><h3 style="margin:0">Consolante</h3>' + trnPhaseList(T, cons, ed) + '</section>';
+  if(ed) out += '<section class="card"><div class="btnrow"><button class="btn wide danger" data-act="trnRegenAsk">Régénérer le tournoi (efface tous les résultats)</button></div>' + (trnU().confirmRegen ? '<p class="hint2" role="alert">Tous les matchs et résultats seront effacés. Continuer ?</p><div class="btnrow"><button class="btn wide danger" data-act="trnRegenOk">Oui, régénérer</button><button class="btn wide" data-act="trnRegenNo">Annuler</button></div>' : '') + '</section>';
+  return out;
+}
+/* ---- Classement / podium / récap ---- */
+function trnRecap(T){
+  var out = [T.name + ' · ' + trnDateLabel(T) + (T.place ? ' · ' + T.place : ''), ''];
+  var pod = trnPodium(T);
+  if(pod) out.push('Podium : ' + pod.map(function(id, i){ return ['1er', '2e', '3e'][i] + ' ' + trnTeamName(T, id); }).join(' · '), '');
+  T.groupsOf.forEach(function(g, gi){
+    out.push(T.groupsOf.length > 1 ? 'Poule ' + String.fromCharCode(65 + gi) : 'Classement');
+    trnGroupStand(T, gi).forEach(function(r, i){ out.push((i + 1) + '. ' + trnTeamName(T, r.id) + ' — ' + r.pts + ' pts (' + r.v + 'V ' + r.d + 'D, sets ' + r.sf + '-' + r.sa + ')'); });
+    out.push('');
+  });
+  T.matches.filter(function(m){ return m.done && !m.bye && m.phase !== 'poule'; }).forEach(function(m){ out.push(trnRoundName(T, m) + ' : ' + trnTeamName(T, m.a) + ' ' + (m.forfeit ? '(forfait)' : m.res.a + '-' + m.res.b) + ' ' + trnTeamName(T, m.b)); });
+  return out.join('\n');
+}
+function trnRankTab(T){
+  var out = '', pod = trnPodium(T);
+  if(pod){
+    out += '<section class="card trnpod"><h3 style="margin:0 0 8px">Podium</h3><div class="pods">' + pod.map(function(id, i){ return '<div class="pod p' + (i + 1) + '"><span class="pm">' + ['🥇', '🥈', '🥉'][i] + '</span>' + trnDot((trnTeam(T, id) || {}).color) + '<b>' + esc(trnTeamName(T, id)) + '</b></div>'; }).join('') + '</div></section>';
+  }
+  if(!T.generated) return out + '<section class="card"><p class="muted" style="margin:0">Le classement apparaîtra quand le tournoi sera lancé.</p></section>';
+  T.groupsOf.forEach(function(g, gi){ out += '<section class="card"><h3 style="margin:0 0 6px">' + (T.groupsOf.length > 1 ? 'Poule ' + String.fromCharCode(65 + gi) : 'Classement') + '</h3>' + trnStandTable(T, trnGroupStand(T, gi)) + '</section>'; });
+  if(!T.groupsOf.length) out += '<section class="card"><p class="muted" style="margin:0">Tableau à élimination directe : consultez les résultats dans « Matchs ».</p></section>';
+  out += '<section class="card"><h3 style="margin:0">Récapitulatif</h3><div class="btnrow"><button class="btn wide" data-act="trnCopy">Copier le récapitulatif</button><button class="btn wide" data-act="trnDownload">Télécharger (.txt)</button></div></section>';
+  return out;
+}
+/* ---- Planning ---- */
+function trnPlanTab(T, ed){
+  if(!T.generated) return '<section class="card"><p class="muted" style="margin:0">Le planning sera créé au lancement du tournoi.</p></section>';
+  var ms = T.matches.filter(function(m){ return !m.bye && m.slot >= 0; }), bySlot = {}, slots = [], me = trnMyTeams(T).map(function(t){ return t.id; });
+  ms.forEach(function(m){ if(!bySlot[m.slot]){ bySlot[m.slot] = []; slots.push(m.slot); } bySlot[m.slot].push(m); });
+  slots.sort(function(a, b){ return a - b; });
+  var out = '';
+  if(ed) out += '<section class="card"><div class="btnrow"><button class="btn wide" data-act="trnReplan">Recalculer le planning des matchs restants</button><button class="btn wide" data-act="trnDelay" data-n="10">Retard : décaler de 10 min</button></div></section>';
+  out += '<section class="card"><h3 style="margin:0 0 6px">Programme</h3>' + (slots.length ? '' : '<p class="muted">Aucun match planifié.</p>') + slots.map(function(s){
+    var arr = bySlot[s].sort(function(a, b){ return a.court - b.court; });
+    return '<div class="trnslot"><b class="trnst">' + esc(arr[0].time) + '</b><div class="trnsc">' + arr.map(function(m){ var mine = me.indexOf(m.a) >= 0 || me.indexOf(m.b) >= 0; return '<div class="trnsm' + (m.done ? ' done' : '') + (mine ? ' mine' : '') + '"><small class="muted">Terrain ' + m.court + ' · ' + (m.phase === 'poule' ? 'Poule ' + String.fromCharCode(65 + (m.grp || 0)) : esc(trnRoundName(T, m))) + '</small><br>' + trnTeamChip(T, m.a) + ' – ' + trnTeamChip(T, m.b) + (m.done ? ' <b>' + (m.forfeit ? 'forfait' : m.res.a + '-' + m.res.b) + '</b>' : '') + '</div>'; }).join('') + '</div></div>';
+  }).join('') + '</section>';
+  return out;
+}
+/* ---- Partage / invitations ---- */
+function trnLink(T, code){ return location.href.split('#')[0] + '#/tournoi/' + T.id + (code ? '/code/' + code : ''); }
+function trnPendingAdd(T){ return S.sync.out.some(function(x){ return x.c === 'tournoi' && x.id === T.id && x.op === 'add'; }); }
+function trnCodeRow(T, label, code, role, team){
+  return '<div class="trnpl"><span style="flex:1">' + label + (code ? ' <b class="trncode">' + esc(code) + '</b>' : '') + '</span>' +
+    (code ? '<button class="btn trnbtn" data-act="trnCopyLink" data-c="' + esc(code) + '">Copier le lien</button><button class="btn trnbtn" data-act="trnMakeCode" data-r="' + role + '" data-t="' + esc(team || '') + '">Renouveler</button>' : '<button class="btn trnbtn" data-act="trnMakeCode" data-r="' + role + '" data-t="' + esc(team || '') + '">Créer le code</button>') + '</div>';
+}
+function trnShareTab(T, ed){
+  var out = '<section class="card"><h3 style="margin:0">Visibilité</h3>' + trnSelect(T, '', 'vis', 'Qui peut voir ce tournoi ?', [['prive', 'Privé : sur invitation'], ['public', 'Public : consultation libre'], ['libre', 'Public avec inscription libre']], { ro:!ed, r:1 }) + '</section>';
+  if(T.cfg.vis !== 'prive') out += '<section class="card"><h3 style="margin:0">Lien de consultation</h3><p class="hint2" style="margin:4px 0 0">Toute personne qui a ce lien voit les équipes, le planning et les résultats, sans compte.</p><div class="btnrow"><button class="btn wide" data-act="trnCopyLink" data-c="">Copier le lien public</button></div></section>';
+  if(!ed) return out + '<section class="card"><p class="muted" style="margin:0">Seuls les organisateurs gèrent les invitations.</p></section>';
+  var lg = trnLogged(), cd = T.codes || { org:'', teams:{} };
+  out += '<section class="card"><h3 style="margin:0">Organisateurs</h3><p class="hint2" style="margin:4px 0 8px">Rôle temporaire : valable pour ce tournoi seulement. Ajoutez un licencié, ou invitez quelqu\'un avec un code.</p><ul class="trnlist">' + (T.orgs.map(function(mid){ var f = findMember(mid); return '<li class="trnpl"><span style="flex:1">' + esc(f ? memberName(f.m) : '?') + '</span><button class="del" data-act="trnOrgDel" data-mid="' + mid + '" aria-label="Retirer">' + xIcon(22) + '</button></li>'; }).join('') || '<li class="muted">Aucun licencié ajouté.</li>') + '</ul><label class="f">Ajouter un organisateur (licencié)</label><div class="fx" style="gap:8px;flex-wrap:wrap">' + trnMemberSelect() + '</div></section>';
+  out += '<section class="card"><h3 style="margin:0">Invitations par code</h3>';
+  if(!lg) out += '<p class="hint2" style="margin:6px 0">Connectez-vous pour créer des codes : ils sont gardés par le serveur, et fonctionnent sur tous les appareils.</p><div class="btnrow"><button class="btn wide" data-act="sbOpen">Se connecter</button></div>';
+  else if(trnPendingAdd(T)) out += '<p class="hint2" style="margin:6px 0">Le tournoi est en cours d\'envoi au serveur. Les codes seront disponibles dans un instant.</p><div class="btnrow"><button class="btn wide" data-act="trnSyncNow">Synchroniser maintenant</button></div>';
+  else {
+    out += '<p class="hint2" style="margin:6px 0 4px">Le code organisateur donne la gestion complète. Le code d\'une équipe permet à son capitaine de gérer sa composition et de saisir le score de ses matchs.</p>' + trnCodeRow(T, '<b>Organisateur</b>', cd.org, 'orga', '') +
+      (T.teams.map(function(t){ return trnCodeRow(T, trnDot(t.color) + esc(t.name), (cd.teams || {})[t.id], 'cap', t.id); }).join('') || '<p class="muted">Ajoutez des équipes pour créer leurs codes.</p>') +
+      '<p class="hint2" style="margin:10px 0 0">Les personnes invitées ouvrent le lien, se connectent avec leur e-mail, et le rôle s\'active pour ce tournoi.</p>';
+  }
+  return out + '</section>';
+}
+/* ---- Écran géant ---- */
+function trnTvView(T){
+  var now = T.matches.filter(function(m){ return !m.done && !m.bye && m.a && m.b; }).sort(function(a, b){ return (a.slot < 0 ? 999 : a.slot) - (b.slot < 0 ? 999 : b.slot) || a.court - b.court; });
+  var first = now.length ? now[0].slot : -1, cur = now.filter(function(m){ return m.slot === first; }), nxt = now.filter(function(m){ return m.slot > first; }).slice(0, T.cfg.courts * 2);
+  var last = T.matches.filter(function(m){ return m.done && !m.bye; }).slice(-4).reverse();
+  var out = '<div class="trntv"><div class="fx" style="justify-content:space-between;align-items:center"><h1>' + esc(T.name) + '</h1><button class="btn" data-act="trnTvClose">Fermer</button></div>';
+  out += '<h2>En cours / à suivre</h2>' + (cur.length ? cur.map(function(m){ return '<div class="tvm"><span class="tvt">' + esc(m.time) + ' · Terrain ' + m.court + '</span><span class="tvx">' + trnTeamChip(T, m.a) + ' <b>–</b> ' + trnTeamChip(T, m.b) + '</span></div>'; }).join('') : '<p class="muted">Aucun match à venir.</p>');
+  if(nxt.length) out += '<h2>Ensuite</h2>' + nxt.map(function(m){ return '<div class="tvm small"><span class="tvt">' + esc(m.time) + ' · T' + m.court + '</span><span class="tvx">' + trnTeamChip(T, m.a) + ' – ' + trnTeamChip(T, m.b) + '</span></div>'; }).join('');
+  if(last.length) out += '<h2>Derniers résultats</h2>' + last.map(function(m){ return '<div class="tvm small"><span class="tvx">' + trnTeamChip(T, m.a) + ' <b>' + (m.forfeit ? 'F' : m.res.a) + ' – ' + (m.forfeit ? 'F' : m.res.b) + '</b> ' + trnTeamChip(T, m.b) + '</span></div>'; }).join('');
+  T.groupsOf.forEach(function(g, gi){ out += '<h2>' + (T.groupsOf.length > 1 ? 'Poule ' + String.fromCharCode(65 + gi) : 'Classement') + '</h2>' + trnStandTable(T, trnGroupStand(T, gi)); });
+  var pod = trnPodium(T); if(pod) out += '<h2>Podium</h2><p class="tvpod">' + pod.map(function(id, i){ return ['🥇', '🥈', '🥉'][i] + ' ' + esc(trnTeamName(T, id)); }).join('  ') + '</p>';
+  return out + '</div>';
+}
+/* ---- actions ---- */
+function trnCur(){ var u = trnU(); return u.id ? trnById(u.id) : null; }
+function trnAddPlayerTo(list, p){ if(!list.some(function(x){ return trnPlayerKey(x) === trnPlayerKey(p); })) list.push(p); }
+function trnMemberPlayer(mid){ var f = findMember(mid); return f ? { id:uid(), name:memberName(f.m), mid:mid } : null; }
+function trnNewTeam(T, name, o){
+  var st = ((T.cfg.maxTeams && T.teams.length >= T.cfg.maxTeams) || !trnCanEdit(T)) ? 'attente' : 'ok';
+  var t = { id:uid(), name:name, color:TRN_COL[T.teams.length % TRN_COL.length], clubId:(o && o.clubId) || '', teamId:(o && o.teamId) || '', cap:'', players:[], state:st, here:false };
+  T.teams.push(t); return t;
+}
+function trnLoadCodes(T){
+  if(!T || trnPendingAdd(T)) return;
+  SB.trnCodes(T.id).then(function(r){
+    if(!r.ok) return;
+    var c = { org:'', teams:{} }; r.list.forEach(function(x){ if(x.role === 'orga') c.org = x.code; else if(x.team_id) c.teams[x.team_id] = x.code; });
+    T.codes = c; if(ui.tab === 'tournoi' && trnU().tab === 'partage') render();
+  });
+}
+/* après une synchronisation : l'organisateur fait avancer le tableau avec les scores saisis par les capitaines */
+function trnAfterPull(){ trnList().forEach(function(T){ if(T.generated && trnCanEdit(T)) trnAdvance(T); }); }
+/* actualisation automatique du tournoi ouvert (spectateurs, capitaines, écran géant) */
+var trnPollBusy = false;
+setInterval(function(){
+  var u = ui.trn;
+  if(trnPollBusy || ui.tab !== 'tournoi' || !u || !u.id || u.view !== 'detail' || document.visibilityState !== 'visible' || navigator.onLine === false) return;
+  trnPollBusy = true;
+  SB.trnRefresh(u.id).then(function(r){
+    trnPollBusy = false;
+    if(!r || !r.changed) return;
+    var ae = document.activeElement, typing = ae && /^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName);
+    if(u.edit || typing || ui.sheet) return;
+    render();
+  }, function(){ trnPollBusy = false; });
+}, 20000);
+function trnOpenRemote(id){
+  SB.trnRefresh(id).then(function(r){
+    if(r && r.found && trnById(id)){ var u = trnU(); u.view = 'detail'; u.id = id; u.tab = 'infos'; if(ui.tab === 'tournoi'){ render(); window.scrollTo(0, 0); } }
+    else if(ui.tab === 'tournoi'){ ui.msg = 'Ce tournoi est introuvable ou privé : connectez-vous ou utilisez un code d\'invitation.'; }
+  });
+}
+function trnRegenerate(T){ T.matches = []; T.groupsOf = []; T.generated = false; trnGenerate(T); }
+function trnAct(act, d){
+  var u = trnU(), T = trnCur();
+  function done(){ save(); render(); }
+  switch(act){
+    case 'trnNewOpen': u.view = 'create'; u.draft = null; render(); window.scrollTo(0, 0); return true;
+    case 'trnNewOpen2': ui.sheet = null; setTab('tournoi'); u = trnU(); u.view = 'create'; u.draft = null; u.id = null; render(); window.scrollTo(0, 0); return true;
+    case 'trnBack': u.view = 'list'; u.id = null; u.team = null; u.edit = null; u.tv = false; render(); window.scrollTo(0, 0); return true;
+    case 'trnOpen': u.view = 'detail'; u.id = d.id; u.tab = 'infos'; u.team = null; u.edit = null; u.add = null; render(); window.scrollTo(0, 0); return true;
+    case 'trnTab': u.tab = d.k; u.team = null; u.edit = null; u.add = null; u.confirmDel = u.confirmRegen = u.confirmTeamDel = false; render(); if(d.k === 'partage' && T && trnLogged() && trnCanEdit(T)) trnLoadCodes(T); return true;
+    case 'trnCreate': {
+      var dr = u.draft || {}, err = document.getElementById('trnerr');
+      if(!(dr.name || '').trim() || !parseDate(dr.date)){ if(err){ err.textContent = !(dr.name || '').trim() ? 'Saisissez un nom pour le tournoi.' : 'Choisissez une date.'; err.style.display = ''; } return true; }
+      var nt = trnNew({ name:dr.name.trim(), date:dr.date, date2:dr.date2, time:normTime(dr.time) || '', place:(dr.place || '').trim(), clubId:dr.clubId, cat:dr.cat, vis:dr.vis });
+      trnList().push(nt); trnSyncAgenda(nt); u.view = 'detail'; u.id = nt.id; u.tab = 'equipes'; u.draft = null; ui.msg = 'Tournoi créé et ajouté au calendrier.'; done(); window.scrollTo(0, 0); return true;
+    }
+    case 'trnTv': u.tv = true; render(); return true;
+    case 'trnTvClose': u.tv = false; render(); return true;
+    case 'trnJoinOpen': u.joinOpen = !u.joinOpen; render(); return true;
+    case 'trnJoinGo': {
+      var jc = document.getElementById('trn_jc'), jv = jc ? jc.value.trim() : '', je = document.getElementById('trnjerr');
+      function jerr(t){ if(je){ je.textContent = t; je.style.display = ''; } }
+      if(!jv){ jerr('Saisissez le code reçu.'); return true; }
+      if(!trnLogged()){ jerr('Connectez-vous d\'abord.'); return true; }
+      SB.trnRedeem(jv).then(function(r){
+        if(!r.ok){ jerr(r.msg); return; }
+        var u2 = trnU(); u2.joinOpen = false; u2.join = ''; u2.view = 'detail'; u2.id = r.tid; u2.tab = r.role === 'cap' ? 'equipes' : 'infos'; u2.team = null; ui.msg = r.role === 'orga' ? 'Vous êtes organisateur de ce tournoi.' : 'Vous êtes capitaine : gérez votre équipe.'; render(); window.scrollTo(0, 0);
+      });
+      return true;
+    }
+  }
+  if(!T) return false;
+  switch(act){
+    case 'trnDelAsk': u.confirmDel = true; render(); return true;
+    case 'trnDelNo': u.confirmDel = false; render(); return true;
+    case 'trnDelOk': S.agenda = S.agenda.filter(function(a){ return a.id !== T.agendaId; }); S.tournois = S.tournois.filter(function(x){ return x.id !== T.id; }); u.view = 'list'; u.id = null; u.confirmDel = false; ui.msg = 'Tournoi supprimé.'; done(); window.scrollTo(0, 0); return true;
+    case 'trnDup': {
+      var c = JSON.parse(JSON.stringify(T)); c.id = uid(); c.name = T.name + ' (copie)'; c.status = 'brouillon'; c.generated = false; c.matches = []; c.groupsOf = []; c.agendaId = ''; c.news = []; c.codes = { org:'', teams:{} }; c.created = stamp(); c.by = meGet() || '';
+      c.teams.forEach(function(t){ t.id = uid(); t.here = false; t.cap = ''; t.state = 'ok'; t.players.forEach(function(p){ p.id = uid(); }); });
+      c.date = isoOf(new Date()); c.date2 = ''; trnList().push(c); trnSyncAgenda(c); u.id = c.id; u.tab = 'infos'; ui.msg = 'Tournoi dupliqué : changez la date et le nom.'; done(); window.scrollTo(0, 0); return true;
+    }
+    case 'trnNewsAdd': { var inp = document.getElementById('trn_news'), tx = inp ? inp.value.trim() : ''; if(!tx) return true; T.news.push({ id:uid(), text:tx, at:fmtDay(stamp()) }); done(); return true; }
+    case 'trnNewsDel': T.news = T.news.filter(function(n){ return n.id !== d.id; }); done(); return true;
+    case 'trnAddOpen': u.add = u.add === d.k ? null : d.k; u.addClub = ''; u.addTeam = ''; render(); return true;
+    case 'trnTeamFree': { var an = document.getElementById('trn_an'), nm = an ? an.value.trim() : ''; if(!nm){ if(an) an.focus(); return true; } var t1 = trnNewTeam(T, nm); u.add = null; u.team = t1.id; done(); return true; }
+    case 'trnTeamFromClub': {
+      var c1 = clubById(u.addClub); if(!c1) return true;
+      ensureTeams(c1); var tm = u.addTeam ? c1.teams.filter(function(x){ return x.id === u.addTeam; })[0] : null;
+      var nt2 = trnNewTeam(T, tm ? (tm.name === c1.name ? c1.name : c1.name + ' · ' + tm.name) : c1.name, { clubId:c1.id, teamId:tm ? tm.id : '' });
+      var ids = tm ? tm.memberIds : c1.members.map(function(m){ return m.id; });
+      ids.forEach(function(mid){ var p = trnMemberPlayer(mid); if(p) trnAddPlayerTo(nt2.players, p); });
+      u.add = null; u.team = nt2.id; done(); return true;
+    }
+    case 'trnTeamOpen': u.team = d.id; u.confirmTeamDel = false; u.pickClub = ''; render(); window.scrollTo(0, 0); return true;
+    case 'trnTeamBack': u.team = null; u.pickClub = ''; render(); return true;
+    case 'trnTeamDelAsk': u.confirmTeamDel = true; render(); return true;
+    case 'trnTeamDelNo': u.confirmTeamDel = false; render(); return true;
+    case 'trnTeamDelOk': T.teams = T.teams.filter(function(x){ return x.id !== u.team; }); u.team = null; u.confirmTeamDel = false; done(); return true;
+    case 'trnColor': { var tc = trnTeam(T, u.team); if(tc){ tc.color = d.c; done(); } return true; }
+    case 'trnCap': { var tc2 = trnTeam(T, u.team); if(tc2){ tc2.cap = tc2.cap === d.pid ? '' : d.pid; done(); } return true; }
+    case 'trnPlayerAdd': { var pn = document.getElementById('trn_pn'), pv = pn ? pn.value.trim() : '', tp = trnTeam(T, u.team); if(!pv || !tp){ if(pn) pn.focus(); return true; } trnAddPlayerTo(tp.players, { id:uid(), name:pv, mid:'' }); done(); return true; }
+    case 'trnPlayerDel': { var tp2 = u.team ? trnTeam(T, u.team) : null; if(tp2){ tp2.players = tp2.players.filter(function(p){ return p.id !== d.pid; }); if(tp2.cap === d.pid) tp2.cap = ''; } else T.free = T.free.filter(function(p){ return p.id !== d.pid; }); done(); return true; }
+    case 'trnFreeAdd': { var fn = document.getElementById('trn_fn'), fv = fn ? fn.value.trim() : ''; if(!fv){ if(fn) fn.focus(); return true; } trnAddPlayerTo(T.free, { id:uid(), name:fv, mid:'' }); done(); return true; }
+    case 'trnDraw': {
+      var dn = document.getElementById('trn_dn'), n = Math.max(2, Math.min(T.free.length, parseInt(dn ? dn.value : '2', 10) || 2)), sh = trnShuffle(T.free), k;
+      var teams = []; for(k = 0; k < n; k++) teams.push(trnNewTeam(T, 'Équipe ' + (T.teams.length + 1)));
+      sh.forEach(function(p, i){ teams[i % n].players.push(p); });
+      T.free = []; ui.msg = n + ' équipes tirées au sort.'; done(); return true;
+    }
+    case 'trnFmt': T.fmt.type = d.v; done(); return true;
+    case 'trnGen': trnGenerate(T); T.cfg.start = T.time || T.cfg.start || '09:00'; ui.msg = 'Tournoi lancé : matchs et planning créés.'; u.tab = 'matchs'; done(); window.scrollTo(0, 0); return true;
+    case 'trnRegenAsk': u.confirmRegen = true; render(); return true;
+    case 'trnRegenNo': u.confirmRegen = false; render(); return true;
+    case 'trnRegenOk': u.confirmRegen = false; trnRegenerate(T); ui.msg = 'Tournoi régénéré.'; done(); return true;
+    case 'trnEdit': u.edit = u.edit === d.id ? null : d.id; render(); return true;
+    case 'trnQuick': { var mq = T.matches.filter(function(m){ return m.id === d.id; })[0]; if(!mq) return true; trnSetResult(T, mq, parseInt(d.a, 10), parseInt(d.b, 10), 0, 0, null); u.edit = null; done(); return true; }
+    case 'trnSets': {
+      var ms = T.matches.filter(function(m){ return m.id === d.id; })[0]; if(!ms) return true;
+      var nS = T.cfg.setsToWin, max = 2 * nS - 1, sets = [], wa = 0, wb = 0, pa = 0, pb = 0, i, er = document.getElementById('trnserr'), bad = '';
+      for(i = 0; i < max; i++){
+        var ea = document.getElementById('ts_' + i + '_a'), eb = document.getElementById('ts_' + i + '_b'), va = ea ? ea.value.trim() : '', vb = eb ? eb.value.trim() : '';
+        if(va === '' && vb === '') continue;
+        var xa = parseInt(va, 10), xb = parseInt(vb, 10);
+        if(isNaN(xa) || isNaN(xb) || xa === xb){ bad = 'Set ' + (i + 1) + ' : scores non valides.'; break; }
+        sets.push([xa, xb]); pa += xa; pb += xb; if(xa > xb) wa++; else wb++;
+        if(wa === nS || wb === nS){ if(i < max - 1){ var nx = document.getElementById('ts_' + (i + 1) + '_a'); if(nx && nx.value.trim() !== ''){ bad = 'Le match est déjà gagné : retirez les sets en trop.'; } } break; }
+      }
+      if(!bad && (wa !== nS && wb !== nS)) bad = 'Il faut ' + nS + ' set' + (nS > 1 ? 's' : '') + ' gagnant' + (nS > 1 ? 's' : '') + ' pour une équipe.';
+      if(bad){ if(er){ er.textContent = bad; er.style.display = ''; } return true; }
+      trnSetResult(T, ms, wa, wb, pa, pb, sets); u.edit = null; done(); return true;
+    }
+    case 'trnForfeit': { var mf = T.matches.filter(function(m){ return m.id === d.id; })[0]; if(!mf) return true; mf.res = null; mf.forfeit = d.s; mf.done = true; trnAdvance(T); u.edit = null; done(); return true; }
+    case 'trnClear': { var mc = T.matches.filter(function(m){ return m.id === d.id; })[0]; if(!mc) return true; trnClearResult(T, mc); u.edit = null; done(); return true; }
+    case 'trnReplan': trnPlan(T); ui.msg = 'Planning recalculé.'; done(); return true;
+    case 'trnDelay': { var dl = parseInt(d.n, 10) || 10; T.matches.forEach(function(m){ if(!m.done && m.time) m.time = trnTimeAdd(m.time, dl); }); ui.msg = 'Matchs restants décalés de ' + dl + ' min.'; done(); return true; }
+    case 'trnMakeCode': {
+      SB.trnMakeCode(T.id, d.r, d.t).then(function(r){
+        if(!r.ok){ ui.msg = r.msg; render(); return; }
+        T.codes = T.codes || { org:'', teams:{} }; T.codes.teams = T.codes.teams || {};
+        if(d.r === 'orga') T.codes.org = r.code; else T.codes.teams[d.t] = r.code;
+        save(); render();
+      });
+      return true;
+    }
+    case 'trnSyncNow': try{ SB.sync(); }catch(e){} ui.msg = 'Synchronisation lancée.'; return true;
+    case 'trnCopyLink': {
+      var lk = trnLink(T, d.c);
+      try{ navigator.clipboard.writeText(lk); ui.msg = 'Lien copié.'; }catch(e){ ui.msg = lk; }
+      return true;
+    }
+    case 'trnOrgDel': T.orgs = T.orgs.filter(function(x){ return x !== d.mid; }); done(); return true;
+    case 'trnCopy': { try{ navigator.clipboard.writeText(trnRecap(T)); ui.msg = 'Récapitulatif copié.'; }catch(e){ ui.msg = 'Copie impossible sur cet appareil.'; } return true; }
+    case 'trnDownload': {
+      try{ var bl = new Blob([trnRecap(T)], { type:'text/plain;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = (T.name || 'tournoi').replace(/[^\w\-]+/g, '_') + '.txt'; document.body.appendChild(a); a.click(); a.remove(); }catch(e){}
+      return true;
+    }
+  }
+  return false;
+}
+function trnBind(bind, ds, el){
+  var u = trnU(), T = trnCur(), v = el.type === 'checkbox' ? el.checked : el.value;
+  if(bind === 'trnd'){ if(!u.draft) u.draft = {}; u.draft[ds.k] = v; return; }
+  if(!T) return;
+  if(bind === 'trnf'){
+    var obj = ds.g ? T[ds.g] : T;
+    if(ds.n){ var min = ds.min != null ? parseInt(ds.min, 10) : 0, nv = parseInt(v, 10); if(isNaN(nv)) return; v = Math.max(min, nv); }
+    obj[ds.k] = v;
+    if(ds.sync) trnSyncAgenda(T);
+    if(ds.k === 'time' && !ds.g) T.cfg.start = v || T.cfg.start;
+    save(); if(ds.r || ds.k === 'status' || ds.k === 'vis') render(); return;
+  }
+  if(bind === 'trntf'){ var tt = trnTeam(T, u.team); if(tt){ tt[ds.k] = v; save(); } return; }
+  if(bind === 'trnteamck'){ var tc = trnTeam(T, u.team); if(tc){ if(ds.k === 'here') tc.here = !!v; else tc.state = v ? 'ok' : 'attente'; save(); } return; }
+  if(bind === 'trnadd'){ if(ds.k === 'club'){ u.addClub = v; u.addTeam = ''; } else u.addTeam = v; render(); return; }
+  if(bind === 'trnmf'){
+    var m = T.matches.filter(function(x){ return x.id === ds.id; })[0]; if(!m) return;
+    if(ds.k === 'court') m.court = parseInt(v, 10) || 0; else m.time = v;
+    save(); return;
+  }
+  if(bind === 'trnpick'){
+    if(ds.k === 'club'){ u.pickClub = v; render(); return; }
+    if(ds.k === 'member' && v){
+      var p = trnMemberPlayer(v); if(!p) return;
+      if(u.tab === 'partage'){ if(T.orgs.indexOf(v) < 0) T.orgs.push(v); }
+      else if(u.team){ var tp = trnTeam(T, u.team); if(tp) trnAddPlayerTo(tp.players, p); }
+      else trnAddPlayerTo(T.free, p);
+      u.pickClub = ''; save(); render();
+    }
+  }
 }
 function clubsView(){
   var v = ui.clubView;
@@ -6404,7 +7316,7 @@ function sheetView(){
         '<div class="btnrow"><button class="btn wide primary" data-act="resdupAmical">En faire une rencontre amicale</button><button class="btn wide" data-act="closeSheet">Annuler la saisie</button></div>';
     }
   } else if(sh.kind === 'evpick'){
-    inner = '<h2>Que voulez-vous créer ?</h2><div class="btnrow"><button class="btn wide primary" data-act="evPick" data-k="match">Une rencontre</button>' + (can('trainCreate') ? '<button class="btn wide" data-act="evPick" data-k="train">' + dotHtml('t') + 'Un entraînement</button>' : '') + '<button class="btn wide" data-act="evPick" data-k="event">Autre (réunion, tournoi…)</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+    inner = '<h2>Que voulez-vous créer ?</h2><div class="btnrow"><button class="btn wide primary" data-act="evPick" data-k="match">Une rencontre</button>' + (can('trainCreate') ? '<button class="btn wide" data-act="evPick" data-k="train">' + dotHtml('t') + 'Un entraînement</button>' : '') + '' + (can('trnCreate') ? '<button class="btn wide" data-act="trnNewOpen2">Un tournoi</button>' : '') + '<button class="btn wide" data-act="evPick" data-k="event">Autre (réunion…)</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'newchamp'){
     inner = '<h2>Nouveau championnat</h2><p class="hint2" style="margin-top:4px">Saison ' + esc(curSeason().label) + '</p><label class="f" for="newchamp">Nom du championnat</label><input type="text" id="newchamp" placeholder="Ex. Départementale" data-enter="champ" autocomplete="off"><div class="btnrow"><button class="btn wide primary" data-act="addChamp">Créer</button></div>';
   } else if(sh.kind === 'clrres'){
@@ -6696,7 +7608,7 @@ function render(){
   navSave();
 }
 /* Page courante conservée en cas d'actualisation (sessionStorage : propre à l'onglet / à la session) */
-var NAV_KEYS = ['tab','clubView','clubSel','teamSel','clubTab','statClub','champSel','champTab','calView','dataView','dataTeam','dataMatch','dataFrom','dataPlayer','resume','addRes','showSetup','prepTeam','calMode','calType','calHome','fil','calQ','calFOpen','favDone','clq'];
+var NAV_KEYS = ['tab','trn','clubView','clubSel','teamSel','clubTab','statClub','champSel','champTab','calView','dataView','dataTeam','dataMatch','dataFrom','dataPlayer','resume','addRes','showSetup','prepTeam','calMode','calType','calHome','fil','calQ','calFOpen','favDone','clq'];
 function navSave(){
   try{
     var o = {}; NAV_KEYS.forEach(function(k){ if(ui[k] !== undefined) o[k] = ui[k]; });
@@ -6852,6 +7764,7 @@ document.addEventListener('click', function(e){
   if(!b || b.disabled) return;
   var act = b.dataset.act, d = b.dataset, t = parseInt(d.team, 10), sh = ui.sheet;
   if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = null; render(); return; }
+  if(act.indexOf('trn') === 0 && trnAct(act, d)) return;
   /* Lecture seule : qui ne saisit pas le match ne peut agir sur rien (le terrain reste consultable) */
   if(ro() && { openPoint:1, openFault:1, openSub:1, subExc:1, subCount:1, timeout:1, tcStop:1, undo:1, undoAsk:1, undoOk:1, endSetAsk:1, endSetOk:1, clock:1, serve:1, swap:1, xToggle:1, xPick:1, rot:1, injOpen:1, cardOpen:1, openLineup:1, modeChg:1, modeChgOk:1, modeGo:1, modeSel:1, hdrToggle:1 }[act]) return;
   switch(act){
@@ -7453,7 +8366,7 @@ document.addEventListener('click', function(e){
     case 'calDay': ui.calDay = d.d; if(d.d < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = d.d; render(); break;
     case 'calWeek': { var cwd = toDate(calBaseDay()); cwd.setDate(cwd.getDate() + 7 * parseInt(d.n, 10)); ui.calDay = isoOf(cwd); if(ui.calDay < weekStart(isoOf(new Date()))) ui.calPast = true; if(calAnyFilter()) ui.calGo = ui.calDay; render(); break; }
     case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; delete lc.pal; delete lc.palv; ui.msg = ''; save(); render(); } break; }
-    case 'openFixture': ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break;
+    case 'openFixture': { var oft = !d.cid && S.agenda.filter(function(x){ return x.id === d.fid && x.trn; })[0]; if(oft && trnById(oft.trn)){ setTab('tournoi'); ui.trn = Object.assign(trnU(), { view:'detail', id:oft.trn, tab:'infos', team:null, edit:null, tv:false }); render(); window.scrollTo(0, 0); break; } ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break; }
     case 'sbOpen': ui.sheet = { kind:'sblogin', draft:{ step:'email', email:'', code:'' }, err:'' }; render(); break;
     case 'sbBack': sh.draft.step = 'email'; sh.draft.code = ''; sh.err = ''; render(); break;
     case 'sbSend': {
@@ -7745,6 +8658,7 @@ document.addEventListener('input', function(e){
   if(e.target.classList && e.target.classList.contains('snum')){ e.target.className = 'snum ' + numCls(e.target.value); }
   var bind = ds.bind;
   if(!bind) return;
+  if(bind.indexOf('trn') === 0){ trnBind(bind, ds, e.target); return; }
   var v = e.target.value, t = parseInt(ds.team, 10);
   if(bind === 'tname'){ S.teams[t].name = v; syncTitle(); }
   else if(bind === 'title'){ S.title = v; S.titleAuto = v.trim() === ''; if(S.titleAuto) syncTitle(); }
@@ -7904,6 +8818,7 @@ document.addEventListener('keydown', function(e){
   else if(en === 'member') addMember();
   else if(en === 'teamcreate'){ var tb = document.createElement('button'); tb.setAttribute('data-act', 'teamCreate'); tb.style.display = 'none'; document.body.appendChild(tb); tb.click(); document.body.removeChild(tb); }
   else if(en === 'champ') addChamp();
+  else if(en.indexOf('trn') === 0){ var trb = document.createElement('button'); trb.setAttribute('data-act', { trnteam:'trnTeamFree', trnfree:'trnFreeAdd', trnplayer:'trnPlayerAdd', trnjoin:'trnJoinGo' }[en] || ''); trb.style.display = 'none'; document.body.appendChild(trb); trb.click(); document.body.removeChild(trb); }
 });
 document.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key === ' ') && e.target && e.target.classList && e.target.classList.contains('mc') && e.target.getAttribute('role') === 'button'){ e.preventDefault(); e.target.click(); } });
 document.addEventListener('keydown', function(e){ if((e.key === 'Enter' || e.key === ' ') && e.target && e.target.classList && e.target.classList.contains('favstar')){ e.preventDefault(); e.target.click(); } });
