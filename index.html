@@ -321,6 +321,7 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 /* Domicile / extérieur */
 .hacell{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg);min-width:0}
 .hacell small{display:block;color:var(--muted);font-weight:600;margin-bottom:4px}
+.preplist{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}.preprow{display:flex;align-items:center;justify-content:space-between;gap:10px}.prepinfo{display:flex;align-items:center;gap:6px;min-width:0;flex:1}.prepinfo .fxteam{min-width:0;flex:0 1 auto}.prepinfo .nm{white-space:nowrap}.prepinfo small{color:var(--muted);font-size:12px;white-space:nowrap}.prepgo{flex-shrink:0;min-height:40px;padding:6px 12px}
 .prepbtn{flex-direction:column;gap:4px;align-items:center;min-height:72px;padding:8px 6px;text-align:center}
 .prepbtn small{opacity:.8;font-weight:500;font-size:12px}
 .otherin{margin-top:6px}
@@ -5004,11 +5005,12 @@ function homeAwayHtml(ch){
   return '<div class="row2" style="margin-top:12px">' + menu(0) + menu(1) + '</div>' + (locked ? '<p class="muted" style="margin:6px 0 0">Équipes figées : le match a commencé.</p>' : '');
 }
 function prepButtons(){
-  return '<section class="card"><h3>Préparation des équipes</h3><div class="row2">' + [0, 1].map(function(t){
+  return '<section class="card"><h3>Préparation des équipes</h3><ul class="preplist">' + [0, 1].map(function(t){
     var n = S.teams[t].players.length;
-    return '<button class="btn wide prepbtn" data-act="prepTeam" data-team="' + t + '"><span class="fxteam">' + logoHtml(S.teams[t].clubId, 24) + '<span class="nm">' + esc(tn(t)) + '</span></span>' +
-      '<small>' + (t ? 'Extérieur' : 'Domicile') + ' · ' + onCourt(t).length + '/6 en jeu' + (n ? ' · ' + n + ' joueur' + (n > 1 ? 's' : '') : '') + '</small></button>';
-  }).join('') + '</div></section>';
+    return '<li class="preprow"><span class="prepinfo"><span class="fxteam">' + logoHtml(S.teams[t].clubId, 24) + '<span class="nm">' + esc(tn(t)) + '</span></span>' +
+      '<small>' + (n ? n + ' joueur' + (n > 1 ? 's' : '') : 'pas encore composé') + '</small></span>' +
+      '<button class="btn prepgo" data-act="prepTeam" data-team="' + t + '" aria-label="Préparer ' + esc(tn(t)) + '">Préparer</button></li>';
+  }).join('') + '</ul></section>';
 }
 function teamPrepView(t){
   var pf = ui.prepFix;
