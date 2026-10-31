@@ -928,6 +928,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .msc-live{display:inline-flex;align-items:center;font-size:12px;font-weight:800;letter-spacing:.04em;padding:6px 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface2)}
 .msc-live .livedot{margin-right:6px}
 .msc-row{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;line-height:1.5}
+.msc-row.prepr{gap:8px}.prepopen{flex:1;min-width:0;display:flex!important;flex-wrap:wrap;align-items:baseline;gap:0 8px;width:auto!important;padding:2px 0!important}.msc-row.prepr{line-height:1.3;min-height:40px}.msc-row.prepr .prepopen .nm{flex:0 1 auto;max-width:100%}.msc-row.prepr .prepgo{font-size:15px;min-height:36px;padding:4px 12px;margin-left:auto}.prepopen small{font-size:12px;font-weight:500;line-height:1.2}
 .msc-row .dot{flex:0 0 10px;width:10px;height:10px;border-radius:50%;background:var(--muted)}
 .msc-row .dot.mine{background:var(--acc)}
 .msc-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
@@ -4818,16 +4819,19 @@ function compoLines(e, tid){
   return c.pl.length + ' joueur' + (c.pl.length > 1 ? 's' : '');
 }
 function prepCardHtml(e, i, today, day){
-  var mine = [];
-  var btns = '';
-  if(i.staff.length && !(e.f && e.f.locked)){
-    i.staff.forEach(function(t){ btns += '<button class="btn" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(t) + '" data-back="match">Préparer' + (i.staff.length > 1 ? ' ' + esc(clubName(t)) : '') + '</button>'; });
+  var op = 'data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '" aria-label="Ouvrir ' + esc(clubName(e.home) + ' – ' + clubName(e.away)) + '"';
+  var canP = i.staff.length && !(e.f && e.f.locked);
+  function row(tid){
+    var c = e.f && e.f.compo && e.f.compo[tid], n = c && c.pl ? c.pl.length : 0;
+    var st = n ? n + ' joueur' + (n > 1 ? 's' : '') : 'pas encore composé';
+    return '<div class="msc-row prepr"><button class="msc-main prepopen" ' + op + '><span class="nm">' + esc(clubName(tid)) + '</span><small class="muted">' + st + '</small></button>' +
+      (canP && i.staff.indexOf(tid) >= 0 ? '<button class="btn prepgo" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(tid) + '" data-back="match" aria-label="Préparer ' + esc(clubName(tid)) + '">Préparer</button>' : '') + '</div>';
   }
+  var btns = '';
   if(day && entryScoreOk(e)) btns += '<button class="btn primary" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Démarrer</button>';
-  return '<div class="msc prepc"><button class="msc-main" data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '" aria-label="Ouvrir ' + esc(clubName(e.home) + ' – ' + clubName(e.away)) + '">' +
-    '<span class="msc-top"><span class="msc-tag">' + (day ? 'À démarrer' : 'En préparation') + '</span><span class="msc-date">' + esc(fmtDay(e.date) + (e.time ? ' à ' + e.time : '')) + '</span>' + tmpTag(e) + '</span>' +
-    '<span class="msc-row"><span class="nm">' + esc(clubName(e.home)) + '</span></span><span class="msc-row"><span class="nm">' + esc(clubName(e.away)) + '</span></span>' +
-    '<span class="msc-box"><span class="msc-head"><span>COMPOSITION</span></span><small class="muted">' + esc(clubName(e.home)) + ' : ' + esc(compoLines(e, e.home)) + ' · ' + esc(clubName(e.away)) + ' : ' + esc(compoLines(e, e.away)) + '</small></span></button>' +
+  return '<div class="msc prepc"><button class="msc-main" ' + op + '>' +
+    '<span class="msc-top"><span class="msc-tag">' + (day ? 'À démarrer' : 'En préparation') + '</span><span class="msc-date">' + esc(fmtDay(e.date) + (e.time ? ' à ' + e.time : '')) + '</span>' + tmpTag(e) + '</span></button>' +
+    row(e.home) + row(e.away) +
     (btns ? '<div class="btnrow" style="margin:10px 0 0">' + btns + '</div>' : '') + '</div>';
 }
 function homeView0(){
