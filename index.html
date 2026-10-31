@@ -7578,7 +7578,7 @@ function sheetView(){
   } else if(sh.kind === 'licseason'){ inner = licSheet(sh);
   } else if(sh.kind === 'mephoto'){ var q_pv = meInfo();
     inner = '<h2>Ma photo</h2>' + (q_pv && q_pv.m.photo ? '<div style="text-align:center;margin-top:10px"><img src="' + esc(q_pv.m.photo) + '" alt="Ma photo" style="max-width:100%;max-height:60vh;border-radius:14px"></div>' : '<p class="muted">Aucune photo.</p>') +
-      '<div class="btnrow"><label class="btn wide primary" for="mephoto" style="text-align:center;cursor:pointer">Modifier la photo</label><button class="btn wide" data-act="closeSheet">Fermer</button></div>';
+      '<div class="btnrow"><label class="btn wide primary" for="mephoto" style="text-align:center;cursor:pointer">Modifier la photo</label><button class="btn wide danger" data-act="mePhotoDel">Supprimer la photo</button></div>';
   } else if(sh.kind === 'testas'){ inner = testSheet(sh);
   } else if(sh.kind === 'info'){ inner = '<h2>' + esc(sh.title) + '</h2><p class="hint2">' + esc(sh.note) + '</p>';
   } else if(sh.kind === 'profile'){
@@ -7814,7 +7814,7 @@ document.addEventListener('click', function(e){
   var b = e.target.closest('[data-act]');
   if(!b || b.disabled) return;
   var act = b.dataset.act, d = b.dataset, t = parseInt(d.team, 10), sh = ui.sheet;
-  if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = null; render(); return; }
+  if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = ui.sheet && ui.sheet.kind === 'mephoto' ? { kind:'profile' } : null; render(); return; }
   if(act.indexOf('trn') === 0 && trnAct(act, d)) return;
   /* Lecture seule : qui ne saisit pas le match ne peut agir sur rien (le terrain reste consultable) */
   if(ro() && { openPoint:1, openFault:1, openSub:1, subExc:1, subCount:1, timeout:1, tcStop:1, undo:1, undoAsk:1, undoOk:1, endSetAsk:1, endSetOk:1, clock:1, serve:1, swap:1, xToggle:1, xPick:1, rot:1, injOpen:1, cardOpen:1, openLineup:1, modeChg:1, modeChgOk:1, modeGo:1, modeSel:1, hdrToggle:1 }[act]) return;
@@ -8284,7 +8284,8 @@ document.addEventListener('click', function(e){
     case 'undoAsk': if(S.history.length){ ui.sheet = { kind:'undoask' }; render(); } break;
     case 'endSetAsk': ui.sheet = { kind:'endask' }; render(); break;
     case 'endSetOk': endSet(); break;
-    case 'closeSheet': ui.sheet = null; render(); break;
+    case 'closeSheet': ui.sheet = ui.sheet && ui.sheet.kind === 'mephoto' ? { kind:'profile' } : null; render(); break;
+    case 'mePhotoDel': { var q_pd = meInfo(); if(q_pd && !meTest()){ delete q_pd.m.photo; save(); } ui.sheet = { kind:'profile' }; render(); break; }
     case 'pickHow':
       if(d.how === 'oppfault' && sh.kind === 'point'){ ui.sheet = { kind:'fault', team:1 - sh.team }; if(modeOf() !== 'complet' || !onCourt(1 - sh.team).length) ui.sheet.pid = ''; render(); }
       else { sh.how = d.how; var al = whoAllowed(sh.team, d.how); if(al && sh.pid && al.indexOf(sh.pid) < 0) delete sh.pid;
