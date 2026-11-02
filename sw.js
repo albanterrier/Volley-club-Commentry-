@@ -3,10 +3,10 @@
      et mis à jour en arrière-plan quand il y a du réseau.
    - À CHAQUE nouvelle version déposée sur GitHub, changez le numéro VERSION ci-dessous (n'importe quel texte différent du précédent).
    - Notifications : le serveur envoie un message « push » ; ce fichier l'affiche, et ouvre l'application au toucher. */
-const VERSION = 'v3.027';
+const VERSION = 'v3.029';
 const CACHE = 'volley-' + VERSION;
 const FONTS = 'volley-fonts';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png'];
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png', './badge-96.png'];
 
 self.addEventListener('install', function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(SHELL.map(function(u){ return new Request(u, { cache: 'reload' }); })); }).then(function(){ return self.skipWaiting(); }));
@@ -57,7 +57,7 @@ self.addEventListener('fetch', function(e){
 self.addEventListener('push', function(e){
   var d = {};
   try{ d = e.data ? e.data.json() : {}; }catch(x){ try{ d = { body: e.data.text() }; }catch(y){} }
-  var opt = { body: d.body || '', icon: './icon-192.png', badge: './icon-192.png', data: { url: d.url || './#/messages' } };
+  var opt = { body: d.body || '', icon: './icon-192.png', badge: './badge-96.png', data: { url: d.url || './#/messages' } };
   if(d.tag){ opt.tag = d.tag; opt.renotify = true; }
   e.waitUntil(self.registration.showNotification(d.title || 'Volley-Club Commentry', opt));
 });
