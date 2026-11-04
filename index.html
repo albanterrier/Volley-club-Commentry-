@@ -2586,7 +2586,7 @@ function roleAddSheet(sh){
     rsSelect('ra_r', 'Rôle', 'role', nom.map(function(r){ return [r, profLabel(r)]; }), dr.role, '— Choisir —');
   if(dr.role === 'pres' || dr.role === 'rclub' || dr.role === 'requ'){
     out += rsSelect('ra_c', 'Club concerné', 'cid', clubItems(mclubs), dr.cid, '— Choisir —');
-    if(dr.role === 'requ') out += rsSelect('ra_t', 'Équipe', 'tid', sc ? (sc.teams || []).map(function(t){ return [t.id, t.name]; }) : [], dr.tid, sc ? '— Choisir —' : 'Choisissez d\'abord le club');
+    if(dr.role === 'requ') out += rsSelect('ra_t', 'Équipe', 'tid', sc ? clubTeams(sc).map(function(t){ return [t.id, t.name]; }) : [], dr.tid, sc ? '— Choisir —' : 'Choisissez d\'abord le club');
   }
   return out + '<p class="hint2">« Attribuer maintenant » donne le rôle tout de suite. « Créer une invitation » donne un code valable 7 jours : la personne le saisit sur son appareil.</p>' + sheetErr(sh) +
     '<div class="btnrow"><button class="btn wide primary" data-act="roleAttrOk">Attribuer maintenant</button><button class="btn wide" data-act="roleInvOk">Créer une invitation</button><button class="btn wide" data-act="rolesOpen">Retour</button></div>';
@@ -5578,7 +5578,7 @@ function trnTeamsTab(T, ed){
     if(u.add === 'club'){
       var cs = S.clubs, cid = u.addClub || '', c = cid ? clubById(cid) : null;
       out += '<div class="trnadd"><label class="f" for="trn_ac">Club</label><select id="trn_ac" data-bind="trnadd" data-k="club"><option value="">— Choisir —</option>' + cs.map(function(x){ return '<option value="' + x.id + '"' + (x.id === cid ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
-      if(c){ ensureTeams(c); out += '<label class="f" for="trn_at">Équipe du club</label><select id="trn_at" data-bind="trnadd" data-k="team"><option value="">Tout le club</option>' + c.teams.map(function(x){ return '<option value="' + x.id + '"' + (x.id === u.addTeam ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select><div class="btnrow"><button class="btn wide primary" data-act="trnTeamFromClub">Ajouter cette équipe</button></div>'; }
+      if(c){ ensureTeams(c); out += '<label class="f" for="trn_at">Équipe du club</label><select id="trn_at" data-bind="trnadd" data-k="team"><option value="">Tout le club</option>' + clubTeams(c).map(function(x){ return '<option value="' + x.id + '"' + (x.id === u.addTeam ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select><div class="btnrow"><button class="btn wide primary" data-act="trnTeamFromClub">Ajouter cette équipe</button></div>'; }
       out += '</div>';
     }
     if(u.add === 'libre') out += '<div class="trnadd"><label class="f" for="trn_an">Nom de l\'équipe</label><input id="trn_an" type="text" autocomplete="off" data-enter="trnteam"><div class="btnrow"><button class="btn wide primary" data-act="trnTeamFree">Créer l\'équipe</button></div></div>';
