@@ -5991,7 +5991,7 @@ function clubsCreated(){
 /* clubs favoris : affichés en premier, au-dessus de la recherche, et retirés de la liste du dessous */
 function favClubs(){ return S.clubs.filter(function(c){ return isFav('club', c.id); }).sort(function(a,b){ return a.name.localeCompare(b.name, 'fr'); }); }
 function clubRowHtml(c){
-  var n = c.members.length, nt = (c.teams && c.teams.length) || 1;
+  var n = c.members.length, nt = clubTeams(c).length || 1;
   return '<div class="ritem"><button class="fx big" data-act="clubEdit" data-cid="' + c.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 36) + '<span class="nm">' + esc(c.name) + '</span>' + favStar('club', c.id) + '</span>' +
     '<small>' + n + ' licencié' + (n > 1 ? 's' : '') + ' · ' + nt + ' équipe' + (nt > 1 ? 's' : '') + '</small></span><span class="rsc" aria-hidden="true">›</span></button></div>';
 }
@@ -6050,6 +6050,12 @@ function teamEverEngaged(tid){
     return ch.clubIds.indexOf(tid) >= 0 || ch.fixtures.some(function(f){ return f.home === tid || f.away === tid; }) || ch.matches.some(function(m){ return m.home === tid || m.away === tid; });
   });
 }
+/* Équipes visibles dans la saison actuelle : l'équipe principale du club, les équipes jamais engagées (nouvelles) et celles engagées dans un championnat de la saison en cours. Les autres (engagées seulement dans une saison passée) sont masquées. */
+function teamInSeason(c, t){
+  if(t.id === c.id || !teamEverEngaged(t.id)) return true;
+  return champs().some(function(ch){ return ch.clubIds.indexOf(t.id) >= 0; });
+}
+function clubTeams(c){ return (c.teams || []).filter(function(t){ return teamInSeason(c, t); }); }
 function champOfTeam(tid){ return champs().filter(function(ch){ return ch.clubIds.indexOf(tid) >= 0; })[0] || null; }
 function sortMembers(list){ return list.slice().sort(function(a,b){ return (a.nom || '').localeCompare(b.nom || '', 'fr') || (a.prenom || '').localeCompare(b.prenom || '', 'fr'); }); }
 /* Champ « validable » : affiché comme un bouton blanc ; touché, il devient une zone de saisie avec un petit bouton ✓ à l'intérieur.
@@ -6102,11 +6108,11 @@ function clubsEdit(){
     var members = sortMembers(c.members);
     out += '<div class="clubhead"><h2>Membres (' + members.length + ')</h2>' + addBtn('Ajouter des membres') + '</div><section class="card">' + (members.length ? memberRows(members, !!ui.edit && can('memberEdit', { cid:c.id })) : '<p class="muted">Aucun membre existant</p>') + '</section>';
   } else if(tab === 'teams'){
-    out += '<div class="clubhead"><h2>Équipes (' + c.teams.length + ')</h2>' + addBtn('Ajouter des équipes') + '</div><section class="card">' + c.teams.map(function(t){
+    out += '<div class="clubhead"><h2>Équipes (' + clubTeams(c).length + ')</h2>' + addBtn('Ajouter des équipes') + '</div><section class="card">' + clubTeams(c).map(function(t){
       var n = t.memberIds.length;
       return '<div class="ritem"><button class="fx" data-act="teamOpen" data-tid="' + t.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 32) + '<span class="nm">' + esc(t.name) + '</span>' + favStar('team', t.id) + '</span><small>' + n + ' membre' + (n > 1 ? 's' : '') + teamChampsTxt(t.id) + '</small></span><span class="rsc" aria-hidden="true">›</span></button>' +
         (ui.edit && can('clubEdit', { cid:c.id }) && t.id !== c.id && !teamEverEngaged(t.id) ? '<button class="delwrap" data-act="delTeamRow" data-tid="' + t.id + '" aria-label="Supprimer l\'équipe ' + esc(t.name) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</div>';
-    }).join('') + (ui.edit ? '<p class="hint2">Une équipe peut être supprimée (✕) tant qu\'elle n\'a jamais été engagée dans un championnat, quelle que soit la saison.</p>' : '') + '</section>';
+    }).join('') + (c.teams.length > clubTeams(c).length ? '<p class="hint2">' + (c.teams.length - clubTeams(c).length) + ' équipe(s) d\'une autre saison masquée(s).</p>' : '') + '</section>';
   }
   else if(tab === 'matches'){
     var today = isoOf(new Date()), all = calEntries().filter(function(e){ return e.kind !== 'event' && e.home && e.away && (clubOfEntrant(e.home) === c.id || clubOfEntrant(e.away) === c.id); });
@@ -6119,7 +6125,7 @@ function clubsEdit(){
         (function(){
           /* un match par équipe du club (le prochain, ou le dernier joué) */
           var kind = sel === 'next' ? 'nxt' : 'lst', rows = [];
-          c.teams.forEach(function(t){
+          clubTeams(c).forEach(function(t){
             var te = all.filter(function(e){ return e.home === t.id || e.away === t.id; }), x = kind === 'nxt'
               ? te.filter(function(e){ return !e.postponed && e.date >= today && !entryResult(e); })[0] : te.filter(function(e){ return entryResult(e); }).pop();
             if(x) rows.push({ t:t, e:x });
@@ -6711,7 +6717,7 @@ function teamBlock(tid, today){
 }
 function clubBlock(c, today){
   ensureTeams(c);
-  var teams = c.teams.filter(function(t){ return !isFav('team', t.id); }), n = teams.length;
+  var teams = clubTeams(c).filter(function(t){ return !isFav('team', t.id); }), n = teams.length;
   if(!n) return '';                     /* toutes ses équipes sont déjà en favori : le club serait redondant */
   var i = slideState('club:' + c.id, n, 'first');
   var t = teams[i];
