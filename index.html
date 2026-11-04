@@ -6053,10 +6053,11 @@ function teamEverEngaged(tid){
 }
 /* Équipes visibles dans la saison actuelle : l'équipe principale du club, les équipes jamais engagées (nouvelles) et celles engagées dans un championnat de la saison en cours. Les autres (engagées seulement dans une saison passée) sont masquées. */
 function teamInSeason(c, t){
-  if(t.id === c.id || !teamEverEngaged(t.id)) return true;
+  if(!teamEverEngaged(t.id)) return true;
   return champs().some(function(ch){ return ch.clubIds.indexOf(t.id) >= 0; });
 }
-function clubTeams(c){ return (c.teams || []).filter(function(t){ return teamInSeason(c, t); }); }
+/* si aucune équipe n'est de la saison, on garde au moins l'équipe principale (ou la première) */
+function clubTeams(c){ var l = (c.teams || []).filter(function(t){ return teamInSeason(c, t); }); return l.length ? l : (c.teams || []).slice(0, 1).filter(function(t){ return true; }).map(function(){ return defaultTeam(c) || c.teams[0]; }); }
 /* Supprimable : jamais engagée ; l'équipe principale du club l'est aussi si le club a une autre équipe */
 function teamDeletable(c, t){ return !teamEverEngaged(t.id) && (t.id !== c.id || c.teams.length > 1); }
 function champOfTeam(tid){ return champs().filter(function(ch){ return ch.clubIds.indexOf(tid) >= 0; })[0] || null; }
