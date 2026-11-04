@@ -846,7 +846,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .lgsort{background:none;border:0;padding:0;margin:0;font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;cursor:pointer}.lgsort.on{color:var(--ink)}
 .lgr{border-top:1px solid var(--line);min-height:42px}
 .lgk{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--surface2);color:var(--muted);font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
-.lgn{display:flex;align-items:center;gap:8px;min-width:0}.lgn .logo{flex:none;border-radius:5px;width:22px;height:22px}.lgx{display:flex;flex-direction:column;min-width:0}.lgn b{font-size:14px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lgn small{font-size:10.5px;line-height:1.15;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lgbtn{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;background:none;border:0;padding:0;margin:0;color:inherit;font:inherit;text-align:left;cursor:pointer}.lgn{display:flex;align-items:center;gap:8px;min-width:0}.lgn .logo{flex:none;border-radius:5px;width:22px;height:22px}.lgx{display:flex;flex-direction:column;min-width:0}.lgn b{font-size:14px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lgn small{font-size:10.5px;line-height:1.15;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lgj{font-size:13px;color:var(--muted);font-weight:600}.lgv{font-size:13px;color:var(--muted);font-weight:700;white-space:nowrap}.lgp{font-family:var(--font-d);font-size:20px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 .lgr.up .lgk{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}.lgr.up .lgn small,.lgr.up .lgv{color:var(--ok)}
 .lgr.down .lgk{background:color-mix(in srgb,var(--danger) 20%,transparent);color:var(--danger)}.lgr.down .lgn small,.lgr.down .lgv,.lgr.down .lgp{color:var(--danger)}
@@ -6654,8 +6654,8 @@ function standHtml(rows, hi, sortable){
   }
   var out = '<div class="lg" role="table"><div class="lgh" role="row"><span>#</span>' + hd('club', 'Équipe', 'lgn') + hd('j', 'MJ', 'lgj') + hd('g', 'V-D', 'lgv') + hd('pts', 'Pts', 'lgp') + '</div>';
   rows.forEach(function(r){
-    var me = standHl(r, hi), tone = me ? 'me' : (n > 1 && r.rank === 1 ? 'up' : (n > 1 && r.rank === n ? 'down' : '')), diff = r.sp - r.sc;
-    out += '<div class="lgr ' + tone + '" role="row"><span class="lgk">' + r.rank + '</span><span class="lgn">' + logoHtml(r.id, 26) + '<span class="lgx"><b title="' + esc(r.name) + '">' + esc(r.name) + '</b><small>Sets: ' + r.sp + '-' + r.sc + (me ? ' (' + (diff > 0 ? '+' : '') + diff + ')' : '') + '</small></span></span>' +
+    var lgc = clubOfEntrant(r.id) || (clubById(r.id) ? r.id : ''), me = standHl(r, hi), tone = me ? 'me' : (n > 1 && r.rank === 1 ? 'up' : (n > 1 && r.rank === n ? 'down' : '')), diff = r.sp - r.sc;
+    out += '<div class="lgr ' + tone + '" role="row"><span class="lgk">' + r.rank + '</span><span class="lgn">' + (lgc ? '<button class="lgbtn" data-act="favGo" data-kind="club" data-id="' + esc(lgc) + '" aria-label="Ouvrir la page du club ' + esc(r.name) + '">' : '') + logoHtml(r.id, 26) + '<span class="lgx"><b title="' + esc(r.name) + '">' + esc(r.name) + '</b><small>Sets: ' + r.sp + '-' + r.sc + (me ? ' (' + (diff > 0 ? '+' : '') + diff + ')' : '') + '</small></span>' + (lgc ? '</button>' : '') + '</span>' +
       '<span class="lgj">' + r.j + '</span><span class="lgv">' + r.g + '-' + r.p + '</span><span class="lgp">' + r.pts + '</span></div>';
   });
   return out + '</div>';
