@@ -2003,12 +2003,13 @@ function ensureTeams(c){
     c.teams = [{ id:c.id, name:c.name, memberIds:c.members.map(function(m){ return m.id; }), squad:c.squad || null }];
     delete c.squad;
   }
-  if(!defaultTeam(c)) c.teams.unshift({ id:c.id, name:c.name, memberIds:[], squad:null });
+  if(!defaultTeam(c) && !c.noDef) c.teams.unshift({ id:c.id, name:c.name, memberIds:[], squad:null });
   c.teams.forEach(function(t){ if(!t.memberIds) t.memberIds = []; });
 }
 function syncDefaultTeam(c){
   ensureTeams(c);
-  var d = defaultTeam(c);
+  var d = defaultTeam(c) || c.teams[0];
+  if(!d) return;
   c.members.forEach(function(m){
     if(!c.teams.some(function(t){ return t.memberIds.indexOf(m.id) >= 0; })) d.memberIds.push(m.id);
   });
@@ -6056,6 +6057,8 @@ function teamInSeason(c, t){
   return champs().some(function(ch){ return ch.clubIds.indexOf(t.id) >= 0; });
 }
 function clubTeams(c){ return (c.teams || []).filter(function(t){ return teamInSeason(c, t); }); }
+/* Supprimable : jamais engagée ; l'équipe principale du club l'est aussi si le club a une autre équipe */
+function teamDeletable(c, t){ return !teamEverEngaged(t.id) && (t.id !== c.id || c.teams.length > 1); }
 function champOfTeam(tid){ return champs().filter(function(ch){ return ch.clubIds.indexOf(tid) >= 0; })[0] || null; }
 function sortMembers(list){ return list.slice().sort(function(a,b){ return (a.nom || '').localeCompare(b.nom || '', 'fr') || (a.prenom || '').localeCompare(b.prenom || '', 'fr'); }); }
 /* Champ « validable » : affiché comme un bouton blanc ; touché, il devient une zone de saisie avec un petit bouton ✓ à l'intérieur.
@@ -6111,7 +6114,7 @@ function clubsEdit(){
     out += '<div class="clubhead"><h2>Équipes (' + clubTeams(c).length + ')</h2>' + addBtn('Ajouter des équipes') + '</div><section class="card">' + clubTeams(c).map(function(t){
       var n = t.memberIds.length;
       return '<div class="ritem"><button class="fx" data-act="teamOpen" data-tid="' + t.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 32) + '<span class="nm">' + esc(t.name) + '</span>' + favStar('team', t.id) + '</span><small>' + n + ' membre' + (n > 1 ? 's' : '') + teamChampsTxt(t.id) + '</small></span><span class="rsc" aria-hidden="true">›</span></button>' +
-        (ui.edit && can('clubEdit', { cid:c.id }) && t.id !== c.id && !teamEverEngaged(t.id) ? '<button class="delwrap" data-act="delTeamRow" data-tid="' + t.id + '" aria-label="Supprimer l\'équipe ' + esc(t.name) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</div>';
+        (ui.edit && can('clubEdit', { cid:c.id }) && teamDeletable(c, t) ? '<button class="delwrap" data-act="delTeamRow" data-tid="' + t.id + '" aria-label="Supprimer l\'équipe ' + esc(t.name) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</div>';
     }).join('') + (c.teams.length > clubTeams(c).length ? '<p class="hint2">' + (c.teams.length - clubTeams(c).length) + ' équipe(s) d\'une autre saison masquée(s).</p>' : '') + '</section>';
   }
   else if(tab === 'matches'){
@@ -6171,7 +6174,7 @@ function clubsTeam(){
     }).join('') + '</div>' : '<p class="muted" style="margin:10px 0 0">Aucun membre dans cette équipe.</p>';
   }
   out += '</section>';
-  if(!isDef && ui.edit) out += teamEverEngaged(t.id) ? '<p class="hint2">Cette équipe a déjà été engagée dans un championnat : elle ne peut pas être supprimée.</p>' : '<div class="btnrow"><button class="btn wide danger" data-act="delTeamAsk">Supprimer cette équipe</button></div>';
+  if((!isDef || c.teams.length > 1) && ui.edit) out += teamEverEngaged(t.id) ? '<p class="hint2">Cette équipe a déjà été engagée dans un championnat : elle ne peut pas être supprimée.</p>' : '<div class="btnrow"><button class="btn wide danger" data-act="delTeamAsk">Supprimer cette équipe</button></div>';
   return out + '</div>';
 }
 /* Fenêtre « + » : membres ou équipes */
@@ -8731,12 +8734,14 @@ document.addEventListener('click', function(e){
       save(); render(); break;
     }
     case 'delTeamAsk': ui.sheet = { kind:'delteam' }; render(); break;
-    case 'delTeamRow': if(findTeam(d.tid) && !teamEverEngaged(d.tid)){ ui.teamSel = d.tid; ui.sheet = { kind:'delteam' }; } render(); break;
+    case 'delTeamRow': if(findTeam(d.tid) && teamDeletable(findTeam(d.tid).c, findTeam(d.tid).t)){ ui.teamSel = d.tid; ui.sheet = { kind:'delteam' }; } render(); break;
     case 'delTeamOk': {
       var dtf2 = findTeam(ui.teamSel);
-      if(dtf2 && dtf2.t.id !== dtf2.c.id && !teamEverEngaged(dtf2.t.id)){
-        var tid = dtf2.t.id;
+      if(dtf2 && teamDeletable(dtf2.c, dtf2.t)){
+        var tid = dtf2.t.id, gone = dtf2.t;
+        if(tid === dtf2.c.id) dtf2.c.noDef = true;
         dtf2.c.teams = dtf2.c.teams.filter(function(x){ return x.id !== tid; });
+        gone.memberIds.forEach(function(mid){ if(!dtf2.c.teams.some(function(x){ return x.memberIds.indexOf(mid) >= 0; })) dtf2.c.teams[0].memberIds.push(mid); });
         S.champs.forEach(function(ch4){
           ch4.clubIds = ch4.clubIds.filter(function(id){ return id !== tid; });
           ch4.matches = ch4.matches.filter(function(m2){ return m2.home !== tid && m2.away !== tid; });
