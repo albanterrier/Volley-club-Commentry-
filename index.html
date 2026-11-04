@@ -1687,7 +1687,7 @@ function installCardHtml(){
 }
 var PUSH_TYPES = [
   ['team', 'Fils d\'équipe', 'Messages ordinaires de vos équipes (les annonces arrivent toujours).'],
-  ['match', 'Mes matchs', 'Date, heure ou lieu modifié, match reporté, composition publiée, désignation arbitre ou compteur.'],
+  ['match', 'Mes matchs', 'Date, heure ou lieu modifié, match reporté, composition publiée, désignation arbitre ou compteur, résultat à valider (arbitre).'],
   ['rappel', 'Rappel de la veille', 'La veille au soir d\'un match où vous êtes dans la composition.'],
   ['fav', 'Mes favoris', 'Résultats de vos équipes et clubs favoris, et leurs matchs le jour J.'],
   ['event', 'Entraînements et événements', 'Nouveaux, modifiés ou annulés (pour ceux auxquels vous avez répondu).'],
@@ -2965,6 +2965,16 @@ function routeHash(){
   return h;
 }
 function routeApply(hs){
+  /* #/rencontre/<championnat ou ->/<rencontre> : ouvre la fiche d'une rencontre (notification « Résultat à valider ») */
+  var mr = (hs || '').match(/^#\/rencontre\/([^\/?#]*)\/([^\/?#]+)$/);
+  if(mr){
+    var rc = '', rf = '';
+    try{ rc = decodeURIComponent(mr[1]); rf = decodeURIComponent(mr[2]); }catch(e){ return false; }
+    if(ui.tab !== 'cal') setTab('cal');
+    ui.calView = 'list'; ui.edit = false; ui.msg = '';
+    ui.sheet = { kind:'fixture', cid:rc === '-' ? '' : rc, fid:rf };
+    return true;
+  }
   var m = (hs || '').match(/^#\/(match|clubs|championnat|statistiques|tournoi|parametres|sauvegarde|messages)((?:\/[^\/?#]*)*)$/);
   if(!m) return false;
   var tab = { match:'match', clubs:'clubs', championnat:'champ', statistiques:'data', tournoi:'tournoi', parametres:'settings', sauvegarde:'backup', messages:'msg' }[m[1]];
@@ -9035,7 +9045,11 @@ window.addEventListener('hashchange', function(){
 if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('message', function(ev){
     var d = ev.data;
-    if(d && d.type === 'open'){ ui.msgThread = null; ui.sheet = null; setTab('msg'); render(); try{ if(SB.status().logged) SB.msgSync(); }catch(e){} window.scrollTo(0, 0); }
+    if(d && d.type === 'open'){
+      var ou = String(d.url || ''), oh = ou.indexOf('#') >= 0 ? ou.slice(ou.indexOf('#')) : '';
+      if(/^#\/rencontre\//.test(oh) && routeApply(oh)){ render(); window.scrollTo(0, 0); try{ if(SB.status().logged) SB.sync(); }catch(e){} return; }
+      ui.msgThread = null; ui.sheet = null; setTab('msg'); render(); try{ if(SB.status().logged) SB.msgSync(); }catch(e){} window.scrollTo(0, 0);
+    }
   });
 }
 try{
