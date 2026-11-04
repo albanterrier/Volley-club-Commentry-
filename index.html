@@ -6109,7 +6109,18 @@ function clubsEdit(){
     else {
       var sel = !lst ? 'next' : ui.clubEv === 'last' ? 'last' : (ui.clubEv === 'next' ? 'next' : (nxt || !lst ? 'next' : 'last'));
       out += '<div class="homenext"><div class="evsw" role="tablist">' + (lst ? '<button data-act="clubEv" data-k="last" role="tab" aria-selected="' + (sel === 'last') + '" class="' + (sel === 'last' ? 'on' : '') + '">Dernier match</button>' : '') + '<button data-act="clubEv" data-k="next" role="tab" aria-selected="' + (sel === 'next') + '" class="' + (sel === 'next' ? 'on' : '') + '">Prochain match</button></div>' +
-        (sel === 'next' ? (nxt ? calRow(nxt, today) : '<p class="muted">Aucun match à venir.</p>') : (lst ? calRow(lst, today) : '<p class="muted">Aucun match joué.</p>')) +
+        (function(){
+          /* un match par équipe du club (le prochain, ou le dernier joué) */
+          var kind = sel === 'next' ? 'nxt' : 'lst', rows = [];
+          c.teams.forEach(function(t){
+            var te = all.filter(function(e){ return e.home === t.id || e.away === t.id; }), x = kind === 'nxt'
+              ? te.filter(function(e){ return !e.postponed && e.date >= today && !entryResult(e); })[0] : te.filter(function(e){ return entryResult(e); }).pop();
+            if(x) rows.push({ t:t, e:x });
+          });
+          if(!rows.length) return '<p class="muted">' + (kind === 'nxt' ? 'Aucun match à venir.' : 'Aucun match joué.') + '</p>';
+          var multi = rows.length > 1;
+          return rows.map(function(r){ return (multi ? '<p class="hint2" style="margin:12px 0 4px"><b>' + esc(r.t.name) + '</b></p>' : '') + calRow(r.e, today); }).join('');
+        })() +
         (trn ? '<h2>Prochain entraînement</h2>' + calRow(trn, today) : '') + '</div>';
     }
   }
