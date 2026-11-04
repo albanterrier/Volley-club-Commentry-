@@ -1831,7 +1831,7 @@ function migrate(s){
   var d = newState();
   s.clubs = s.clubs || []; s.champs = s.champs || []; s.tournois = s.tournois || [];
   s.champs.forEach(function(c){ var pm = /^PH ([ABC])$/.exec(c.name || ''); if(pm) c.name = 'Promotion Honneur ' + pm[1]; });
-  s.clubs.forEach(function(c){ if(c.members === undefined) c.members = []; if(!c.teams){ c.teams = [{ id:c.id, name:c.name, memberIds:c.members.map(function(m){ return m.id; }), squad:c.squad || null }]; delete c.squad; } if(!c.teams.some(function(t){ return t.id === c.id; })) c.teams.unshift({ id:c.id, name:c.name, memberIds:[], squad:null }); c.teams.forEach(function(t){ if(!t.memberIds) t.memberIds = []; }); });
+  s.clubs.forEach(function(c){ if(c.members === undefined) c.members = []; if(!c.teams){ c.teams = [{ id:c.id, name:c.name, memberIds:c.members.map(function(m){ return m.id; }), squad:c.squad || null }]; delete c.squad; } if(!c.noDef && !c.teams.some(function(t){ return t.id === c.id; })) c.teams.unshift({ id:c.id, name:c.name, memberIds:[], squad:null }); c.teams.forEach(function(t){ if(!t.memberIds) t.memberIds = []; }); });
   s.champs.forEach(function(c){
     c.fixtures = c.fixtures || [];
     c.fixtures.forEach(function(f){ if(f.time === undefined) f.time = ''; if(f.place === undefined) f.place = ''; });
