@@ -470,6 +470,7 @@ header.top{border-bottom:1px solid rgba(255,255,255,.08)}
 .trnslot{display:flex;gap:10px;margin:8px 0;border-top:1px solid var(--line);padding-top:8px}.trnst{width:52px;flex:none}.trnsc{flex:1;display:flex;flex-direction:column;gap:6px}.trnsm{font-size:14px}.trnsm.mine{border-left:3px solid var(--acc);padding-left:6px}.trnsm.done{opacity:.7}
 .trncode{font-family:monospace;letter-spacing:.12em;font-size:16px}
 .hmenu .lvic{display:inline-flex;align-items:center;position:relative}.hmenu .lvic.on:after{content:'';position:absolute;right:-3px;top:-3px;width:9px;height:9px;border-radius:50%;background:#e53935}
+.lvdemo{border-radius:14px;overflow:hidden;margin:4px 0 12px;pointer-events:none}.lvmini{min-height:0!important;padding:14px 10px 10px!important}.lvmini .lvnm{font-size:16px}.lvmini .lvsets{font-size:34px}.lvmini .lvpts{font-size:56px}.lvmini .lvhist{font-size:14px;margin:8px 0 2px}.lvmini .lvmsg{margin-top:8px}
 .lvpage{min-height:100vh;box-sizing:border-box;padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px));background:#0f1720;color:#fff;text-align:center;font-family:inherit}.lvhead{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:14px}.lvstate{font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;padding:4px 12px;border-radius:99px;background:#444}.lvstate.on{background:#d32f2f}.lvstate.end{background:#2e7d32}.lvstate.old{background:#8a6d00}.lvtitle{opacity:.8;font-size:15px}.lvboard{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:10px auto;max-width:640px}.lvteam{display:flex;flex-direction:column;gap:6px;align-items:center}.lvnm{font-size:clamp(17px,4.6vw,28px);font-weight:700;line-height:1.15;word-break:break-word}.lvsets{font-size:clamp(40px,12vw,72px);font-weight:800;line-height:1}.lvpts{font-size:clamp(56px,20vw,120px);font-weight:800;line-height:1;color:#ffd54f;min-height:1em}.lvmid{display:flex;flex-direction:column;gap:6px;font-size:13px;opacity:.7;text-transform:uppercase}.lvsrv{display:inline-block;width:.55em;height:.55em;border-radius:50%;background:#ffd54f;margin-right:.35em}.lvhist{margin:14px 0 4px;font-size:16px}.lvmsg{opacity:.65;font-size:13px;margin-top:18px}
 .trntv{position:fixed;inset:0;z-index:50;background:var(--bg);color:var(--ink);overflow:auto;padding:16px 20px calc(24px + env(safe-area-inset-bottom,0px))}.trntv h1{font-size:30px;margin:0}.trntv h2{font-size:20px;margin:22px 0 8px;color:var(--muted)}
 .tvm{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0;background:var(--surface)}.tvm .tvx{font-size:26px;font-weight:700}.tvm.small .tvx{font-size:20px}.tvm .tvt{color:var(--acc-text);font-weight:700;font-size:16px}.tvpod{font-size:26px;font-weight:700}
@@ -2189,7 +2190,7 @@ var RIGHTS = {
   trainCreate:{ admin:1, pres:'club', rclub:'club' }, trnCreate:{ admin:1, fede:1, pres:'club', rclub:'club' },
   designate:{ admin:1, fede:1, pres:'club', rclub:'club' },
   compo:{ admin:1, pres:'club', rclub:'club', requ:'team' },
-  score:{ admin:1, compteur:'match' }, validate:{ admin:1, arbitre:'match' }, unlock:{ admin:1, fede:1 },
+  live:{ admin:1, pres:'club', rclub:'club' }, score:{ admin:1, compteur:'match' }, validate:{ admin:1, arbitre:'match' }, unlock:{ admin:1, fede:1 },
   settings:{ admin:1 }, licFin:{ admin:1, fede:1 }
 };
 function can(act, ctx){
@@ -2842,6 +2843,7 @@ function settingsView(){
     chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
     '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
   out += '<section class="card"><h2>Saison</h2><p class="muted" style="margin:6px 0 10px">Les championnats, le calendrier et les résultats dépendent de la saison choisie.</p>' + seasonBtn(true) + '</section>';
+  if(can('live')) out += liveSettingsHtml();
   out += pushCardHtml();
   if(can('settings')) out += '<section class="card"><h2>Données</h2><div class="backupbox' + (bk.warn ? ' warn' : '') + '" style="margin:10px 0 0"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>' +
     '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, données officielles, cohérence…</button></div></section>';
@@ -4496,8 +4498,18 @@ function livePush(now){
     SB.livePut(L2.id, liveSnap()).then(function(r){ lvBusy = false; L2 = lvGet(); L2.err = r.ok ? '' : r.msg; L2.at = r.ok ? Date.now() : L2.at; lvSet(L2); if(ui.sheet && ui.sheet.kind === 'live') render(); }, function(){ lvBusy = false; });
   }, now ? 0 : 1500);
 }
+/* Diffusion : administrateur, président et responsables des clubs du match (sans droit de saisie du score) */
+function canLive(){
+  if(availRoles() === null) return true;
+  var cl = [], fr = S.fixtureRef ? calEntry(S.fixtureRef.cid, S.fixtureRef.fid) : null;
+  if(fr){ cl.push(clubOfEntrant(fr.home), clubOfEntrant(fr.away)); } else { cl.push(S.teams[0].clubId, S.teams[1].clubId); }
+  cl = cl.filter(function(c){ return !!c; });
+  if(!cl.length) return can('live');
+  return cl.some(function(c){ return can('live', { cid:c }); });
+}
 var IC_LIVE = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 9.5V8.5a3 3 0 0 1 3-3h6.5"/><path d="M4 12.2a7.3 7.3 0 0 1 7.3 7.3"/><path d="M4 15.8a3.7 3.7 0 0 1 3.7 3.7"/><path d="M4 19.2a.4.4 0 0 1 .4.4"/><path d="M12.5 19.5H17a2 2 0 0 0 2-2v-4.7"/><circle cx="17.2" cy="8" r="5" fill="currentColor" stroke="none"/><path d="M16 5.6l3.4 2.4-3.4 2.4z" fill="var(--head-bg,#fff)" stroke="none"/></svg>';
 function liveMenuBtn(){
+  if(!canLive()) return '';
   var on = lvGet().on;
   return '<button class="hsw" data-act="liveMenu"><span>' + (on ? 'Diffusion en direct' : 'Diffuser le score') + '</span><span class="lvic' + (on ? ' on' : '') + '" aria-hidden="true">' + IC_LIVE + '</span></button>';
 }
@@ -4518,8 +4530,8 @@ function liveSheetHtml(){
   }
   return out;
 }
-function liveView(){
-  var d = ui.liveData, out = '<div class="lvpage">';
+function liveView(d0, mini){
+  var d = mini ? d0 : ui.liveData, out = '<div class="lvpage' + (mini ? ' lvmini' : '') + '">';
   if(d === undefined || d === 'wait') return out + '<p class="lvmsg">Chargement…</p></div>';
   if(!d) return out + '<h1>Match introuvable</h1><p class="lvmsg">Ce lien n\'est plus actif (la diffusion est terminée ou le lien est incorrect).</p></div>';
   var w = [0, 0]; (d.sets || []).forEach(function(x){ if(x[0] > x[1]) w[0]++; else w[1]++; });
@@ -4532,6 +4544,13 @@ function liveView(){
   return out;
 }
 var lvPoll = null;
+/* Paramètres › Diffusion de match (réservé à ceux qui ont le droit de diffuser) */
+function liveSettingsHtml(){
+  var demo = { title:'Régionale · Journée 5', home:'RIOM 1', away:'COMMENTRY', sets:[[25, 20], [18, 25]], cur:[12, 9], serving:1, finished:false, ua:new Date().toISOString() };
+  return '<section class="card"><h2>Diffusion de match</h2><p class="muted" style="margin:6px 0 10px">Page publique du score en direct, à partager par lien. Voici l\'aperçu de ce que voient les spectateurs :</p>' +
+    '<div class="lvdemo" aria-hidden="true">' + liveView(demo, true) + '</div>' +
+    '<div class="btnrow"><button class="btn wide" data-act="liveCfg">Modifier les paramètres de diffusion</button></div></section>';
+}
 function liveFetch(){
   if(!ui.liveView) return;
   SB.liveGet(ui.liveView).then(function(d){ if(!ui.liveView) return; if(d !== undefined) ui.liveData = d; else if(ui.liveData === 'wait') ui.liveData = undefined; render(); });
@@ -4542,7 +4561,7 @@ function liveWatch(id){
 }
 function doShare(m){
   m = m || S;
-  ui.sheet = { kind:'text', title:'Partager le score', note:'', text:shareText(m), canShare:!!navigator.share, live:m === S };
+  ui.sheet = { kind:'text', title:'Partager le score', note:'', text:shareText(m), canShare:!!navigator.share, live:m === S && canLive() };
   render();
 }
 function copyText(text){
@@ -4575,7 +4594,7 @@ function header(){
   var w = setsWon(), open = !!ui.hdrOpen;
   var chev = '<button class="hchev' + (open ? ' open' : '') + '" data-act="hdrToggle" aria-expanded="' + open + '" aria-label="' + (open ? 'Fermer' : 'Ouvrir') + ' les options d\'affichage" title="' + (open ? 'Fermer' : 'Ouvrir') + ' les options d\'affichage">' +
     '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>';
-  var showMenu = canScore();
+  var showMenu = canScore() || canLive();
   if(!showMenu) chev = '';
   var pvp = prevAct(), leftp = pvp ? prevBtnHtml(pvp) : '<button class="ibtn" data-act="tab" data-tab="menu" aria-label="Accueil"><img src="' + LOGO_V2C + '" alt=""></button>';
   var topRow = '<div class="hmain">' + leftp + '<div class="hscore" role="group" aria-label="Score en sets"><span class="hn">' + esc(tn(0)) + '</span><b>' + w[0] + ' – ' + w[1] + '</b><span class="hn">' + esc(tn(1)) + '</span></div>' + chev + profBtnHtml() + dotsBtnHtml() + '</div>';
@@ -4585,7 +4604,7 @@ function header(){
     return '<button class="hsw" role="switch" aria-checked="' + on + '" data-act="pref" data-k="' + k + '"><span>' + label + '</span><span class="track" aria-hidden="true"><span class="knob"></span></span></button>';
   }
   return '<header class="top hc">' + topRow + '<div class="hshade" data-act="hdrToggle" aria-hidden="true"></div>' +
-    '<div class="hmenu" role="group" aria-label="Mode de saisie et informations à afficher">' + modeBtnHtml() + sw('table', 'Tableau') + (modeOf() === 'complet' ? sw('players', 'Résultats par joueur') : '') + sw('sheet', 'Feuille de match') + liveMenuBtn() + '</div></header>';
+    '<div class="hmenu" role="group" aria-label="Mode de saisie et informations à afficher">' + (canScore() ? modeBtnHtml() + sw('table', 'Tableau') + (modeOf() === 'complet' ? sw('players', 'Résultats par joueur') : '') + sw('sheet', 'Feuille de match') : '') + liveMenuBtn() + '</div></header>';
 }
 /* Tableau des sets, sous le schéma : équipe à domicile en haut, une colonne par set joué (+ le set en cours) */
 function stLogo(t){
@@ -7783,6 +7802,8 @@ function sheetView(){
       (sh.live ? '<div class="btnrow"><button class="btn wide" data-act="liveOpen">Diffuser en direct (lien public)</button></div>' : '');
   } else if(sh.kind === 'live'){
     inner = liveSheetHtml();
+  } else if(sh.kind === 'livecfg'){
+    inner = '<h2>Paramètres de diffusion</h2><p class="hint2" style="font-size:16px;margin-top:12px"><b>En projet.</b> Les réglages de la page de diffusion (logos, couleurs, texte affiché…) arriveront plus tard.</p>';
   }
   var own = ['memmerge','licinv','sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
@@ -8521,9 +8542,10 @@ document.addEventListener('click', function(e){
       try{ navigator.share({ text:sh.text }).catch(function(){}); }catch(err){}
       break;
     case 'copy': copyText(sh.text); break;
-    case 'liveOpen': ui.sheet = { kind:'live' }; render(); break;
-    case 'liveMenu': ui.hdrOpen = false; ui.sheet = { kind:'live' }; render(); break;
-    case 'liveStart': lvSet({ on:true, id:lvNewId(), err:'', at:0 }); livePush(true); render(); break;
+    case 'liveCfg': if(!can('live')){ break; } ui.sheet = { kind:'livecfg' }; render(); break;
+    case 'liveOpen': if(!canLive()){ ui.sheet = null; render(); break; } ui.sheet = { kind:'live' }; render(); break;
+    case 'liveMenu': if(!canLive()){ ui.sheet = null; render(); break; } ui.hdrOpen = false; ui.sheet = { kind:'live' }; render(); break;
+    case 'liveStart': if(!canLive()){ ui.sheet = null; render(); break; } lvSet({ on:true, id:lvNewId(), err:'', at:0 }); livePush(true); render(); break;
     case 'liveStop': { var Lq = lvGet(); Lq.on = false; lvSet(Lq); ui.msg = 'Diffusion arrêtée. L\'ancien lien n\'est plus mis à jour.'; ui.sheet = null; render(); break; }
     case 'liveShare': try{ navigator.share({ title:'Score en direct', text:'Suivez le match en direct :', url:liveLink(lvGet().id) }).catch(function(){}); }catch(err){} break;
     case 'liveCopy': { var lk = liveLink(lvGet().id); try{ navigator.clipboard.writeText(lk).then(function(){ ui.msg = 'Lien copié.'; render(); }, function(){}); }catch(err){ var li = document.getElementById('livelink'); if(li){ li.focus(); li.select(); try{ document.execCommand('copy'); }catch(e2){} } } break; }
