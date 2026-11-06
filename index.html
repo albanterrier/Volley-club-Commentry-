@@ -4047,6 +4047,13 @@ function relinkFixtures(chs){
       var m = (ch.matches || []).filter(function(x){ return x.fid === f.id; })[0];
       if(m){ f.matchId = m.id; n++; }
     });
+    /* résultat sans identifiant de rencontre (match saisi hors calendrier) : on le rattache à la première rencontre libre des mêmes équipes, dans le même sens */
+    (ch.matches || []).forEach(function(m){
+      if((ch.fixtures || []).some(function(f){ return f.matchId === m.id; })) return;
+      var fx = (ch.fixtures || []).filter(function(f){ return !f.matchId && !f.postponed && f.home === m.home && f.away === m.away; })
+        .sort(function(a, b){ return String(a.date || '').localeCompare(String(b.date || '')); })[0];
+      if(fx){ fx.matchId = m.id; if(!m.fid) m.fid = fx.id; n++; }
+    });
   });
   return n;
 }
