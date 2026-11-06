@@ -1477,6 +1477,10 @@ var SB = (function(){
       return req('GET', '/rest/v1/match_sync?select=fid,champ_id,home,away,sets,cur,finished,ua&order=ua.desc&limit=600')
         .then(function(r){ return r.ok && Array.isArray(r.json) ? r.json : null; }, function(){ return null; });
     },
+    msFinished:function(){
+      return req('GET', '/rest/v1/match_sync?select=fid,data,ua&finished=eq.true&order=ua.desc&limit=300')
+        .then(function(r){ return r.ok && Array.isArray(r.json) ? r.json : null; }, function(){ return null; });
+    },
     msGet:function(fid){
       return req('GET', '/rest/v1/match_sync?select=data,ua,finished&fid=eq.' + encodeURIComponent(fid))
         .then(function(r){ return r.ok && Array.isArray(r.json) && r.json[0] ? r.json[0] : null; }, function(){ return undefined; });
@@ -3903,6 +3907,10 @@ function allMatches(){
   var out = [];
   if(hasContent()) out.push(S);
   S.library.forEach(function(e){ out.push(e); });
+  if(typeof MS !== 'undefined'){
+    var have = {}; out.forEach(function(x){ have[x.created] = 1; });
+    Object.keys(MS.rm).forEach(function(k){ var r = MS.rm[k]; if(r && r.finished && !have[r.created]){ have[r.created] = 1; out.push(r); } });
+  }
   return out.sort(function(a,b){ return String(matchDate(b)).localeCompare(String(matchDate(a))); });
 }
 function matchById(id){ return (typeof MS !== 'undefined' && MS.rm[id]) || allMatches().filter(function(x){ return x.created === id; })[0] || S; }
@@ -4517,7 +4525,7 @@ function doExport(kind, m){
 }
 function doBackup(){ bkMark(); deliverFile('volley-sauvegarde-' + stamp() + '.json', backupText(), 'json'); render(); }
 /* ---------- Match suivi par tous (table match_sync) ---------- */
-var MS = { map:{}, rm:{}, sig:'', timer:null, pt:null, last:'', err:'', busy:false };
+var MS = { map:{}, rm:{}, rmUa:{}, all:false, bf:null, sig:'', timer:null, pt:null, last:'', err:'', busy:false };
 function msLogged(){ try{ return !!SB.status().logged; }catch(e){ return false; } }
 /* envoi du match par le compteur (ou l'administrateur) : score, événements, feuille de match */
 function msPush(now){
@@ -4551,12 +4559,36 @@ function msList(){
   SB.msList().then(function(a){
     if(!a) return;
     var m = {}; a.forEach(function(r){ m[r.fid] = r; });
-    var sig = msSigOf(m); MS.map = m;
+    var sig = msSigOf(m); MS.map = m; msBackfill(); msLoadAll();
     if(sig !== MS.sig){
       MS.sig = sig;
       var ae = document.activeElement;
       if(!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))) render();
     }
+  });
+}
+/* matchs terminés du serveur (statistiques, feuilles de match) : chargés une fois par session, et à la demande */
+function msLoadAll(force){
+  if(!msLogged() || (MS.all && !force)) return;
+  MS.all = true;
+  SB.msFinished().then(function(a){
+    if(!a){ MS.all = false; return; }
+    var n = 0;
+    a.forEach(function(r){ var m = r.data; if(m && m.created && (!MS.rm[m.created] || MS.rmUa[m.created] !== r.ua)){ MS.rm[m.created] = m; MS.rmUa[m.created] = r.ua; n++; } });
+    if(n){ var ae = document.activeElement; if(!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !ui.watch) render(); }
+  });
+}
+/* matchs terminés sur cet appareil mais absents du serveur : renvoyés une fois (compteur ou administrateur) */
+function msBackfill(){
+  if(MS.bf || !msLogged()) return;
+  MS.bf = {};
+  var list = [];
+  if(S.finished && hasContent()) list.push(matchSnapshot());
+  S.library.forEach(function(e){ if(e.finished) list.push(e); });
+  list.forEach(function(e){
+    var fr = e.fixtureRef; if(!fr || !fr.fid || MS.map[fr.fid] || MS.bf[fr.fid]) return;
+    MS.bf[fr.fid] = 1;
+    SB.msPut(fr.fid, fr.cid, e);
   });
 }
 function msScoreTxt(r){ var w = [0, 0]; (r.sets || []).forEach(function(x){ if(x[0] > x[1]) w[0]++; else w[1]++; }); return w[0] + ' – ' + w[1] + ' · set ' + ((r.sets || []).length + 1) + ' : ' + r.cur[0] + '–' + r.cur[1]; }
@@ -4580,7 +4612,7 @@ function msFetchOne(){
   });
 }
 function watchView(){
-  var w = ui.watch, m = w.created ? MS.rm[w.created] : null;
+  var w = ui.watch, m = w.created ? (MS.rm[w.created] || (w.local ? matchById(w.created) : null)) : null;
   var out = '<div class="watchbar"><button class="btn" data-act="msUnwatch">‹ Retour</button>';
   if(m){
   }
@@ -4591,6 +4623,8 @@ function watchView(){
   return out + '<div class="lvdemo" style="margin:0 12px 12px">' + board + '</div>' + dataMatchView().replace('<details class="card"><summary>Feuille de match', '<details class="card" open><summary>Feuille de match');
 }
 function msWatchBtn(fe){
+  var rs = entryResult(fe), lm = rs && rs.ref ? allMatches().filter(function(x){ return x.created === rs.ref; })[0] : null;
+  if(lm && lm.finished && !MS.map[fe.fid]) return '<div class="btnrow"><button class="btn wide primary" data-act="msLocal" data-mid="' + esc(lm.created) + '">Voir la feuille de match</button></div>';
   var r = MS.map[fe.fid]; if(!r) return '';
   if(S.fixtureRef && S.fixtureRef.fid === fe.fid && canScore()) return '';
   var live = msLive(fe.fid);
@@ -8668,6 +8702,7 @@ document.addEventListener('click', function(e){
     case 'copy': copyText(sh.text); break;
     case 'msWatch': msWatch(d.fid, d.cid); break;
     case 'msUnwatch': msUnwatch(); break;
+    case 'msLocal': ui.watch = { fid:'', cid:'', created:d.mid, ua:'', done:true, local:true }; ui.sheet = null; render(); window.scrollTo(0, 0); break;
     case 'liveCfg': if(!can('live')){ break; } ui.sheet = { kind:'livecfg' }; render(); break;
     case 'liveOpen': if(!canLive()){ ui.sheet = null; render(); break; } ui.sheet = { kind:'live' }; render(); break;
     case 'liveMenu': if(!canLive()){ ui.sheet = null; render(); break; } ui.hdrOpen = false; ui.sheet = { kind:'live' }; render(); break;
