@@ -1284,6 +1284,7 @@ var SB = (function(){
         S.sb = S.sb || {}; S.sb.trn = a[17].map(function(x){ return { tid:x.tid, role:x.role, team:x.team_id || '' }; });
         if(!lsGet(MEKEY) && !(S.sb && S.sb.at) && S.adminId && findMember(S.adminId)) meSet(S.adminId);
         merge(build(R));
+        try{ relinkFixtures(S.champs); }catch(e){}
         try{ SB.jqApply(); }catch(e){}
         var set = {}; R.settings.forEach(function(r){ set[r.k] = r.v; });
         S.adminId = typeof set.admin_id === 'string' ? set.admin_id : '';
@@ -1854,6 +1855,7 @@ function newState(){
 function migrate(s){
   var d = newState();
   s.clubs = s.clubs || []; s.champs = s.champs || []; s.tournois = s.tournois || [];
+  try{ relinkFixtures(s.champs); }catch(e){}
   s.champs.forEach(function(c){ var pm = /^PH ([ABC])$/.exec(c.name || ''); if(pm) c.name = 'Promotion Honneur ' + pm[1]; });
   s.clubs.forEach(function(c){ if(c.members === undefined) c.members = []; if(!c.teams){ c.teams = [{ id:c.id, name:c.name, memberIds:c.members.map(function(m){ return m.id; }), squad:c.squad || null }]; delete c.squad; } if(!c.noDef && !c.teams.some(function(t){ return t.id === c.id; })) c.teams.unshift({ id:c.id, name:c.name, memberIds:[], squad:null }); c.teams.forEach(function(t){ if(!t.memberIds) t.memberIds = []; }); });
   s.champs.forEach(function(c){
@@ -4034,6 +4036,20 @@ function weekLabel(ws){
   return 'Semaine du ' + a.toLocaleDateString('fr-FR', same ? { day:'numeric' } : { day:'numeric', month:'long' }) + ' au ' + b.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
 }
 function fixtureOf(ch, fid){ return ch.fixtures.filter(function(f){ return f.id === fid; })[0] || null; }
+/* Rattache chaque rencontre à son résultat : un résultat saisi par le compteur porte l'identifiant de la rencontre (fid), mais le compteur
+   n'a pas le droit de modifier la rencontre elle-même sur le serveur ; sans ce rattachement, la rencontre restait « À renseigner » chez les autres. */
+function relinkFixtures(chs){
+  var n = 0;
+  (chs || []).forEach(function(ch){
+    var byId = {}; (ch.matches || []).forEach(function(m){ byId[m.id] = m; });
+    (ch.fixtures || []).forEach(function(f){
+      if(f.matchId && byId[f.matchId]) return;
+      var m = (ch.matches || []).filter(function(x){ return x.fid === f.id; })[0];
+      if(m){ f.matchId = m.id; n++; }
+    });
+  });
+  return n;
+}
 function matchOf(ch, mid){ return mid ? (ch.matches.filter(function(m){ return m.id === mid; })[0] || null) : null; }
 /* Jour N d'un championnat : chaque semaine avec au moins une rencontre non reportée ; une semaine sans match ne change pas le numéro */
 function champWeeks(ch){
@@ -5073,7 +5089,7 @@ function prepInfo(e){
 function fixStarted(fid){ return savedMatches().some(function(it){ return it.m.fixtureRef && it.m.fixtureRef.fid === fid; }); }
 function prepEntries(today){
   return calEntries().filter(function(e){
-    return e.kind !== 'event' && e.home && e.away && !e.postponed && !entryResult(e) && !(e.f && e.f.locked) && e.date >= today && !fixStarted(e.fid);
+    return e.kind !== 'event' && e.home && e.away && !e.postponed && !entryResult(e) && !(e.f && e.f.locked) && e.date >= today && !fixStarted(e.fid) && !(typeof MS !== 'undefined' && MS.map[e.fid]);
   }).map(function(e){ return { e:e, i:prepInfo(e) }; }).filter(function(x){ return x.i.any; })
     .sort(function(a, b){ return (a.e.date + (a.e.time || '')).localeCompare(b.e.date + (b.e.time || '')); });
 }
