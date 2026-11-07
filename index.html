@@ -4622,14 +4622,19 @@ function watchView(){
   var board = liveView({ title:m.title || '', home:tnOf(m, 0), away:tnOf(m, 1), sets:m.sets || [], cur:m.cur || [0, 0], serving:m.serving == null ? null : m.serving, finished:!!m.finished, ua:w.ua || new Date().toISOString() }, true);
   return out + '<div class="lvdemo" style="margin:0 12px 12px">' + board + '</div>' + dataMatchView().replace('<details class="card"><summary>Feuille de match', '<details class="card" open><summary>Feuille de match');
 }
+/* match en cours (haut de la fiche) */
 function msWatchBtn(fe){
-  var rs = entryResult(fe), lm = rs && rs.ref ? allMatches().filter(function(x){ return x.created === rs.ref; })[0] : null;
-  if(lm && lm.finished && !MS.map[fe.fid]) return '<div class="btnrow"><button class="btn wide primary" data-act="msLocal" data-mid="' + esc(lm.created) + '">Voir la feuille de match</button></div>';
-  var r = MS.map[fe.fid]; if(!r) return '';
+  var live = msLive(fe.fid); if(!live) return '';
   if(S.fixtureRef && S.fixtureRef.fid === fe.fid && canScore()) return '';
-  var live = msLive(fe.fid);
-  return '<div class="btnrow"><button class="btn wide primary" data-act="msWatch" data-fid="' + esc(fe.fid) + '" data-cid="' + esc(fe.cid || '') + '">' + (live ? 'Suivre le match en direct' : 'Voir la feuille de match') + '</button></div>' +
-    (live ? '<p class="hint2" style="margin-top:0"><b>En cours</b> · ' + esc(msScoreTxt(live)) + '</p>' : '');
+  return '<div class="btnrow"><button class="btn wide primary" data-act="msWatch" data-fid="' + esc(fe.fid) + '" data-cid="' + esc(fe.cid || '') + '">Suivre le match en direct</button></div>' +
+    '<p class="hint2" style="margin-top:0"><b>En cours</b> · ' + esc(msScoreTxt(live)) + '</p>';
+}
+/* feuille de match d'une rencontre terminée (tout en bas de la fiche), si elle existe */
+function msSheetBtn(fe){
+  var rs = entryResult(fe), lm = rs && rs.ref ? allMatches().filter(function(x){ return x.created === rs.ref; })[0] : null;
+  if(lm && lm.finished) return '<div class="btnrow"><button class="btn wide primary" data-act="msLocal" data-mid="' + esc(lm.created) + '">Voir la feuille de match</button></div>';
+  var r = MS.map[fe.fid]; if(!r || !r.finished) return '';
+  return '<div class="btnrow"><button class="btn wide primary" data-act="msWatch" data-fid="' + esc(fe.fid) + '" data-cid="' + esc(fe.cid || '') + '">Voir la feuille de match</button></div>';
 }
 setInterval(msList, 15000); setTimeout(msList, 2500);
 
@@ -6336,6 +6341,7 @@ function ifCommit(id){
   if(!txt && !ph){ return; }          /* champ vide sans texte d'aide : on reste en saisie */
   var tmp = document.createElement('div');
   tmp.innerHTML = ifBtnHtml(id, txt || ph, !txt, false, aria);
+  if(id === 'chname'){ setTimeout(render, 0); }
   if(id === 'tmname'){ var hh = document.querySelector('.clubhead h2'); if(hh){ var hn = hh.querySelector('.hnm'); (hn || hh).textContent = txt; } }
   ifBusy = true;
   try{ if(wrap && wrap.parentNode) wrap.parentNode.replaceChild(tmp.firstChild, wrap); }catch(e){}
@@ -6805,6 +6811,7 @@ function champView0(){
   var ch = curChamp();
   if(!champs().length) out += emptySeasonHtml();
   if(!ch) return out + '</div>';
+  if(ui.edit && can('champEdit')) out += '<section class="card"><label class="f" for="chname">Nom du championnat</label>' + ifield('chname', { value:ch.name, attrs:'data-bind="chname"', aria:'Nom du championnat' }) + '</section>';
   var tab = ui.champTab || 'results';
   out += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + [['teams','Équipes'],['agenda','Agenda'],['results','Résultats']].map(function(x){
     return '<button class="btn' + (tab === x[0] ? ' primary' : '') + '" data-act="champTab" data-v="' + x[0] + '" aria-pressed="' + (tab === x[0] ? 'true' : 'false') + '">' + x[1] + '</button>';
@@ -7723,7 +7730,7 @@ function sheetView(){
   } else if(sh.kind === 'evpick'){
     inner = '<h2>Que voulez-vous créer ?</h2><div class="btnrow"><button class="btn wide primary" data-act="evPick" data-k="match">Une rencontre</button>' + (can('trainCreate') ? '<button class="btn wide" data-act="evPick" data-k="train">' + dotHtml('t') + 'Un entraînement</button>' : '') + '' + (can('trnCreate') ? '<button class="btn wide" data-act="trnNewOpen2">Un tournoi</button>' : '') + '<button class="btn wide" data-act="evPick" data-k="event">Autre (réunion…)</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'newchamp'){
-    inner = '<h2>Nouveau championnat</h2><p class="hint2" style="margin-top:4px">Saison ' + esc(curSeason().label) + '</p><label class="f" for="newchamp">Nom du championnat</label><input type="text" id="newchamp" placeholder="Ex. Départementale" data-enter="champ" autocomplete="off"><div class="btnrow"><button class="btn wide primary" data-act="addChamp">Créer</button></div>';
+    inner = '<h2>Nouveau championnat</h2><p class="hint2" style="margin-top:4px">Saison ' + esc(curSeason().label) + '</p><label class="f" for="newchamp">Nom du championnat</label><input type="text" id="newchamp" placeholder="Ex. Départementale" data-enter="champ" autocomplete="off"><label class="f" for="newchamplvl">Coupe (niveau)</label><select id="newchamplvl" aria-label="Coupe du championnat"><option value="0">Aucune (autres championnats)</option>' + CHAMP_LVLS.map(function(x){ var n = champLvlList(x[0]).length; return '<option value="' + x[0] + '">' + esc(x[1]) + (n ? ' (' + n + ')' : '') + '</option>'; }).join('') + '</select><p class="hint2">Le niveau choisi est ajouté au début du nom, par exemple « Honneur A ».</p><div class="btnrow"><button class="btn wide primary" data-act="addChamp">Créer</button></div>';
   } else if(sh.kind === 'clrres'){
     var cre = calEntry(sh.cid, sh.fid), crr = cre && entryResult(cre);
     inner = '<h2>Effacer le résultat ?</h2>' + (cre && crr ? '<p class="hint2" style="font-size:18px">' + esc(clubName(cre.home)) + ' <b>' + crr.hs + ' – ' + crr.as + '</b> ' + esc(clubName(cre.away)) + '</p>' : '') +
@@ -7839,6 +7846,7 @@ function sheetView(){
         (fm ? '<button class="btn wide" data-act="fixClearAsk">Effacer le résultat</button>' : '') +
         '<button class="btn wide danger" data-act="fixDelAsk">Supprimer du calendrier</button></div>';
       if(fDate && !fm) inner += '<div class="btnrow"><button class="btn wide" data-act="fixDateOpen">Modifier la date</button></div>';
+      inner += msSheetBtn(fe);
     }
   } else if(sh.kind === 'fixdate'){
     var de = calEntry(sh.cid, sh.fid);
@@ -8149,6 +8157,11 @@ function addMember(){
 function addChamp(){
   var el = document.getElementById('newchamp'), name = el.value.trim();
   if(!name){ badField('newchamp', 'Saisissez le nom du championnat.'); return; }
+  var lv = parseInt((document.getElementById('newchamplvl') || {}).value, 10) || 0;
+  if(lv && champLvl(name) !== lv){
+    var lab = CHAMP_LVLS[lv - 1][1], fm = /^(f[ée]minine)\s+(.*)$/i.exec(name);
+    name = fm ? fm[1] + ' ' + lab + ' ' + fm[2] : lab + ' ' + name;
+  }
   var c = { id:uid(), name:name, clubIds:[], matches:[], fixtures:[], seasonId:S.season };
   S.champs.push(c); ui.champSel = c.id; ui.sheet = null; ui.msg = 'Championnat « ' + name + ' » créé.';
   save(); render();
@@ -9142,6 +9155,7 @@ document.addEventListener('input', function(e){
     render(); return;
   }
   else if(bind === 'tmadd'){ var tfa = findTeam(ui.teamSel); if(tfa && v && tfa.t.memberIds.indexOf(v) < 0){ tfa.t.memberIds.push(v); save(); } render(); return; }
+  else if(bind === 'chname'){ var chn = curChamp(); if(chn && can('champEdit') && v.trim()){ chn.name = v.trim(); save(); } return; }
   else if(bind === 'tmname'){ var tff = findTeam(ui.teamSel); if(tff) tff.t.name = v; save(); return; }
   else if(bind === 'cname'){ var c = curClub(); if(c){ var dt = defaultTeam(c); if(dt && dt.name === c.name) dt.name = v; c.name = v; } }
   else if(bind === 'champsel'){ ui.edit = false; ui.champSel = v; ui.mm = { a:'', b:'', homeIs:'a', res:'3-0' }; render(); return; }
