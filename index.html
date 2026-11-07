@@ -874,6 +874,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 
 @keyframes livecol{0%,100%{background:#22C55E;box-shadow:0 0 0 0 rgba(34,197,94,.6)}50%{background:#3B82F6;box-shadow:0 0 0 5px rgba(59,130,246,0)}}
 .livedot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#22C55E;vertical-align:middle;margin-right:6px;animation:livecol 1.6s ease-in-out infinite;flex:0 0 auto}
+.lgl{position:relative;display:inline-flex;flex:0 0 auto;line-height:0}.lgl .livedot.corner{top:-3px;right:-3px;border-width:2px}
 .livedot.corner{position:absolute;top:0;right:11px;margin:0;width:10px;height:10px;border:2px solid var(--surface);box-sizing:content-box}
 .nav button .pill{position:relative}
 .tag.live .livedot{width:8px;height:8px;margin-right:5px;border:1px solid rgba(255,255,255,.8)}
@@ -1476,6 +1477,14 @@ var SB = (function(){
     msList:function(){
       return req('GET', '/rest/v1/match_sync?select=fid,champ_id,home,away,sets,cur,finished,ua&order=ua.desc&limit=600')
         .then(function(r){ return r.ok && Array.isArray(r.json) ? r.json : null; }, function(){ return null; });
+    },
+    msLiveList:function(){
+      return req('GET', '/rest/v1/match_live?select=fid,champ_id,home,away,sets,cur,ua,hc,ac,serving,title&order=ua.desc&limit=100')
+        .then(function(r){ return r.ok && Array.isArray(r.json) ? r.json : null; }, function(){ return null; });
+    },
+    msLiveGet:function(fid){
+      return req('GET', '/rest/v1/match_live?select=fid,champ_id,home,away,sets,cur,ua,hc,ac,serving,title&fid=eq.' + encodeURIComponent(fid))
+        .then(function(r){ return r.ok && Array.isArray(r.json) ? (r.json[0] || null) : undefined; }, function(){ return undefined; });
     },
     msFinished:function(){
       return req('GET', '/rest/v1/match_sync?select=fid,data,ua&finished=eq.true&order=ua.desc&limit=300')
@@ -2145,7 +2154,7 @@ function navHtml(){
   var items = [['match','Match'],['clubs','Clubs'],['champ','Championnat'],['cal','Calendrier'],['tournoi','Tournoi']];
   return '<nav class="nav" aria-label="Navigation principale">' + items.map(function(it){
     var on = ui.tab === it[0] || (it[0] === 'clubs' && ui.tab === 'data');
-    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length ? liveDot(true) : '') : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
+    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length || remoteFav().length ? liveDot(true) : '') : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
   }).join('') + '</nav>';
 }
 function prevBtnHtml(pv){
@@ -4555,11 +4564,14 @@ function msLive(fid){
 }
 function msSigOf(map){ return Object.keys(map).sort().map(function(k){ var r = map[k]; return k + ':' + JSON.stringify(r.sets) + JSON.stringify(r.cur) + (r.finished ? 'f' : ''); }).join('|'); }
 function msList(){
-  if(!msLogged() || document.visibilityState !== 'visible' || ui.watch) return;
-  SB.msList().then(function(a){
-    if(!a) return;
-    var m = {}; a.forEach(function(r){ m[r.fid] = r; });
-    var sig = msSigOf(m); MS.map = m; msBackfill(); msLoadAll();
+  if(document.visibilityState !== 'visible' || ui.watch) return;
+  Promise.all([SB.msLiveList(), msLogged() ? SB.msList() : Promise.resolve(null)]).then(function(rs){
+    var live = rs[0], a = rs[1];
+    if(!live && !a) return;
+    var m = {};
+    (a || []).forEach(function(r){ m[r.fid] = r; });
+    (live || []).forEach(function(r){ m[r.fid] = Object.assign({}, m[r.fid] || {}, r); });
+    var sig = msSigOf(m); MS.map = m; if(msLogged()){ msBackfill(); msLoadAll(); }
     if(sig !== MS.sig){
       MS.sig = sig;
       var ae = document.activeElement;
@@ -4591,6 +4603,56 @@ function msBackfill(){
     SB.msPut(fr.fid, fr.cid, e);
   });
 }
+/* ---- Matchs en cours saisis ailleurs : visibles par tout le monde ---- */
+function rTeams(r){
+  var a = r.hc || '', b = r.ac || '';
+  if(!a || !b){ var fe = r.champ_id ? calEntry(r.champ_id, r.fid) : null; if(fe){ a = a || fe.home || ''; b = b || fe.away || ''; } }
+  return [a, b];
+}
+function remoteLive(){
+  var out = [], mine = {};
+  savedMatches().forEach(function(it){ var fr = it.m.fixtureRef; if(fr && fr.fid) mine[fr.fid] = 1; });
+  Object.keys(MS.map).forEach(function(k){ if(!mine[k] && msLive(k)) out.push(MS.map[k]); });
+  out.sort(function(x, y){ return String(y.ua).localeCompare(String(x.ua)); });
+  return out;
+}
+function remoteFor(ids, ch){
+  return remoteLive().filter(function(r){
+    if(ch) return r.champ_id === ch.id;
+    var t = rTeams(r); return ids.indexOf(t[0]) >= 0 || ids.indexOf(t[1]) >= 0;
+  });
+}
+function remoteFav(){
+  var f = favOf();
+  return remoteLive().filter(function(r){
+    if(f.champ.indexOf(r.champ_id) >= 0) return true;
+    return rTeams(r).some(function(id){ var c = id ? clubById(id) : null; return id && (f.team.indexOf(id) >= 0 || (c && f.club.indexOf(c.id) >= 0)); });
+  });
+}
+function liveClubs(){
+  var o = {};
+  function add(id){ if(!id) return; o[id] = 1; var c = clubById(id); if(c) o[c.id] = 1; }
+  remoteLive().forEach(function(r){ rTeams(r).forEach(add); });
+  savedMatches().forEach(function(it){ if(it.m.teams){ add(it.m.teams[0].clubId); add(it.m.teams[1].clubId); } });
+  return o;
+}
+/* logo avec voyant vert quand un match de ce club (ou de cette équipe) est en cours */
+function logoLive(id, px){
+  var lg = logoHtml(id, px);
+  if(!id || !liveClubs()[id]) return lg;
+  return lg ? '<span class="lgl">' + lg + liveDot(true) + '</span>' : liveDot();
+}
+function liveRemoteHtml(list){
+  if(!list.length) return '';
+  return list.map(function(r){
+    var t = rTeams(r), w = [0, 0], fe = r.champ_id ? calEntry(r.champ_id, r.fid) : null;
+    (r.sets || []).forEach(function(x){ if(x[0] > x[1]) w[0]++; else w[1]++; });
+    function team(i, nm){ return '<span class="mc-team">' + (t[i] ? logoHtml(t[i], 44) : '') + '<span class="nm">' + esc(nm || (t[i] ? clubName(t[i]) : (i ? 'Équipe B' : 'Équipe A'))) + '</span></span>'; }
+    return '<button class="mc live" data-act="msWatch" data-fid="' + esc(r.fid) + '" data-cid="' + esc(r.champ_id || '') + '"><span class="mc-top"><span class="mc-b"><span class="tag live">' + liveDot() + 'En cours</span></span><span class="mc-ctx">' + esc(fe && fe.ch ? fe.ch.name : (r.title || 'Match amical')) + '</span></span>' +
+      '<span class="mc-body">' + team(0, r.home) + '<span class="mc-mid">' + w[0] + ' – ' + w[1] + '</span>' + team(1, r.away) + '</span>' +
+      '<span class="mc-sets">Set ' + ((r.sets || []).length + 1) + ' · ' + r.cur[0] + ' – ' + r.cur[1] + '</span><span class="mc-foot"><span>Suivre le match en direct</span></span></button>';
+  }).join('');
+}
 function msScoreTxt(r){ var w = [0, 0]; (r.sets || []).forEach(function(x){ if(x[0] > x[1]) w[0]++; else w[1]++; }); return w[0] + ' – ' + w[1] + ' · set ' + ((r.sets || []).length + 1) + ' : ' + r.cur[0] + '–' + r.cur[1]; }
 /* suivre un match (fiche en direct, puis feuille de match) */
 function msWatch(fid, cid){
@@ -4602,6 +4664,15 @@ function msWatch(fid, cid){
 function msUnwatch(){ ui.watch = null; clearInterval(MS.timer); render(); msList(); }
 function msFetchOne(){
   var w = ui.watch; if(!w) return;
+  if(!msLogged()){
+    SB.msLiveGet(w.fid).then(function(row){
+      if(ui.watch !== w || row === undefined) return;
+      if(row === null){ w.missing = true; w.light = null; render(); return; }
+      w.missing = false;
+      if(!w.light || w.light.ua !== row.ua){ w.light = row; render(); }
+    });
+    return;
+  }
   SB.msGet(w.fid).then(function(row){
     if(ui.watch !== w) return;
     if(row === undefined) return;
@@ -4614,6 +4685,11 @@ function msFetchOne(){
 function watchView(){
   var w = ui.watch, m = w.created ? (MS.rm[w.created] || (w.local ? matchById(w.created) : null)) : null;
   var out = '<div class="watchbar"><button class="btn" data-act="msUnwatch">‹ Retour</button>';
+  if(!m && w.light){
+    var L = w.light;
+    return out + '</div><div class="lvdemo" style="margin:0 12px 12px">' + liveView({ title:L.title || '', home:L.home || 'Équipe A', away:L.away || 'Équipe B', sets:L.sets || [], cur:L.cur || [0, 0], serving:L.serving == null ? null : L.serving, finished:false, ua:L.ua }, true) + '</div>' +
+      '<p class="muted" style="margin:0 16px 16px">Connectez-vous avec votre compte pour voir aussi les joueurs et la feuille de match.</p>';
+  }
   if(m){
   }
   out += '</div>';
@@ -5162,7 +5238,8 @@ function prepCardHtml(e, i, today, day){
 }
 function homeView0(){
   var today = isoOf(new Date()), list = savedMatches(), pe = prepEntries(today), day = pe.filter(function(x){ return x.e.date === today; }), soon = pe.filter(function(x){ return x.e.date > today; });
-  var nS = list.length + day.length, out = '<div class="stack">';
+  var nS = list.length + day.length, out = '<div class="stack">', rf = remoteFav();
+  if(rf.length) out += '<div class="clubhead"><h2>' + liveDot() + 'En direct (' + rf.length + ')</h2></div><div class="msc-list">' + liveRemoteHtml(rf) + '</div>';
   out += '<div class="clubhead">' + (list.length && canScore() ? editBtnHtml() : '') + '<h2>Matchs suivis' + (nS ? ' (' + nS + ')' : '') + '</h2></div>';
   if(!nS) out += '<section class="card"><p class="muted" style="margin:0">Aucun match suivi en direct pour l\'instant. Touchez le bouton « + » pour jouer un match' + (can('champEdit') ? ' ou ajouter un résultat' : '') + '.</p></section>';
   else out += '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + day.map(function(x){ return prepCardHtml(x.e, x.i, today, true); }).join('') + '</div>';
@@ -6244,7 +6321,7 @@ function clubsCreated(){
 function favClubs(){ return S.clubs.filter(function(c){ return isFav('club', c.id); }).sort(function(a,b){ return a.name.localeCompare(b.name, 'fr'); }); }
 function clubRowHtml(c){
   var n = c.members.length, nt = clubTeams(c).length || 1;
-  return '<div class="ritem"><button class="fx big" data-act="clubEdit" data-cid="' + c.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 36) + '<span class="nm">' + esc(c.name) + '</span>' + favStar('club', c.id) + '</span>' +
+  return '<div class="ritem"><button class="fx big" data-act="clubEdit" data-cid="' + c.id + '"><span class="fxt"><span class="fxteam">' + logoLive(c.id, 36) + '<span class="nm">' + esc(c.name) + '</span>' + favStar('club', c.id) + '</span>' +
     '<small>' + n + ' licencié' + (n > 1 ? 's' : '') + ' · ' + nt + ' équipe' + (nt > 1 ? 's' : '') + '</small></span><span class="rsc" aria-hidden="true">›</span></button></div>';
 }
 function clubRowsHtml(){
@@ -6354,7 +6431,7 @@ function clubsEdit(){
   ensureTeams(c);
   var tab = ui.clubTab || 'matches', out = '<div class="stack">';
   out += '<div class="clubhead">' + (can('clubEdit', { cid:c.id }) ? editBtnHtml() : '') + statBtnHtml(c.id) + '<h2>' +
-    (c.logo ? '<span class="hlg">' + logoHtml(c.id, 40) + '</span>' : (ui.edit ? '<span class="hlg"><span class="logo none" style="width:40px;height:40px;font-size:9px;line-height:1.1;text-align:center">Pas de logo</span></span>' : '')) + esc(c.name) + favStar('club', c.id) + '</h2></div>' + clubInfoHtml(c);
+    (c.logo ? '<span class="hlg">' + logoLive(c.id, 40) + '</span>' : (ui.edit ? '<span class="hlg"><span class="logo none" style="width:40px;height:40px;font-size:9px;line-height:1.1;text-align:center">Pas de logo</span></span>' : '')) + esc(c.name) + favStar('club', c.id) + '</h2></div>' + clubInfoHtml(c) + (function(){ var ids = clubTeams(c).map(function(t){ return t.id; }); ids.push(c.id); var rl = remoteFor(ids, null); return rl.length ? '<div class="msc-list">' + liveRemoteHtml(rl) + '</div>' : ''; })();
   if(ui.edit) out += '<div style="display:flex;gap:8px;margin:0"><button class="btn" style="flex:1 1 0;justify-content:center;text-align:center" data-act="clubLogo" aria-label="Logo, nom et couleurs de ' + esc(c.name) + '">Logo, nom et couleurs</button>' +
     (c.logo ? '<button class="btn" style="flex:1 1 0;justify-content:center;text-align:center" data-act="logoRemoveAsk" aria-label="Retirer le logo de ' + esc(c.name) + '">Retirer le logo</button>' : '') + '</div>';
   out += '<div class="row2 row3 tabs2"><button class="btn wide ' + (tab === 'matches' ? 'primary' : '') + '" data-act="clubTab" data-k="matches" aria-pressed="' + (tab === 'matches') + '">Événement</button>' +
@@ -6366,7 +6443,7 @@ function clubsEdit(){
   } else if(tab === 'teams'){
     out += '<div class="clubhead"><h2>Équipes (' + clubTeams(c).length + ')</h2>' + addBtn('Ajouter des équipes') + '</div><section class="card">' + clubTeams(c).map(function(t){
       var n = t.memberIds.length;
-      return '<div class="ritem"><button class="fx" data-act="teamOpen" data-tid="' + t.id + '"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 32) + '<span class="nm">' + esc(t.name) + '</span>' + favStar('team', t.id) + '</span><small>' + n + ' membre' + (n > 1 ? 's' : '') + teamChampsTxt(t.id) + '</small></span><span class="rsc" aria-hidden="true">›</span></button>' +
+      return '<div class="ritem"><button class="fx" data-act="teamOpen" data-tid="' + t.id + '"><span class="fxt"><span class="fxteam">' + logoLive(t.id, 32) + '<span class="nm">' + esc(t.name) + '</span>' + favStar('team', t.id) + '</span><small>' + n + ' membre' + (n > 1 ? 's' : '') + teamChampsTxt(t.id) + '</small></span><span class="rsc" aria-hidden="true">›</span></button>' +
         (ui.edit && can('clubEdit', { cid:c.id }) && teamDeletable(c, t) ? '<button class="delwrap" data-act="delTeamRow" data-tid="' + t.id + '" aria-label="Supprimer l\'équipe ' + esc(t.name) + '"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button>' : '') + '</div>';
     }).join('') + (c.teams.length > clubTeams(c).length ? '<p class="hint2">' + (c.teams.length - clubTeams(c).length) + ' équipe(s) d\'une autre saison masquée(s).</p>' : '') + '</section>';
   }
@@ -6949,7 +7026,7 @@ function standingsHome(ch, hi, only){
   return '<h3 class="hsec">Classement</h3>' + standHtml(rows, hi, false);
 }
 function favHead(kind, id, title, sub, logoId){
-  return '<div class="favhd">' + (logoId ? logoHtml(logoId, 40) : '') + '<button class="favtitle" data-act="favGo" data-kind="' + kind + '" data-id="' + esc(id) + '"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></button>' + favStar(kind, id) + '</div>';
+  return '<div class="favhd">' + (logoId ? logoLive(logoId, 40) : '') + '<button class="favtitle" data-act="favGo" data-kind="' + kind + '" data-id="' + esc(id) + '"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></button>' + favStar(kind, id) + '</div>';
 }
 /* Séparation entre les séries de matchs (en cours, à venir, passés) : un trait entre chaque partie non vide */
 function sepJoin(parts){ return parts.filter(function(x){ return !!x; }).join('<hr class="hsep">'); }
@@ -6958,13 +7035,13 @@ function champBlock(ch, today){
   var ents = calEntries().filter(function(e){ return e.kind === 'fixture' && e.cid === ch.id; });
   var pu = splitPast(ents, today), past = pu[0], up = pu[1];
   return '<section class="favblock">' + favHead('champ', ch.id, ch.name, 'Championnat · saison ' + curSeason().label, '') +
-    sepJoin([liveHtml(liveFor([], ch)), standingsHome(ch, ''), matchSlider('c:' + ch.id + ':p', past, 'last', today, '', 'Match passé'), matchSlider('c:' + ch.id + ':u', up, 'first', today, '', 'Match à venir')]) + '</section>';
+    sepJoin([liveHtml(liveFor([], ch)) + liveRemoteHtml(remoteFor([], ch)), standingsHome(ch, ''), matchSlider('c:' + ch.id + ':p', past, 'last', today, '', 'Match passé'), matchSlider('c:' + ch.id + ':u', up, 'first', today, '', 'Match à venir')]) + '</section>';
 }
 function teamInner(tid, today, keyp){
   var ch = champOfTeam(tid);
   var ents = calEntries().filter(function(e){ return e.kind !== 'event' && (e.home === tid || e.away === tid); });
   var pu = splitPast(ents, today), past = pu[0], up = pu[1];
-  return sepJoin([liveHtml(liveFor([tid], null)),
+  return sepJoin([liveHtml(liveFor([tid], null)) + (keyp.indexOf('ct:') === 0 ? '' : liveRemoteHtml(remoteFor([tid], null))),
     matchSlider(keyp + ':u', up, 'first', today, tid, 'Match à venir'), matchSlider(keyp + ':p', past, 'last', today, tid, 'Match passé'),
     (ch ? '<p class="hchname">' + esc(ch.name) + '</p>' + standingsHome(ch, tid, true) : '<p class="muted hempty">Cette équipe n\'est dans aucun championnat cette saison.</p>')]);
 }
@@ -6980,7 +7057,7 @@ function clubBlock(c, today){
   var i = slideState('club:' + c.id, n, 'first');
   var t = teams[i];
   var nav = n > 1 ? '<div class="clubnav">' + slArrow('club:' + c.id, n, -1, true) + '<span class="clubdots" role="group" aria-label="Équipe ' + (i + 1) + ' sur ' + n + '">' + teams.map(function(x, k){ return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('') + '</span>' + slArrow('club:' + c.id, n, 1, true) + '</div>' : '';
-  return '<section class="favblock">' + favHead('club', c.id, c.name, 'Club · ' + n + ' équipe' + (n > 1 ? 's' : ''), c.id) + nav +
+  return '<section class="favblock">' + favHead('club', c.id, c.name, 'Club · ' + n + ' équipe' + (n > 1 ? 's' : ''), c.id) + liveRemoteHtml(remoteFor(teams.map(function(x){ return x.id; }).concat([c.id]), null)) + nav +
     '<div class="slider clubslide" data-sl="club:' + esc(c.id) + '"><div class="slview"><h3 class="teamname">' + esc(t.name) + '</h3>' + teamInner(t.id, today, 'ct:' + t.id) + '</div></div></section>';
 }
 function homePager(list, key){
@@ -7987,7 +8064,28 @@ function fitNames(){
     while(el.scrollWidth > el.clientWidth + 1 && px > 10){ px--; el.style.fontSize = px + 'px'; }
   }
 }
+/* Listes de joueurs sous le terrain : la police se réduit (par équipe) jusqu'à ce que tous les noms tiennent en entier */
+function fitPlayers(){
+  var ls = document.querySelectorAll('.tlist');
+  for(var i = 0; i < ls.length; i++){
+    var rows = ls[i].querySelectorAll('.plrow'), j, k, fs, ok;
+    if(!rows.length) continue;
+    for(j = 0; j < rows.length; j++){ rows[j].style.fontSize = ''; rows[j].style.whiteSpace = ''; var q = rows[j].querySelector('.pt'); if(q){ q.style.whiteSpace = ''; q.style.overflowWrap = ''; } }
+    fs = parseFloat(getComputedStyle(rows[0]).fontSize) || 12;
+    for(;;){
+      ok = true;
+      for(k = 0; k < rows.length; k++){ var pt = rows[k].querySelector('.pt'); if(pt && pt.scrollWidth > pt.clientWidth + 1){ ok = false; break; } }
+      if(ok || fs <= 8) break;
+      fs -= 0.5;
+      for(j = 0; j < rows.length; j++) rows[j].style.fontSize = fs + 'px';
+    }
+    if(!ok){ /* encore trop long à la taille minimale : le nom passe sur deux lignes plutôt que d'être coupé */
+      for(j = 0; j < rows.length; j++){ var w = rows[j].querySelector('.pt'); if(w && w.scrollWidth > w.clientWidth + 1){ rows[j].style.whiteSpace = 'normal'; w.style.whiteSpace = 'normal'; w.style.overflowWrap = 'anywhere'; w.style.overflow = 'visible'; } }
+    }
+  }
+}
 function fitNames(){
+  fitPlayers();
   var els = document.querySelectorAll('.tname>span, .mc-team .nm');
   for(var i = 0; i < els.length; i++){
     var el = els[i], box = el.parentNode, lim;
