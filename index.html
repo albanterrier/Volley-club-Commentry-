@@ -2218,6 +2218,7 @@ var RIGHTS = {
   trainCreate:{ admin:1, pres:'club', rclub:'club' }, trnCreate:{ admin:1, fede:1, pres:'club', rclub:'club' },
   designate:{ admin:1, fede:1, pres:'club', rclub:'club' },
   compo:{ admin:1, pres:'club', rclub:'club', requ:'team' },
+  freeTeam:{ admin:1, pres:'club', rclub:'club' },
   live:{ admin:1, pres:'club', rclub:'club' }, score:{ admin:1, compteur:'match' }, validate:{ admin:1, arbitre:'match' }, unlock:{ admin:1, fede:1 },
   settings:{ admin:1 }, licFin:{ admin:1, fede:1 }
 };
@@ -4538,22 +4539,24 @@ function doBackup(){ bkMark(); deliverFile('volley-sauvegarde-' + stamp() + '.js
 var MS = { map:{}, rm:{}, rmUa:{}, all:false, bf:null, sig:'', timer:null, pt:null, last:'', err:'', busy:false };
 function msLogged(){ try{ return !!SB.status().logged; }catch(e){ return false; } }
 /* envoi du match par le compteur (ou l'administrateur) : score, événements, feuille de match */
+/* identifiant partagé : la rencontre du calendrier, ou « libre-<date de création> » pour un match lancé sans calendrier */
+function msFidOf(m){ return m && m.fixtureRef && m.fixtureRef.fid ? m.fixtureRef.fid : (m && m.created ? 'libre-' + m.created : ''); }
 function msPush(now){
   var fr = S.fixtureRef;
-  if(!fr || !fr.fid || !hasContent() || !canScore() || !msLogged()) return;
+  if(!msFidOf(S) || !hasContent() || !canScore() || !msLogged() || (!(S.fixtureRef && S.fixtureRef.fid) && !freeMatchOk())) return;
   var instant = now || S.finished;
   if(MS.pt && !instant) return;
   clearTimeout(MS.pt);
   MS.pt = setTimeout(function(){
     MS.pt = null;
-    var f2 = S.fixtureRef; if(!f2 || !f2.fid || !hasContent() || !canScore()) return;
+    var f2 = { fid:msFidOf(S), cid:S.fixtureRef ? S.fixtureRef.cid : '' }; if(!f2.fid || !hasContent() || !canScore()) return;
     if(MS.busy){ msPush(); return; }
     var snap = matchSnapshot(), js = JSON.stringify(snap);
     if(js === MS.last) return;
     MS.busy = true;
     SB.msPut(f2.fid, f2.cid, snap).then(function(r){
       MS.busy = false;
-      if(r.ok){ MS.last = js; MS.err = ''; MS.map[f2.fid] = { fid:f2.fid, sets:snap.sets, cur:snap.cur, finished:!!snap.finished, ua:new Date().toISOString() }; }
+      if(r.ok){ MS.last = js; MS.err = ''; if(snap.finished && /^libre-/.test(f2.fid)) delete MS.map[f2.fid]; else MS.map[f2.fid] = { fid:f2.fid, sets:snap.sets, cur:snap.cur, finished:!!snap.finished, ua:new Date().toISOString() }; }
       else MS.err = r.msg || '';
     });
   }, instant ? 0 : 2500);
@@ -4612,7 +4615,7 @@ function rTeams(r){
 }
 function remoteLive(){
   var out = [], mine = {};
-  savedMatches().forEach(function(it){ var fr = it.m.fixtureRef; if(fr && fr.fid) mine[fr.fid] = 1; });
+  savedMatches().forEach(function(it){ var k = msFidOf(it.m); if(k) mine[k] = 1; });
   Object.keys(MS.map).forEach(function(k){ if(!mine[k] && msLive(k)) out.push(MS.map[k]); });
   out.sort(function(x, y){ return String(y.ua).localeCompare(String(x.ua)); });
   return out;
@@ -5392,6 +5395,16 @@ function teamCard(t){
     compositionHtml(t) + captainHtml(t) + '</section>';
 }
 /* Équipes du match : deux menus côte à côte (domicile à gauche, extérieur à droite), ou affichage seul si le match vient du calendrier */
+/* Match libre : seuls l'administrateur, les présidents et responsables de club peuvent y mettre une équipe de leur club.
+   Les autres saisissent des équipes temporaires (nom libre, sans club), valables pour ce match seulement. */
+function freeTeamOk(id){
+  if(!id) return true;
+  var c = clubById(id);
+  return can('freeTeam', c ? { cid:c.id } : undefined);
+}
+/* l'autre équipe du match est de mon club : je peux alors choisir n'importe quelle équipe pour celle-ci */
+function freeOtherMine(t){ var o = S.teams[1 - t].clubId; return !!o && freeTeamOk(o) && can('freeTeam'); }
+function freeMatchOk(){ var ids = S.teams.map(function(t){ return t.clubId; }).filter(Boolean); return !ids.length || ids.some(function(id){ return freeTeamOk(id); }); }
 function homeAwayHtml(ch){
   var locked = S.events.length > 0;
   var fe = S.fixtureRef ? calEntry(S.fixtureRef.cid, S.fixtureRef.fid) : null;
@@ -5400,17 +5413,22 @@ function homeAwayHtml(ch){
     return '<p class="f" style="margin:12px 0 4px">Équipes (rencontre du calendrier)</p><div class="row2">' + cell(0, 'Domicile') + cell(1, 'Extérieur') + '</div>';
   }
   function menu(t){
-    var clubs = ch ? entrantsOf(ch.clubIds) : allEntrants();
+    var clubs = (ch ? entrantsOf(ch.clubIds) : allEntrants()).filter(function(c){ return freeTeamOk(c.id) || freeOtherMine(t) || c.id === S.teams[t].clubId; });
     var cur = S.teams[t].clubId, other = isOtherTeam(t);
+    if(!clubs.length && !cur){
+      var lb = t ? 'Extérieur' : 'Domicile', nm0 = (S.teams[t].name || '').trim();
+      return '<div><label class="f">' + lb + ' · équipe temporaire</label><div class="otherin" style="margin-top:0">' + ifield('tother' + t, { value:DEFAULT_TEAM_NAMES.indexOf(nm0) >= 0 ? '' : nm0, attrs:'data-bind="tnameother" data-team="' + t + '"', ph:'Nom de l\'équipe', aria:'Nom de l\'équipe ' + lb.toLowerCase(), disabled:locked }) + '</div></div>';
+    }
     if(cur && !clubs.some(function(c){ return c.id === cur; })){ var cc = entrantObj(cur); if(cc) clubs.push(cc); }
     var label = t ? 'Extérieur' : 'Domicile';
     return '<div><label class="f" for="teamsel' + t + '">' + label + '</label><select id="teamsel' + t + '" data-bind="teamsel" data-team="' + t + '"' + (locked ? ' disabled' : '') + '><option value="">— Choisir —</option>' +
       clubs.map(function(c){ return '<option value="' + c.id + '"' + (!other && c.id === cur ? ' selected' : '') + '>' + esc(entrantLabel(c)) + '</option>'; }).join('') +
-      '<option value="other"' + (other ? ' selected' : '') + '>Autre équipe (saisir)</option></select>' +
+      '<option value="other"' + (other ? ' selected' : '') + '>Équipe temporaire (saisir)</option></select>' +
       (other ? '<div class="otherin">' + ifield('tother' + t, { value:S.teams[t].name, attrs:'data-bind="tnameother" data-team="' + t + '"', ph:'Nom de l\'équipe', aria:'Nom de l\'équipe ' + label.toLowerCase(), disabled:locked }) + '</div>' +
         '<label class="f" for="tclub' + t + '" style="margin-top:8px">Club de cette équipe (facultatif)</label><select id="tclub' + t + '" data-bind="otherclub" data-team="' + t + '"' + (locked ? ' disabled' : '') + '><option value="">— Aucun club —</option>' + S.clubs.map(function(c){ return '<option value="' + c.id + '"' + (S.teams[t].otherClub === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' : '') + '</div>';
   }
-  return '<div class="row2" style="margin-top:12px">' + menu(0) + menu(1) + '</div>' + (locked ? '<p class="muted" style="margin:6px 0 0">Équipes figées : le match a commencé.</p>' : '');
+  return '<div class="row2" style="margin-top:12px">' + menu(0) + menu(1) + '</div>' + (locked ? '<p class="muted" style="margin:6px 0 0">Équipes figées : le match a commencé.</p>' : '') +
+    (can('freeTeam') ? '' : '<p class="hint2" style="margin:8px 0 0">Équipes temporaires : elles ne servent que pour ce match. Seuls les présidents et responsables de club peuvent choisir des équipes de club, si l\'une des deux est de leur club.</p>');
 }
 function prepButtons(){
   return '<section class="card"><h3>Préparation des équipes</h3><ul class="preplist">' + [0, 1].map(function(t){
@@ -8825,10 +8843,10 @@ document.addEventListener('click', function(e){
       Promise.all([SB.msLiveList(), lg ? SB.msList() : Promise.resolve(undefined)]).then(function(rs){
         r.push(rs[0] ? ['ok', 'Matchs en cours lisibles par tous (script 20) : ' + rs[0].length + ' match(s) en cours', ''] : ['ko', 'Script SQL 20 non installé (ou serveur injoignable)', 'À lancer dans Supabase › SQL Editor, après le script 18.']);
         if(lg) r.push(rs[1] ? ['ok', 'Partage des matchs (script 18) : ' + rs[1].length + ' ligne(s) enregistrée(s)', ''] : ['ko', 'Script SQL 18 non installé (ou refusé)', 'À lancer dans Supabase › SQL Editor.']);
-        var fr = S.fixtureRef;
-        if(!fr || !fr.fid) r.push(['wa', 'Aucun match en cours de saisie sur cet appareil, ou match lancé sans rencontre du calendrier', 'Seules les rencontres du calendrier (et amicaux du calendrier) sont partagées.']);
+        var fr = { fid:msFidOf(S) };
+        if(!fr.fid || !hasContent()) r.push(['wa', 'Aucun match en cours de saisie sur cet appareil', 'Lancez un match, marquez un point, puis relancez le diagnostic.']);
         else {
-          r.push(['ok', 'Match en cours lié à la rencontre ' + fr.fid, '']);
+          r.push(['ok', S.fixtureRef && S.fixtureRef.fid ? 'Match en cours lié à la rencontre ' + fr.fid : 'Match libre en cours (sans calendrier)' + (lg ? '' : ' : il ne sera partagé que si vous vous connectez'), '']);
           r.push([canScore() ? 'ok' : 'ko', canScore() ? 'Vous avez le droit de saisir ce match' : 'Droit de saisie refusé pour ce match', '']);
           r.push([MS.map[fr.fid] ? 'ok' : 'ko', MS.map[fr.fid] ? 'Ce match est bien arrivé sur le serveur' : 'Ce match n\'est pas encore arrivé sur le serveur', MS.err ? 'Dernier message d\'erreur : ' + MS.err : (lg ? 'Marquez un point puis relancez le diagnostic.' : 'Connectez-vous pour envoyer le match.')]);
         }
