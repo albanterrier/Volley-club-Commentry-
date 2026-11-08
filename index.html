@@ -1474,6 +1474,10 @@ var SB = (function(){
       return req('POST', '/rest/v1/rpc/v2c_match_put', { p_fid:fid, p_champ:champ || '', p_data:data })
         .then(function(r){ return r.ok ? { ok:true } : { ok:false, status:r.status, msg:(r.status === 404 ? 'Le script SQL 18 n\'est pas encore installé.' : errTxt(r.json, 'Refusé')) }; }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
     },
+    msDel:function(fid){
+      return req('POST', '/rest/v1/rpc/v2c_match_del', { p_fid:fid })
+        .then(function(r){ return r.ok ? { ok:true } : { ok:false, status:r.status, msg:(r.status === 404 ? 'Le script SQL 22 n\'est pas encore installé.' : errTxt(r.json, 'Refusé')) }; }, function(){ return { ok:false, msg:'Pas de connexion.' }; });
+    },
     msList:function(){
       return req('GET', '/rest/v1/match_sync?select=fid,champ_id,home,away,sets,cur,finished,ua&order=ua.desc&limit=600')
         .then(function(r){ return r.ok && Array.isArray(r.json) ? r.json : null; }, function(){ return null; });
@@ -3607,7 +3611,9 @@ function resetForNew(){
 }
 /* Supprime le match courant (sans l'archiver) : on repart d'un match vierge, équipes et joueurs conservés */
 function discardCurrent(){
-  stopClock();
+  stopClock(); msDrop(S);
+  S.library = S.library.filter(function(x){ return x.created !== S.created; });
+  var Ld = lvGet(); if(Ld.on){ Ld.on = false; lvSet(Ld); }
   S = Object.assign(newState(), keepShared());
   clearComp();
   S.stage = 'home';
@@ -4541,6 +4547,12 @@ function msLogged(){ try{ return !!SB.status().logged; }catch(e){ return false; 
 /* envoi du match par le compteur (ou l'administrateur) : score, événements, feuille de match */
 /* identifiant partagé : la rencontre du calendrier, ou « libre-<date de création> » pour un match lancé sans calendrier */
 function msFidOf(m){ return m && m.fixtureRef && m.fixtureRef.fid ? m.fixtureRef.fid : (m && m.created ? 'libre-' + m.created : ''); }
+/* match supprimé dans l'appli : on le retire aussi du direct, sinon il réapparaît chez tout le monde */
+function msDrop(m){
+  var fid = m && !m.finished ? msFidOf(m) : '';
+  if(!fid || !msLogged()) return;
+  SB.msDel(fid).then(function(r){ if(r.ok){ delete MS.map[fid]; render(); } });
+}
 function msPush(now){
   var fr = S.fixtureRef;
   if(!msFidOf(S) || !hasContent() || !canScore() || !msLogged() || (!(S.fixtureRef && S.fixtureRef.fid) && !freeMatchOk())) return;
@@ -4688,7 +4700,7 @@ function msFetchOne(){
 }
 function watchView(){
   var w = ui.watch, m = w.created ? (MS.rm[w.created] || (w.local ? matchById(w.created) : null)) : null;
-  var out = '<div class="watchbar"><button class="btn" data-act="msUnwatch">‹ Retour</button>';
+  var out = '<div class="watchbar"><button class="btn" data-act="msUnwatch">‹ Retour</button>' + (msLogged() && (can('freeTeam') || can('score')) && MS.map[w.fid] && !MS.map[w.fid].finished ? '<button class="btn" data-act="msRemove" data-fid="' + esc(w.fid) + '">Retirer du direct</button>' : '');
   if(!m && w.light){
     var L = w.light;
     return out + '</div><div class="lvdemo" style="margin:0 12px 12px">' + liveView({ title:L.title || '', home:L.home || 'Équipe A', away:L.away || 'Équipe B', sets:L.sets || [], cur:L.cur || [0, 0], serving:L.serving == null ? null : L.serving, finished:false, ua:L.ua }, true) + '</div>' +
@@ -7968,8 +7980,8 @@ function sheetView(){
       '<div class="btnrow"><button class="btn wide primary" data-act="unlockOk">Déverrouiller</button><button class="btn wide" data-act="fixBack">Annuler</button></div>';
   } else if(sh.kind === 'dellib'){
     var de = sh.mid === S.created ? S : S.library.filter(function(x){ return x.created === sh.mid; })[0];
-    inner = '<h2>Supprimer ' + esc(de ? matchSummary(de).title : 'ce match') + ' ?</h2><p class="hint2">Les données de ce match seront perdues. Exportez-les avant si besoin. Un résultat déjà ajouté à un championnat n\'est pas supprimé.</p>' +
-      '<div class="btnrow"><button class="btn wide danger" data-act="delLibOk">Oui, supprimer</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
+    inner = '<h2>⚠️ Supprimer ' + esc(de ? matchSummary(de).title : 'ce match') + ' ?</h2><p class="hint2"><b>Cette action est irréversible.</b> Le match n\'est pas terminé : il sera effacé définitivement de cet appareil (score, joueurs, historique des points) et retiré du direct. Aucune copie n\'est conservée et il ne pourra pas être récupéré. Exportez-le avant si vous voulez en garder une trace.</p>' +
+      '<div class="btnrow"><button class="btn wide danger" data-act="delLibOk">Oui, supprimer définitivement</button><button class="btn wide" data-act="closeSheet">Annuler</button></div>';
   } else if(sh.kind === 'matchadd'){
     inner = '<h2>Ajouter</h2><div class="btnrow"><button class="btn wide primary" data-act="matchAddGo" data-v="play">Jouer un nouveau match</button><button class="btn wide primary" data-act="matchAddGo" data-v="res">Saisir un score</button></div>';
   } else if(sh.kind === 'newmatch'){
@@ -8553,7 +8565,7 @@ document.addEventListener('click', function(e){
     case 'delLibAsk': ui.sheet = { kind:'dellib', mid:d.mid }; render(); break;
     case 'delLibOk':
       if(sh.mid === S.created) discardCurrent();
-      else S.library = S.library.filter(function(x){ return x.created !== sh.mid; });
+      else { msDrop(S.library.filter(function(x){ return x.created === sh.mid; })[0]); S.library = S.library.filter(function(x){ return x.created !== sh.mid; }); }
       if(!savedMatches().length) ui.resume = false;
       ui.sheet = null; save(); render(); break;
     case 'clock': toggleClock(); break;
@@ -8834,6 +8846,12 @@ document.addEventListener('click', function(e){
       break;
     case 'copy': copyText(sh.text); break;
     case 'msWatch': msWatch(d.fid, d.cid); break;
+    case 'msRemove': (function(fid){
+      SB.msDel(fid).then(function(r){
+        if(r.ok){ delete MS.map[fid]; msUnwatch(); ui.msg = 'Match retiré du direct.'; msList(); }
+        else { ui.msg = r.msg || 'Impossible de retirer ce match.'; render(); }
+      });
+    })(d.fid); break;
     case 'msUnwatch': msUnwatch(); break;
     case 'msLocal': ui.watch = { fid:'', cid:'', created:d.mid, ua:'', done:true, local:true }; ui.sheet = null; render(); window.scrollTo(0, 0); break;
     case 'liveDiag': (function(){
