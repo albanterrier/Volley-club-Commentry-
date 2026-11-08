@@ -8838,7 +8838,7 @@ document.addEventListener('click', function(e){
     case 'msLocal': ui.watch = { fid:'', cid:'', created:d.mid, ua:'', done:true, local:true }; ui.sheet = null; render(); window.scrollTo(0, 0); break;
     case 'liveDiag': (function(){
       var sh = { kind:'diag', res:null }; ui.sheet = sh; render();
-      var r = [['ok', 'Version de l\'appli : v238 (direct public)', '']], lg = msLogged();
+      var r = [['ok', 'Version de l\'appli : v242 (match libre)', '']], lg = msLogged();
       r.push([lg ? 'ok' : 'wa', lg ? 'Compte connecté' : 'Pas de compte connecté', lg ? '' : 'Sans compte, vous pouvez voir les matchs en cours mais pas en saisir de partagé.']);
       Promise.all([SB.msLiveList(), lg ? SB.msList() : Promise.resolve(undefined)]).then(function(rs){
         r.push(rs[0] ? ['ok', 'Matchs en cours lisibles par tous (script 20) : ' + rs[0].length + ' match(s) en cours', ''] : ['ko', 'Script SQL 20 non installé (ou serveur injoignable)', 'À lancer dans Supabase › SQL Editor, après le script 18.']);
