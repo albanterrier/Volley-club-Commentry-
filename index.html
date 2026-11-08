@@ -567,6 +567,10 @@ header.top .hl>.ibtn[data-tab="menu"]:active{transform:translateY(1px);box-shado
 .mc-foot3 .fr{justify-self:end}
 .prs{min-height:28px;padding:0 9px;border-radius:999px;border:1.5px solid var(--line-ui);background:var(--bg);color:var(--muted);font-weight:700;font-size:12px;white-space:nowrap}
 .prs .pcnt{font-size:11.5px}
+.pmlist{display:grid;gap:6px;margin-top:10px}.pmrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line,#8884);border-radius:12px}.pmrow input[type=checkbox]{width:22px;height:22px;flex:0 0 auto}.pmrow .pmn{flex:1;min-width:0}.pmrow small{opacity:.7}
+.pmrow.ok{background:rgba(46,158,91,.16);border-color:#2e9e5b}.pmrow.bad{background:rgba(214,69,69,.14);border-color:#d64545}
+.pmtag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff;flex:0 0 auto}.pmtag.ok{background:#2e9e5b}.pmtag.bad{background:#d64545}
+.pmfoot{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));background:var(--surface);padding:12px 0 calc(6px + env(safe-area-inset-bottom,0px));margin-top:12px;display:grid;gap:8px}
 .prs.ok{background:#2e9e5b;border-color:#2e9e5b;color:#fff}
 .prs.bad{background:#d64545;border-color:#d64545;color:#fff}
 .pcnt{font-weight:700}.pcnt b{font-weight:800}.pcnt .cp{color:#2e9e5b}.pcnt .ca{color:#d64545}
@@ -2408,9 +2412,10 @@ function cpCourt(sh, k){
 function compoSheet(sh){
   var t = findTeam(sh.tid), k = sh.k || 1, on = sh.rows.filter(function(r){ return r.on; }), L = cpArr(sh, k);
   var out = '<h2>Préparation · ' + esc(t ? t.t.name : '') + '</h2><p class="hint2" style="margin-top:4px">Cochez les joueurs du match et saisissez leur numéro, puis placez-les sur le terrain. Le compteur ne modifie pas cette composition.</p><h3 style="margin:12px 0 4px">Joueurs du match</h3><div class="stack">';
-  sh.rows.forEach(function(r){
+  var pmap = presMapFor(sh.cid, sh.fid);
+  sh.rows.slice().sort(function(a, b){ return presRank(pmap[a.mid]) - presRank(pmap[b.mid]); }).forEach(function(r){
     var f = findMember(r.mid); if(!f) return;
-    out += '<div class="fx" style="gap:8px;align-items:center;margin:4px 0"><input type="checkbox" data-bind="cpon" data-mid="' + r.mid + '"' + (r.on ? ' checked' : '') + ' aria-label="Joue"><span style="flex:1">' + esc(memberName(f.m)) + '</span>' +
+    out += '<div class="fx pmrow' + (pmap[r.mid] === 'p' ? ' ok' : (pmap[r.mid] === 'a' ? ' bad' : '')) + '" style="gap:8px;align-items:center;margin:4px 0"><input type="checkbox" data-bind="cpon" data-mid="' + r.mid + '"' + (r.on ? ' checked' : '') + ' aria-label="Joue"><span style="flex:1">' + esc(memberName(f.m)) + '</span>' +
       '<input type="text" inputmode="numeric" maxlength="3" placeholder="N°" style="width:56px" data-bind="cpnum" data-mid="' + r.mid + '" value="' + esc(r.num) + '" aria-label="Numéro"></div>';
   });
   if(!sh.rows.length) out += '<p class="muted">Cette équipe n\'a pas encore de membres.</p>';
@@ -5291,6 +5296,31 @@ function captainHtml(t){
     on.slice().sort(sortP).map(function(p){ return '<option value="' + p.id + '"' + (p.id === cur ? ' selected' : '') + '>' + esc(plabel(effNum(p), p.name)) + '</option>'; }).join('');
   return '<label class="f" for="capsel' + t + '">Capitaine de l\'équipe</label><select id="capsel' + t + '" data-bind="captain" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>' + opts + '</select>';
 }
+/* Présences à la rencontre : présents en premier (vert), sans réponse, absents en dernier (rouge) */
+function presMapFor(cid, fid){
+  try{ if(!fid) return {}; var fe = calEntry(cid || '', fid); if(!fe || !presVisible(fe)) return {}; return S.pres[fid] || {}; }catch(e){ return {}; }
+}
+function presRank(st){ return st === 'p' ? 0 : (st === 'a' ? 2 : 1); }
+function presTag(st){ return st === 'p' ? '<span class="pmtag ok">Présent</span>' : (st === 'a' ? '<span class="pmtag bad">Absent</span>' : ''); }
+function pickMembersList(t){
+  var club = clubById(S.teams[t].clubId), ftm = findTeam(S.teams[t].clubId);
+  if(!club) return [];
+  var have = {}; S.teams[t].players.forEach(function(p){ if(p.mid) have[p.mid] = true; });
+  var pool = ftm ? club.members.filter(function(m){ return ftm.t.memberIds.indexOf(m.id) >= 0; }) : club.members;
+  var fr = S.fixtureRef, pm = fr ? presMapFor(fr.cid, fr.fid) : {};
+  return sortMembers(pool.filter(function(m){ return !have[m.id]; })).map(function(m){ return { m:m, st:pm[m.id] || '' }; })
+    .sort(function(a, b){ return presRank(a.st) - presRank(b.st); });
+}
+function pickMembersSheet(sh){
+  var t = sh.team, list = pickMembersList(t), n = Object.keys(sh.sel).filter(function(k){ return sh.sel[k]; }).length;
+  var out = '<h2>Ajouter des membres</h2><p class="hint2" style="margin-top:4px">' + esc(tn(t)) + ' · cochez les membres à ajouter, puis validez.</p>';
+  if(!list.length) out += '<p class="muted">Tous les membres sont déjà ajoutés.</p>';
+  else out += '<div class="pmlist">' + list.map(function(x){
+    var m = x.m;
+    return '<label class="pmrow' + (x.st === 'p' ? ' ok' : (x.st === 'a' ? ' bad' : '')) + '"><input type="checkbox" data-bind="pmsel" data-mid="' + m.id + '"' + (sh.sel[m.id] ? ' checked' : '') + '><span class="pmn">' + esc(memberName(m)) + (m.licence ? '<small> · ' + esc(m.licence) + '</small>' : '') + '</span>' + presTag(x.st) + '</label>';
+  }).join('') + '</div>';
+  return out + '<div class="pmfoot"><button class="btn wide primary" id="pmok" data-act="pmOk" data-team="' + t + '"' + (n ? '' : ' disabled') + '>Valider' + (n ? ' (' + n + ')' : '') + '</button></div>';
+}
 function memberSelectHtml(t){
   var club = clubById(S.teams[t].clubId), ftm = findTeam(S.teams[t].clubId);
   if(!club) return '<p class="muted">Cette équipe n\'a pas de club : ajoutez ses joueurs à la main.</p>';
@@ -5382,7 +5412,7 @@ function addPlayerSheet(t){
     '<div class="addrow3"><input type="text" id="newname' + t + '" placeholder="Nom du joueur" aria-label="Nom du joueur" autocomplete="off" data-enter="p' + t + '">' +
     '<button class="btn wide primary" data-act="addP" data-team="' + t + '">Ajouter</button></div>' +
     '<p class="numerr" data-numerr="' + t + '" role="alert" style="display:none"></p>' +
-    '<label class="f" for="pickm' + t + '">Ou ajouter un membre du club (le numéro saisi ci-dessus est repris)</label>' + memberSelectHtml(t);
+    '<div class="btnrow" style="margin-top:12px"><button class="btn wide" data-act="pmOpen" data-team="' + t + '">Ajouter des membres du club…</button></div>';
 }
 function teamCard(t){
   var team = S.teams[t];
@@ -7978,6 +8008,7 @@ function sheetView(){
   } else if(sh.kind === 'unlockfix'){
     inner = '<h2>Déverrouiller ce résultat ?</h2><p class="hint2">« ' + esc(entryLabel(sh.fid)) + ' » pourra de nouveau être modifié, puis revalidé par l\'arbitre.</p>' +
       '<div class="btnrow"><button class="btn wide primary" data-act="unlockOk">Déverrouiller</button><button class="btn wide" data-act="fixBack">Annuler</button></div>';
+  } else if(sh.kind === 'pickm'){ inner = pickMembersSheet(sh);
   } else if(sh.kind === 'dellib'){
     var de = sh.mid === S.created ? S : S.library.filter(function(x){ return x.created === sh.mid; })[0];
     inner = '<h2>⚠️ Supprimer ' + esc(de ? matchSummary(de).title : 'ce match') + ' ?</h2><p class="hint2"><b>Cette action est irréversible.</b> Le match n\'est pas terminé : il sera effacé définitivement de cet appareil (score, joueurs, historique des points) et retiré du direct. Aucune copie n\'est conservée et il ne pourra pas être récupéré. Exportez-le avant si vous voulez en garder une trace.</p>' +
@@ -8482,6 +8513,15 @@ document.addEventListener('click', function(e){
     }
     case 'champLeave': { var chl = champById(d.chid); if(chl){ chl.clubIds = chl.clubIds.filter(function(x){ return x !== ui.teamSel; }); save(); } render(); break; }
     case 'champEditOpen': ui.champEdit = true; render(); break;
+    case 'pmOpen': ui.sheet = { kind:'pickm', team:parseInt(d.team, 10), sel:{} }; render(); break;
+    case 'pmOk': {
+      var pt = parseInt(d.team, 10), picked = pickMembersList(pt).filter(function(x){ return sh.sel[x.m.id]; });
+      picked.forEach(function(x){
+        var m3 = x.m;
+        placeNew(pt, { id:uid(), num:(m3.jnum && !numTaken(pt, m3.jnum) ? m3.jnum : ''), name:memberName(m3), licence:m3.licence, mid:m3.id }, undefined);
+      });
+      ui.sheet = null; save(); render(); break;
+    }
     case 'addPlayerOpen': ui.sheet = { kind:'addplayer', team:t }; render(); break;
     case 'cmpPost': ui.sheet = { kind:'cmppost', team:t, pos:parseInt(d.pos, 10) }; render(); break;
     case 'cmpAssign': {
@@ -9299,6 +9339,14 @@ document.addEventListener('input', function(e){
     render(); return;
   }
   else if(bind === 'captain'){ S.teams[t].captain = v || ''; save(); render(); return; }
+  else if(bind === 'pmsel'){
+    if(ui.sheet && ui.sheet.sel){
+      ui.sheet.sel[ds.mid] = !!e.target.checked;
+      var pn = Object.keys(ui.sheet.sel).filter(function(k){ return ui.sheet.sel[k]; }).length, pb = document.getElementById('pmok');
+      if(pb){ pb.disabled = !pn; pb.textContent = 'Valider' + (pn ? ' (' + pn + ')' : ''); }
+    }
+    return;
+  }
   else if(bind === 'pickmember'){
     var club2 = clubById(S.teams[t].clubId), m2 = club2 && club2.members.filter(function(x){ return x.id === v; })[0];
     if(m2){
