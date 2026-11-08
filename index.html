@@ -5319,7 +5319,7 @@ function pickMembersSheet(sh){
     var m = x.m;
     return '<label class="pmrow' + (x.st === 'p' ? ' ok' : (x.st === 'a' ? ' bad' : '')) + '"><input type="checkbox" data-bind="pmsel" data-mid="' + m.id + '"' + (sh.sel[m.id] ? ' checked' : '') + '><span class="pmn">' + esc(memberName(m)) + (m.licence ? '<small> · ' + esc(m.licence) + '</small>' : '') + '</span>' + presTag(x.st) + '</label>';
   }).join('') + '</div>';
-  return out + '<div class="pmfoot"><button class="btn wide primary" id="pmok" data-act="pmOk" data-team="' + t + '"' + (n ? '' : ' disabled') + '>Valider' + (n ? ' (' + n + ')' : '') + '</button></div>';
+  return out + '<div class="pmfoot"><button class="btn wide primary" id="pmok" data-act="pmOk" data-team="' + t + '"' + (n ? '' : ' disabled') + '>Valider' + (n ? ' (' + n + ')' : '') + '</button><button class="btn wide" data-act="pmManual" data-team="' + t + '">Autre joueur (saisir son nom)</button></div>';
 }
 function memberSelectHtml(t){
   var club = clubById(S.teams[t].clubId), ftm = findTeam(S.teams[t].clubId);
@@ -5408,11 +5408,10 @@ function compositionBody(t){
 }
 function addPlayerSheet(t){
   return '<h2>Ajouter un joueur</h2><p class="hint2" style="margin-top:4px">' + esc(tn(t)) + '</p>' +
-    '<div class="addrow1"><span class="shirt"><input class="snum" type="text" inputmode="numeric" id="newnum' + t + '" placeholder="N°" maxlength="3" aria-label="Numéro de maillot" data-enter="p' + t + '"></span>' + addPostSelect(t) + '</div>' +
+    '<div class="addrow1"><span class="shirt"><input class="snum" type="text" inputmode="numeric" id="newnum' + t + '" placeholder="N°" maxlength="3" aria-label="Numéro de maillot" data-enter="p' + t + '"></span></div>' +
     '<div class="addrow3"><input type="text" id="newname' + t + '" placeholder="Nom du joueur" aria-label="Nom du joueur" autocomplete="off" data-enter="p' + t + '">' +
     '<button class="btn wide primary" data-act="addP" data-team="' + t + '">Ajouter</button></div>' +
-    '<p class="numerr" data-numerr="' + t + '" role="alert" style="display:none"></p>' +
-    '<div class="btnrow" style="margin-top:12px"><button class="btn wide" data-act="pmOpen" data-team="' + t + '">Ajouter des membres du club…</button></div>';
+    '<p class="numerr" data-numerr="' + t + '" role="alert" style="display:none"></p>';
 }
 function teamCard(t){
   var team = S.teams[t];
@@ -8522,7 +8521,12 @@ document.addEventListener('click', function(e){
       });
       ui.sheet = null; save(); render(); break;
     }
-    case 'addPlayerOpen': ui.sheet = { kind:'addplayer', team:t }; render(); break;
+    case 'addPlayerOpen':
+      /* équipe de club avec des membres : on propose directement la liste ; équipe temporaire : nom + numéro de maillot */
+      if(clubById(S.teams[t].clubId) && pickMembersList(t).length) ui.sheet = { kind:'pickm', team:t, sel:{} };
+      else ui.sheet = { kind:'addplayer', team:t };
+      render(); break;
+    case 'pmManual': ui.sheet = { kind:'addplayer', team:parseInt(d.team, 10) }; render(); break;
     case 'cmpPost': ui.sheet = { kind:'cmppost', team:t, pos:parseInt(d.pos, 10) }; render(); break;
     case 'cmpAssign': {
       var sh2 = ui.sheet; if(!sh2 || sh2.kind !== 'cmppost') break;
