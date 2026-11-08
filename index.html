@@ -2872,6 +2872,7 @@ function settingsView(){
     '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
   out += '<section class="card"><h2>Saison</h2><p class="muted" style="margin:6px 0 10px">Les championnats, le calendrier et les résultats dépendent de la saison choisie.</p>' + seasonBtn(true) + '</section>';
   if(can('live')) out += liveSettingsHtml();
+  out += '<section class="card"><h2>Diagnostic du direct</h2><p class="muted" style="margin:6px 0 10px">Si un match en cours n\'apparaît pas chez les autres, ce test montre ce qui bloque.</p><div class="btnrow"><button class="btn wide" data-act="liveDiag">Lancer le diagnostic</button></div></section>';
   out += pushCardHtml();
   if(can('settings')) out += '<section class="card"><h2>Données</h2><div class="backupbox' + (bk.warn ? ' warn' : '') + '" style="margin:10px 0 0"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>' +
     '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, données officielles, cohérence…</button></div></section>';
@@ -8041,6 +8042,9 @@ function sheetView(){
       (sh.live ? '<div class="btnrow"><button class="btn wide" data-act="liveOpen">Diffuser en direct (lien public)</button></div>' : '');
   } else if(sh.kind === 'live'){
     inner = liveSheetHtml();
+  } else if(sh.kind === 'diag'){
+    inner = '<h2>Diagnostic du direct</h2><ul class="diag" style="list-style:none;padding:0;margin:12px 0 0;display:grid;gap:10px">' + (sh.res || [['…', 'Test en cours', '']]).map(function(r){
+      return '<li><b>' + (r[0] === 'ok' ? '✅' : r[0] === 'ko' ? '❌' : r[0] === 'wa' ? '⚠️' : '⏳') + ' ' + esc(r[1]) + '</b>' + (r[2] ? '<br><small class="muted">' + esc(r[2]) + '</small>' : '') + '</li>'; }).join('') + '</ul>';
   } else if(sh.kind === 'livecfg'){
     inner = '<h2>Paramètres de diffusion</h2><p class="hint2" style="font-size:16px;margin-top:12px"><b>En projet.</b> Les réglages de la page de diffusion (logos, couleurs, texte affiché…) arriveront plus tard.</p>';
   }
@@ -8814,6 +8818,23 @@ document.addEventListener('click', function(e){
     case 'msWatch': msWatch(d.fid, d.cid); break;
     case 'msUnwatch': msUnwatch(); break;
     case 'msLocal': ui.watch = { fid:'', cid:'', created:d.mid, ua:'', done:true, local:true }; ui.sheet = null; render(); window.scrollTo(0, 0); break;
+    case 'liveDiag': (function(){
+      var sh = { kind:'diag', res:null }; ui.sheet = sh; render();
+      var r = [['ok', 'Version de l\'appli : v238 (direct public)', '']], lg = msLogged();
+      r.push([lg ? 'ok' : 'wa', lg ? 'Compte connecté' : 'Pas de compte connecté', lg ? '' : 'Sans compte, vous pouvez voir les matchs en cours mais pas en saisir de partagé.']);
+      Promise.all([SB.msLiveList(), lg ? SB.msList() : Promise.resolve(undefined)]).then(function(rs){
+        r.push(rs[0] ? ['ok', 'Matchs en cours lisibles par tous (script 20) : ' + rs[0].length + ' match(s) en cours', ''] : ['ko', 'Script SQL 20 non installé (ou serveur injoignable)', 'À lancer dans Supabase › SQL Editor, après le script 18.']);
+        if(lg) r.push(rs[1] ? ['ok', 'Partage des matchs (script 18) : ' + rs[1].length + ' ligne(s) enregistrée(s)', ''] : ['ko', 'Script SQL 18 non installé (ou refusé)', 'À lancer dans Supabase › SQL Editor.']);
+        var fr = S.fixtureRef;
+        if(!fr || !fr.fid) r.push(['wa', 'Aucun match en cours de saisie sur cet appareil, ou match lancé sans rencontre du calendrier', 'Seules les rencontres du calendrier (et amicaux du calendrier) sont partagées.']);
+        else {
+          r.push(['ok', 'Match en cours lié à la rencontre ' + fr.fid, '']);
+          r.push([canScore() ? 'ok' : 'ko', canScore() ? 'Vous avez le droit de saisir ce match' : 'Droit de saisie refusé pour ce match', '']);
+          r.push([MS.map[fr.fid] ? 'ok' : 'ko', MS.map[fr.fid] ? 'Ce match est bien arrivé sur le serveur' : 'Ce match n\'est pas encore arrivé sur le serveur', MS.err ? 'Dernier message d\'erreur : ' + MS.err : (lg ? 'Marquez un point puis relancez le diagnostic.' : 'Connectez-vous pour envoyer le match.')]);
+        }
+        sh.res = r; if(ui.sheet === sh) render();
+      });
+    })(); break;
     case 'liveCfg': if(!can('live')){ break; } ui.sheet = { kind:'livecfg' }; render(); break;
     case 'liveOpen': if(!canLive()){ ui.sheet = null; render(); break; } ui.sheet = { kind:'live' }; render(); break;
     case 'liveMenu': if(!canLive()){ ui.sheet = null; render(); break; } ui.hdrOpen = false; ui.sheet = { kind:'live' }; render(); break;
