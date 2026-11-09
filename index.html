@@ -1294,6 +1294,7 @@ var SB = (function(){
         var set = {}; R.settings.forEach(function(r){ set[r.k] = r.v; });
         S.adminId = typeof set.admin_id === 'string' ? set.admin_id : '';
         if(typeof set.lic_fin === 'string') S.licFin = set.lic_fin;
+        if(set.perms && typeof set.perms === 'object') S.perms = { arbPlayer:!!set.perms.arbPlayer, cptPlayer:!!set.perms.cptPlayer, sameOff:!!set.perms.sameOff };
         if(Array.isArray(set.seasons) && set.seasons.length){ S.seasons = set.seasons; if(!S.seasons.some(function(x){ return x.id === S.season; })) S.season = S.seasons[S.seasons.length - 1].id; }
         if(prof.length && prof[0].member_id && findMember(prof[0].member_id)) meSet(prof[0].member_id);
         presFromRows(a[13] || []);
@@ -1890,6 +1891,8 @@ function migrate(s){
   if(!s.sync || !s.sync.out) s.sync = { out:[] };
   if(!s.sb) s.sb = { ids:[], at:'', email:'' };
   if(!s.licFin) s.licFin = '07-15';
+  if(!s.perms || typeof s.perms !== 'object') s.perms = {};
+  s.perms.arbPlayer = !!s.perms.arbPlayer; s.perms.cptPlayer = !!s.perms.cptPlayer; s.perms.sameOff = !!s.perms.sameOff;
   ensureSeasons(s);
   if(s.fixtureRef === undefined) s.fixtureRef = null;
   if(s.prepared === undefined) s.prepared = (s.events.length > 0 || s.sets.length > 0 || s.teams.some(function(t){ return t.players.length > 0; }));
@@ -2228,7 +2231,7 @@ var RIGHTS = {
   compo:{ admin:1, pres:'club', rclub:'club', requ:'team' },
   freeTeam:{ admin:1, pres:'club', rclub:'club' },
   live:{ admin:1, pres:'club', rclub:'club' }, score:{ admin:1, compteur:'match' }, validate:{ admin:1, arbitre:'match' }, unlock:{ admin:1, fede:1 },
-  settings:{ admin:1 }, licFin:{ admin:1, fede:1 }
+  settings:{ admin:1 }, perms:{ admin:1 }, licFin:{ admin:1, fede:1 }
 };
 function can(act, ctx){
   if(availRoles() === null) return true;
@@ -2359,12 +2362,14 @@ function officialsHtml(fe, fm, lock){
   }
   return out + '</div>';
 }
+/* Permissions réglées par l'administrateur : l'arbitre / le compteur peut-il être un joueur d'une des deux équipes ? */
+function permPlayer(role){ var P = S.perms || {}; return role === 'arbitre' ? !!P.arbPlayer : !!P.cptPlayer; }
 function desigListHtml(sh){
   var fe = calEntry(sh.cid, sh.fid);
   if(!fe) return '';
   var busy = {}, pool = [];
-  [fe.home, fe.away].forEach(function(id){ var c = fe.f.compo && fe.f.compo[id]; if(c) c.pl.forEach(function(p){ busy[p.mid] = true; }); });
-  var other = entryRoleOf(sh.fid, sh.role === 'arbitre' ? 'compteur' : 'arbitre'); if(other) busy[other.mid] = true;
+  if(!permPlayer(sh.role)) [fe.home, fe.away].forEach(function(id){ var c = fe.f.compo && fe.f.compo[id]; if(c) c.pl.forEach(function(p){ busy[p.mid] = true; }); });
+  var other = entryRoleOf(sh.fid, sh.role === 'arbitre' ? 'compteur' : 'arbitre'); if(other && !(S.perms && S.perms.sameOff)) busy[other.mid] = true;
   if(sh.ext){
     var qn = norm(sh.q);
     if(qn.length < 2) return '<p class="muted">Saisissez au moins 2 lettres du nom, du prénom ou du numéro de licence.</p>';
@@ -2386,7 +2391,7 @@ function desigSheet(sh){
   var out = '<h2>Désigner ' + lab + '</h2><p class="hint2" style="margin-top:4px">' + (fe ? esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) : '') + '</p>';
   if(cur) out += '<p class="hint2">Actuellement : <b>' + esc(whoTxt(cur.mid)) + '</b></p><div class="btnrow"><button class="btn wide" data-act="desigPick" data-mid="">Retirer la désignation</button></div>';
   if(sh.ext) out += '<label class="f" for="dq">Rechercher un licencié (tous clubs)</label><input type="text" id="dq" data-dq="1" value="' + esc(sh.q) + '" autocomplete="off">';
-  else out += '<p class="hint2">Licenciés du club qui reçoit, hors joueurs du match.</p>';
+  else out += '<p class="hint2">Licenciés du club qui reçoit' + (permPlayer(sh.role) ? ' (y compris les joueurs du match, autorisé par l\'administrateur).' : ', hors joueurs du match.') + '</p>';
   out += '<div id="dqres" class="stack" style="margin-top:8px">' + desigListHtml(sh) + '</div>' +
     '<div class="btnrow"><button class="btn wide" data-act="desigExt">' + (sh.ext ? 'Revenir au club qui reçoit' : 'Chercher un autre licencié') + '</button><button class="btn wide" data-act="fixBack">Retour</button></div>';
   return out;
@@ -2884,6 +2889,10 @@ function settingsView(){
   if(can('live')) out += liveSettingsHtml();
   out += '<section class="card"><h2>Diagnostic du direct</h2><p class="muted" style="margin:6px 0 10px">Si un match en cours n\'apparaît pas chez les autres, ce test montre ce qui bloque.</p><div class="btnrow"><button class="btn wide" data-act="liveDiag">Lancer le diagnostic</button></div></section>';
   out += pushCardHtml();
+  if(can('perms')) out += '<section class="card"><h2>Permissions</h2><p class="muted" style="margin:6px 0 10px">Réservé à l\'administrateur. S\'applique à toutes les rencontres.</p>' +
+    [['arbPlayer', 'L\'arbitre peut être un joueur d\'une des deux équipes'], ['cptPlayer', 'Le compteur peut être un joueur d\'une des deux équipes'], ['sameOff', 'Le compteur et l\'arbitre peuvent être la même personne']].map(function(r){
+      return '<label class="fx" style="gap:10px;align-items:center;margin:8px 0"><input type="checkbox" data-bind="perm" data-k="' + r[0] + '"' + ((S.perms || {})[r[0]] ? ' checked' : '') + ' style="width:22px;height:22px;flex:0 0 auto"><span>' + r[1] + '</span></label>';
+    }).join('') + '</section>';
   if(can('settings')) out += '<section class="card"><h2>Données</h2><div class="backupbox' + (bk.warn ? ' warn' : '') + '" style="margin:10px 0 0"><button class="btn wide' + (bk.warn ? ' primary' : '') + '" data-act="backup">Sauvegarder mes données</button><p class="bkmsg">' + esc(bk.text) + '</p></div>' +
     '<div class="btnrow"><button class="btn wide" data-act="tab" data-tab="backup">Restaurer, données officielles, cohérence…</button></div></section>';
   if(can('licFin')) out += '<section class="card"><h2>Fin de saison des licences</h2><p class="muted" style="margin:6px 0 0">Chaque année à cette date, le président peut démarrer une nouvelle saison de licences.</p><label class="f" for="licfin">Date de fin de saison</label><input type="date" id="licfin" data-bind="licfin" value="2000-' + esc(S.licFin || '07-15') + '"></section>';
@@ -9392,6 +9401,7 @@ document.addEventListener('input', function(e){
   else if(bind === 'mejnum'){ var q_jm = meInfo(); if(q_jm && !meTest()){ var jv = v.replace(/\D/g, '').slice(0, 3); if(e.target.value !== jv) e.target.value = jv; jnumSet(q_jm, jv); } return; }
   else if(bind === 'photopub'){ var q_pm = meInfo(); if(q_pm && !meTest()){ q_pm.m.photoPublic = !!e.target.checked; save(); } return; }
   else if(bind === 'emfpub'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft.photoPublic = !!e.target.checked; return; }
+  else if(bind === 'perm'){ if(can('perms') && (ds.k === 'arbPlayer' || ds.k === 'cptPlayer' || ds.k === 'sameOff')){ S.perms = S.perms || {}; S.perms[ds.k] = !!e.target.checked; save(); SB.setting('perms', { arbPlayer:!!S.perms.arbPlayer, cptPlayer:!!S.perms.cptPlayer, sameOff:!!S.perms.sameOff }); } return; }
   else if(bind === 'licfin'){ if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ S.licFin = v.slice(5); save(); SB.setting('lic_fin', S.licFin); } return; }
   else if(bind === 'emf'){ if(ui.sheet && ui.sheet.draft) ui.sheet.draft[ds.k] = v; return; }
   else if(bind === 'ncname'){ ui.newClub.name = v; return; }
