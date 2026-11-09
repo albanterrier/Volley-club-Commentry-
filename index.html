@@ -4018,7 +4018,8 @@ var ST_KINDS = {
   w30:{ t:'Victoires 3-0', f:function(r){ return r.mine === 3 && r.opp === 0; } }, w31:{ t:'Victoires 3-1', f:function(r){ return r.mine === 3 && r.opp === 1; } }, w32:{ t:'Victoires 3-2', f:function(r){ return r.mine === 3 && r.opp === 2; } },
   l23:{ t:'Défaites 2-3', f:function(r){ return r.mine === 2 && r.opp === 3; } }, l13:{ t:'Défaites 1-3', f:function(r){ return r.mine === 1 && r.opp === 3; } }, l03:{ t:'Défaites 0-3', f:function(r){ return r.mine === 0 && r.opp === 3; } }
 };
-var ST_COL = { w30:'#2979FF', w31:'#9CCC65', w32:'#26C6A2', l23:'#FFB74D', l13:'#E65100', l03:'#E53935' };
+/* même vert / même rouge que l'anneau principal, de plus en plus pâles */
+var ST_COL = { w30:'var(--ok)', w31:'color-mix(in srgb, var(--ok) 68%, #fff)', w32:'color-mix(in srgb, var(--ok) 42%, #fff)', l03:'var(--danger)', l13:'color-mix(in srgb, var(--danger) 68%, #fff)', l23:'color-mix(in srgb, var(--danger) 42%, #fff)' };
 function stBoxHtml(d, keys){
   var k = ui.stSeg; if(!k || keys.indexOf(k) < 0) return '';
   var rs = d.recs.filter(ST_KINDS[k].f);
