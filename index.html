@@ -7123,10 +7123,9 @@ function slArrow(key, n, dir, loop){
 function matchSlider(key, ents, start, today, favId, label){
   if(!ents.length) return '<p class="muted hempty">' + (start === 'last' ? 'Aucun match passé.' : 'Aucun match à venir.') + '</p>';
   var n = ents.length, i = slideState(key, n, start), e = ents[i];
-  var play = (!entryResult(e) && e.kind !== 'event' && entryScoreOk(e) && e.home && e.away) ? '<button class="btn wide primary homeplay" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Saisir ce match</button>' : '';
   return '<div class="mcbox"><div class="slider slcol" data-sl="' + esc(key) + '">' +
     '<div class="slview">' + calRow(e, today, favId) + '</div>' +
-    (n > 1 ? '<div class="slnav">' + slArrow(key, n, -1, true) + '<span class="slcnt">' + (i + 1) + ' / ' + n + '</span>' + slArrow(key, n, 1, true) + '</div>' : '') + '</div></div>' + play;
+    (n > 1 ? '<div class="slnav">' + slArrow(key, n, -1, true) + '<span class="slcnt">' + (i + 1) + ' / ' + n + '</span>' + slArrow(key, n, 1, true) + '</div>' : '') + '</div></div>';
 }
 /* Tableau de classement (maquette du 23/10/2026) : 1er en vert, dernier en rouge, équipes favorites en orange */
 function standHl(r, hi){ return (!!hi && r.id === hi) || isFav('team', r.id) || isFav('club', clubOfEntrant(r.id)); }
@@ -8032,15 +8031,15 @@ function sheetView(){
       inner = '<h2>' + esc(fe.title) + (fe.f.train && clubById(fe.f.club) ? ' · ' + esc(clubById(fe.f.club).name) : '') + '</h2><p class="hint2" style="margin-top:4px">' + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + '</p>' + placeRowHtml(fe, fEd) +
         presSheetHtml(fe, isoOf(new Date())) + (fEd ? '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>' : '');
     } else {
-      var fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Amical';
+      var fPlay = '', fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Amical';
       inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + '</p>' + placeRowHtml(fe, !fLock && (fEd || can('clubEdit', { cid:clubOfEntrant(fe.home) }))) + dateTempHtml(fe);
       if(fm){
         inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
       } else if(fe.postponed){
         inner += '<p class="hint2">Ce match est reporté : il reste à jouer' + (fDate ? '. Quand la nouvelle date est connue, utilisez « Modifier la date ».' : '.') + '</p>';
       } else if(entryScoreOk(fe) && !fLock){
-        inner += (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
-          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Suivre cette rencontre en direct</button></div>';
+        fPlay = (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
+          '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Saisir ce match</button></div>';
       }
       inner += msWatchBtn(fe) + h2hHtml(fe) + lastResHtml(fe) + officialsHtml(fe, fm, fLock) + presSheetHtml(fe, isoOf(new Date()));
       (function(){ var w = DB.who(fe.f), l = []; if(w.created) l.push('Ajouté le ' + fmtDay(w.created.at.slice(0, 10)) + (w.created.by ? ' par ' + w.created.by : '')); if(w.updated) l.push('modifié le ' + fmtDay(w.updated.at.slice(0, 10)) + (w.updated.by ? ' par ' + w.updated.by : '')); if(l.length) inner += '<p class="hint2" style="margin-top:12px">' + esc(l.join(' · ')) + '</p>'; })();
@@ -8050,7 +8049,7 @@ function sheetView(){
         (fm ? '<button class="btn wide" data-act="fixClearAsk">Effacer le résultat</button>' : '') +
         '<button class="btn wide danger" data-act="fixDelAsk">Supprimer du calendrier</button></div>';
       if(fDate && !fm) inner += '<div class="btnrow"><button class="btn wide" data-act="fixDateOpen">Modifier la date</button></div>';
-      inner += msSheetBtn(fe);
+      inner += msSheetBtn(fe) + fPlay;
     }
   } else if(sh.kind === 'fixdate'){
     var de = calEntry(sh.cid, sh.fid);
