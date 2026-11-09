@@ -4847,7 +4847,8 @@ function liveView(d0, mini){
 var lvPoll = null;
 /* Paramètres › Diffusion de match (réservé à ceux qui ont le droit de diffuser) */
 function liveSettingsHtml(){
-  var demo = { title:'Régionale · Journée 5', home:'RIOM 1', away:'COMMENTRY', sets:[[25, 20], [18, 25]], cur:[12, 9], serving:1, finished:false, ua:new Date().toISOString(), last:{ x:'Point COMMENTRY · n°7 · Attaque', at:new Date().toISOString() } };
+  var lg = S.clubs.filter(function(c){ return c.logo; }), mine = S.homeClub && lg.filter(function(c){ return c.id === S.homeClub; })[0] || lg[0] || null, other = lg.filter(function(c){ return !mine || c.id !== mine.id; })[0] || null;
+  var demo = { hc:other ? other.id : '', ac:mine ? mine.id : '', title:'Régionale · Journée 5', home:'RIOM 1', away:'COMMENTRY', sets:[[25, 20], [18, 25]], cur:[12, 9], serving:1, finished:false, ua:new Date().toISOString(), last:{ x:'Point COMMENTRY · n°7 · Attaque', at:new Date().toISOString() } };
   return '<section class="card"><h2>Diffusion de match</h2><p class="muted" style="margin:6px 0 10px">Page publique du score en direct, à partager par lien. Voici l\'aperçu de ce que voient les spectateurs :</p>' +
     '<div class="lvdemo" aria-hidden="true">' + liveView(demo, true) + '</div>' +
     '<div class="btnrow"><button class="btn wide" data-act="liveCfg">Modifier les paramètres de diffusion</button></div></section>';
