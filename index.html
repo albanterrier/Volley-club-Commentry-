@@ -3633,7 +3633,7 @@ function resetForNew(){
 function discardCurrent(){
   stopClock(); msDrop(S);
   S.library = S.library.filter(function(x){ return x.created !== S.created; });
-  var Ld = lvGet(); if(Ld.on){ Ld.on = false; lvSet(Ld); }
+  var Ld = lvGet(); if(Ld.on){ liveStopPush(Ld.id); Ld.on = false; lvSet(Ld); }
   S = Object.assign(newState(), keepShared());
   clearComp();
   S.stage = 'home';
@@ -4024,8 +4024,10 @@ function standings(ch){
     h.pts += ptsFor(m.hs, m.as); a.pts += ptsFor(m.as, m.hs);
   });
   var list = Object.keys(rows).map(function(k){ return rows[k]; });
-  list.sort(function(x,y){ return (y.pts - x.pts) || ((y.sp - y.sc) - (x.sp - x.sc)) || (y.sp - x.sp) || x.name.localeCompare(y.name, 'fr'); });
-  list.forEach(function(r,i){ r.rank = i + 1; });
+  /* classement : points, puis différence de sets, puis sets gagnés ; à égalité parfaite, même rang (1, 1, 3…) et ordre alphabétique */
+  function dsets(r){ return r.sp - r.sc; }
+  list.sort(function(x,y){ return (y.pts - x.pts) || (dsets(y) - dsets(x)) || (y.sp - x.sp) || x.name.localeCompare(y.name, 'fr'); });
+  list.forEach(function(r,i){ var q = list[i - 1]; r.rank = (i && q.pts === r.pts && dsets(q) === dsets(r) && q.sp === r.sp) ? q.rank : i + 1; });
   var k = ui.sort.k, dir = ui.sort.dir;
   function val(r){ return k === 'club' ? r.name.toLowerCase() : r[k]; }
   list.sort(function(x,y){
@@ -4774,7 +4776,24 @@ function liveLast(){
   }
   return { x:x, at:e.ts || new Date().toISOString() };
 }
-function liveSnap(){ return { title:S.title || '', home:tn(0), away:tn(1), sets:S.sets.map(function(x){ return [x[0], x[1]]; }), cur:[S.cur[0], S.cur[1]], serving:S.serving == null ? null : S.serving, finished:!!S.finished, hc:S.teams[0].clubId || '', ac:S.teams[1].clubId || '', last:liveLast() }; }
+/* identifiants de CLUB des deux équipes (l'équipe peut être désignée par un id d'équipe ; à défaut, on prend le match du calendrier) */
+function liveClubIds(){
+  var r = [0, 1].map(function(i){ var c = S.teams[i].clubId ? clubById(S.teams[i].clubId) : null; return c ? c.id : ''; });
+  var fr = S.fixtureRef ? calEntry(S.fixtureRef.cid, S.fixtureRef.fid) : null;
+  if(fr && (!r[0] || !r[1])){
+    var e = [clubOfEntrant(fr.home), clubOfEntrant(fr.away)].filter(function(c){ return c && c !== r[0] && c !== r[1]; });
+    if(!r[0] && e.length) r[0] = e.shift();
+    if(!r[1] && e.length) r[1] = e.shift();
+  }
+  return r;
+}
+/* dernier envoi à l'arrêt de la diffusion : la page publique affiche « Diffusion stoppée » */
+function liveStopPush(id){
+  var sn = liveSnap(), l = sn.last || { x:'', at:new Date().toISOString() };
+  sn.last = { x:l.x, at:l.at, stop:true };
+  SB.livePut(id, sn);
+}
+function liveSnap(){ return { title:S.title || '', home:tn(0), away:tn(1), sets:S.sets.map(function(x){ return [x[0], x[1]]; }), cur:[S.cur[0], S.cur[1]], serving:S.serving == null ? null : S.serving, finished:!!S.finished, hc:liveClubIds()[0], ac:liveClubIds()[1], last:liveLast() }; }
 var lvTimer = null, lvBusy = false;
 function livePush(now){
   var L = lvGet(); if(!L.on) return;
@@ -4835,13 +4854,13 @@ function liveView(d0, mini){
   if(d === undefined || d === 'wait') return out + '<p class="lvmsg">Chargement…</p></div>';
   if(!d) return out + '<h1>Match introuvable</h1><p class="lvmsg">Ce lien n\'est plus actif (la diffusion est terminée ou le lien est incorrect).</p></div>';
   var w = [0, 0]; (d.sets || []).forEach(function(x){ if(x[0] > x[1]) w[0]++; else w[1]++; });
-  var age = Math.max(0, Math.round((Date.now() - new Date(d.ua).getTime()) / 1000)), stale = !d.finished && age > 900;
-  function team(i, nm){ return '<div class="lvteam">' + lvLogo(i ? d.ac : d.hc) + '<div class="lvnm">' + (d.serving === i && !d.finished ? '<i class="lvsrv" aria-label="Au service"></i>' : '') + esc(nm) + '</div><div class="lvpts">' + (d.finished ? '' : d.cur[i]) + '</div></div>'; }
-  out += '<div class="lvhead"><span class="lvstate ' + (d.finished ? 'end' : (stale ? 'old' : 'on')) + '">' + (d.finished ? 'Terminé' : (stale ? 'Pause' : 'En direct')) + '</span>' + (d.title ? '<span class="lvtitle">' + esc(d.title) + '</span>' : '') + '</div>';
-  out += '<div class="lvboard">' + team(0, d.home) + '<div class="lvmid"><b class="lvsc" aria-label="Sets gagnés">' + w[0] + ' – ' + w[1] + '</b>' + (d.finished ? '' : '<span>Set ' + ((d.sets || []).length + 1) + '</span>') + '</div>' + team(1, d.away) + '</div>';
-  if((d.sets || []).length) out += '<p class="lvhist">' + d.sets.map(function(x, i){ return 'Set ' + (i + 1) + ' : <b>' + x[0] + ' – ' + x[1] + '</b>'; }).join(' · ') + '</p>';
-  out += '<p class="lvmsg">Mis à jour il y a ' + (age < 90 ? age + ' s' : Math.round(age / 60) + ' min') + ' · se met à jour tout seul</p>';
-  if(d.last && d.last.x){ var la = Math.max(0, Math.round((Date.now() - new Date(d.last.at).getTime()) / 1000)); out += '<div class="lvlast" role="status"><b>Dernière saisie</b><span>' + esc(d.last.x) + '</span><i>' + (la < 90 ? 'il y a ' + la + ' s' : 'il y a ' + Math.round(la / 60) + ' min') + '</i></div>'; }
+  var age = Math.max(0, Math.round((Date.now() - new Date(d.ua).getTime()) / 1000)), stopped = !d.finished && !!(d.last && d.last.stop), stale = !d.finished && !stopped && age > 900;
+  function team(i, nm){ return '<div class="lvteam">' + lvLogo(i ? d.ac : d.hc) + '<div class="lvnm">' + (d.serving === i && !d.finished && !stopped ? '<i class="lvsrv" aria-label="Au service"></i>' : '') + esc(nm) + '</div><div class="lvpts">' + (d.finished ? '' : d.cur[i]) + '</div></div>'; }
+  out += '<div class="lvhead"><span class="lvstate ' + (d.finished ? 'end' : (stopped || stale ? 'old' : 'on')) + '">' + (d.finished ? 'Terminé' : (stopped ? 'Diffusion stoppée' : (stale ? 'Pause' : 'En direct'))) + '</span>' + (d.title ? '<span class="lvtitle">' + esc(d.title) + '</span>' : '') + '</div>';
+  out += '<div class="lvboard">' + team(0, d.home) + '<div class="lvmid"><b class="lvsc" aria-label="Sets gagnés">' + w[0] + ' – ' + w[1] + '</b>' + (d.finished || stopped ? '' : '<span>Set ' + ((d.sets || []).length + 1) + '</span>') + '</div>' + team(1, d.away) + '</div>';
+  if((d.sets || []).length) out += '<div class="lvhist">' + d.sets.map(function(x, i){ return '<div>Set ' + (i + 1) + ' : <b>' + x[0] + ' – ' + x[1] + '</b></div>'; }).join('') + '</div>';
+  out += '<p class="lvmsg">' + (stopped ? 'La diffusion de ce match est terminée · dernière mise à jour il y a ' : 'Mis à jour il y a ') + (age < 90 ? age + ' s' : Math.round(age / 60) + ' min') + (stopped ? '' : ' · se met à jour tout seul') + '</p>';
+  if(d.last && d.last.x && !stopped){ var la = Math.max(0, Math.round((Date.now() - new Date(d.last.at).getTime()) / 1000)); out += '<div class="lvlast" role="status"><b>Dernière saisie</b><span>' + esc(d.last.x) + '</span><i>' + (la < 90 ? 'il y a ' + la + ' s' : 'il y a ' + Math.round(la / 60) + ' min') + '</i></div>'; }
   return out + '</div>';
 }
 var lvPoll = null;
@@ -7118,9 +7137,10 @@ function standHtml(rows, hi, sortable){
     var on = ui.sort.k === k;
     return '<span class="' + cls + '" aria-sort="' + (on ? (ui.sort.dir > 0 ? 'ascending' : 'descending') : 'none') + '"><button class="lgsort' + (on ? ' on' : '') + '" data-act="sort" data-k="' + k + '">' + label + (on ? (ui.sort.dir > 0 ? ' ▴' : ' ▾') : '') + '</button></span>';
   }
+  var lastRank = rows.reduce(function(m, r){ return Math.max(m, r.rank); }, 0), firstRank = rows.reduce(function(m, r){ return Math.min(m, r.rank); }, 1e9);
   var out = '<div class="lg" role="table"><div class="lgh" role="row"><span>#</span>' + hd('club', 'Équipe', 'lgn') + hd('j', 'MJ', 'lgj') + hd('g', 'V-D', 'lgv') + hd('pts', 'Pts', 'lgp') + '</div>';
   rows.forEach(function(r){
-    var lgc = clubOfEntrant(r.id) || (clubById(r.id) ? r.id : ''), me = standHl(r, hi), tone = me ? 'me' : (n > 1 && r.rank === 1 ? 'up' : (n > 1 && r.rank === n ? 'down' : '')), diff = r.sp - r.sc;
+    var lgc = clubOfEntrant(r.id) || (clubById(r.id) ? r.id : ''), me = standHl(r, hi), tone = me ? 'me' : (n > 1 && r.rank === firstRank && lastRank !== firstRank ? 'up' : (n > 1 && r.rank === lastRank && lastRank !== firstRank ? 'down' : '')), diff = r.sp - r.sc;
     out += '<div class="lgr ' + tone + '" role="row"><span class="lgk">' + r.rank + '</span><span class="lgn">' + (lgc ? '<button class="lgbtn" data-act="favGo" data-kind="club" data-id="' + esc(lgc) + '" aria-label="Ouvrir la page du club ' + esc(r.name) + '">' : '') + logoHtml(r.id, 26) + '<span class="lgx"><b title="' + esc(r.name) + '">' + esc(r.name) + '</b><small>Sets: ' + r.sp + '-' + r.sc + (me ? ' (' + (diff > 0 ? '+' : '') + diff + ')' : '') + '</small></span>' + (lgc ? '</button>' : '') + '</span>' +
       '<span class="lgj">' + r.j + '</span><span class="lgv">' + r.g + '-' + r.p + '</span><span class="lgp">' + r.pts + '</span></div>';
   });
@@ -8966,7 +8986,7 @@ document.addEventListener('click', function(e){
     case 'liveOpen': if(!canLive()){ ui.sheet = null; render(); break; } ui.sheet = { kind:'live' }; render(); break;
     case 'liveMenu': if(!canLive()){ ui.sheet = null; render(); break; } ui.hdrOpen = false; ui.sheet = { kind:'live' }; render(); break;
     case 'liveStart': if(!canLive()){ ui.sheet = null; render(); break; } lvSet({ on:true, id:lvNewId(), err:'', at:0 }); livePush(true); render(); break;
-    case 'liveStop': { var Lq = lvGet(); Lq.on = false; lvSet(Lq); ui.msg = 'Diffusion arrêtée. L\'ancien lien n\'est plus mis à jour.'; ui.sheet = null; render(); break; }
+    case 'liveStop': { var Lq = lvGet(); if(Lq.on) liveStopPush(Lq.id); Lq.on = false; lvSet(Lq); ui.msg = 'Diffusion arrêtée. L\'ancien lien n\'est plus mis à jour.'; ui.sheet = null; render(); break; }
     case 'liveShare': try{ navigator.share({ title:'Score en direct', text:'Suivez le match en direct :', url:liveLink(lvGet().id) }).catch(function(){}); }catch(err){} break;
     case 'liveCopy': { var lk = liveLink(lvGet().id); try{ navigator.clipboard.writeText(lk).then(function(){ ui.msg = 'Lien copié.'; render(); }, function(){}); }catch(err){ var li = document.getElementById('livelink'); if(li){ li.focus(); li.select(); try{ document.execCommand('copy'); }catch(e2){} } } break; }
     case 'liveOpenPage': window.open(liveLink(lvGet().id), '_blank'); break;
