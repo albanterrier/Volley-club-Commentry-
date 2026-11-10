@@ -444,6 +444,11 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .panel .close{margin-top:16px;width:100%}
 .rjzone{background:none;border:0;padding:2px 0;margin:0;font:inherit;font-size:.9em;color:var(--acc);border-bottom:1.5px dashed currentColor;cursor:pointer;line-height:1.3}
 .rjzone.set{color:var(--muted);border-bottom-color:transparent}
+.emjr{display:flex;gap:14px;align-items:flex-start;margin-top:4px}
+.emjr>div:first-child{flex:0 0 auto}
+.emrj{flex:1;min-width:0}
+.emrj .chips{gap:6px;margin-top:6px}
+.chip.rjc{min-height:38px;min-width:0;padding:4px 10px;font-size:14px}
 .rjpick{margin:10px 0 0}
 .rjh{display:grid;gap:8px}
 .rjtitle{margin:20px 0 8px;font-size:16px;font-weight:700}
@@ -2869,7 +2874,7 @@ function rjHistoHtml(members){
   var mx = Math.max.apply(null, RJ.map(function(r){ return cnt[r[0]]; }));
   return '<h3 class="rjtitle">Répartition des rôles de jeu</h3><div class="rjh" role="img" aria-label="' + esc(RJ.map(function(r){ return cnt[r[0]] + ' ' + r[1]; }).join(', ')) + '">' + RJ.map(function(r){
     var n = cnt[r[0]];
-    return '<div class="rjr"><span class="rjl">' + esc(r[1]) + '</span><span class="rjt"><i style="width:' + (mx ? Math.round(100 * n / mx) : 0) + '%"></i></span><b>' + n + '</b></div>';
+    return '<div class="rjr"><span class="rjl">' + esc(r[0] === 'recep' ? 'Récep.-att.' : r[1]) + '</span><span class="rjt"><i style="width:' + (mx ? Math.round(100 * n / mx) : 0) + '%"></i></span><b>' + n + '</b></div>';
   }).join('') + '</div>';
 }
 function profJnum(f){ return '<span class="shirt cs" style="' + csVars(clubSpec(f.club)) + '"><input class="snum" style="' + csNumCss(clubSpec(f.club)) + '" type="text" inputmode="numeric" maxlength="3" placeholder="N°" id="mejnum" data-bind="mejnum" value="' + esc(f.m.jnum || '') + '" aria-label="Mon numéro de maillot"' + (meTest() ? ' disabled' : '') + '></span>'; }
@@ -8291,7 +8296,7 @@ function sheetView(){
       '<label class="f" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-bind="emfpub"' + (dr.photoPublic ? ' checked' : '') + '> Photo visible par les visiteurs</label>' +
       '<div class="row2"><div><label class="f" for="em_lic">Licence</label><input type="text" id="em_lic" data-bind="emf" data-k="licence" value="' + esc(dr.licence) + '" autocomplete="off"></div>' +
       '<div><label class="f" for="em_age">Âge</label><input type="text" inputmode="numeric" id="em_age" maxlength="3" data-bind="emf" data-k="age" value="' + esc(dr.age) + '"></div></div>' +
-      '<label class="f" for="em_jn">N° de maillot</label><span class="shirt cs" style="' + csVars(csSh) + '"><input class="snum" style="' + csNumCss(csSh) + '" type="text" inputmode="numeric" id="em_jn" maxlength="3" placeholder="N°" data-bind="emf" data-k="jnum" value="' + esc(dr.jnum || '') + '"></span>' +
+      '<div class="emjr"><div><label class="f" for="em_jn">N° de maillot</label><span class="shirt cs" style="' + csVars(csSh) + '"><input class="snum" style="' + csNumCss(csSh) + '" type="text" inputmode="numeric" id="em_jn" maxlength="3" placeholder="N°" data-bind="emf" data-k="jnum" value="' + esc(dr.jnum || '') + '"></span></div><div class="emrj"><span class="f" id="em_rjl">Rôle de jeu</span><div class="chips" role="group" aria-labelledby="em_rjl">' + RJ.map(function(r){ return '<button type="button" class="chip rjc' + (dr.rj === r[0] ? ' sel' : '') + '" data-act="emRj" data-v="' + r[0] + '" aria-pressed="' + (dr.rj === r[0]) + '">' + esc(r[0] === 'recep' ? 'Récep.-att.' : r[1]) + '</button>'; }).join('') + '</div></div></div>' +
       '<div class="row2"><div><label class="f" for="em_nom">Nom</label><input type="text" id="em_nom" data-bind="emf" data-k="nom" value="' + esc(dr.nom) + '" autocomplete="off"></div>' +
       '<div><label class="f" for="em_pre">Prénom</label><input type="text" id="em_pre" data-bind="emf" data-k="prenom" value="' + esc(dr.prenom) + '" autocomplete="off"></div></div>' +
       (sh.err ? '<p class="hint2" style="color:var(--danger)" role="alert">' + esc(sh.err) + '</p>' : '') +
@@ -8701,7 +8706,7 @@ document.addEventListener('click', function(e){
       render(); window.scrollTo(0,0); break;
     case 'editMember': {
       var fm = findMember(d.mid);
-      if(fm){ ui.sheet = { kind:'editmember', mid:d.mid, err:'', draft:{ licence:fm.m.licence || '', nom:fm.m.nom || '', prenom:fm.m.prenom || '', age:fm.m.age === '' || fm.m.age == null ? '' : String(fm.m.age), photo:fm.m.photo || '', photoPublic:!!fm.m.photoPublic, jnum:fm.m.jnum || '' } }; render(); }
+      if(fm){ ui.sheet = { kind:'editmember', mid:d.mid, err:'', draft:{ licence:fm.m.licence || '', nom:fm.m.nom || '', prenom:fm.m.prenom || '', age:fm.m.age === '' || fm.m.age == null ? '' : String(fm.m.age), photo:fm.m.photo || '', photoPublic:!!fm.m.photoPublic, jnum:fm.m.jnum || '', rj:rjLabel(fm.m.rj) ? fm.m.rj : '' } }; render(); }
       break;
     }
     case 'memMergeOpen': { var mm_f = findMember(sh.mid); if(mm_f && can('memberEdit', { cid:mm_f.club.id })){ ui.sheet = { kind:'memmerge', mid:sh.mid, err:'', draft:{ b:'', keep:'a' } }; render(); } break; }
@@ -8731,6 +8736,7 @@ document.addEventListener('click', function(e){
       if(dr2.photo) ef.m.photo = dr2.photo; else delete ef.m.photo;
       ef.m.photoPublic = !!dr2.photoPublic;
       var jn2 = String(dr2.jnum || '').replace(/\D/g, '').slice(0, 3), jo2 = ef.m.jnum || ''; if(jn2) ef.m.jnum = jn2; else delete ef.m.jnum; if(jn2 !== jo2){ jnumPropagate(ef.m.id, jo2, jn2); SB.setJnum(ef.m.id, jn2); }
+      var rj2 = rjLabel(dr2.rj) ? dr2.rj : '', rjo = ef.m.rj || ''; if(rj2 !== rjo){ if(rj2) ef.m.rj = rj2; else delete ef.m.rj; SB.setRj(ef.m.id, rj2); }
       var nm2 = memberName(ef.m);
       function upd(p){ if(p.mid === ef.m.id){ p.name = nm2; p.licence = ef.m.licence; } }
       S.teams.forEach(function(tm){ tm.players.forEach(upd); });
@@ -9039,6 +9045,7 @@ document.addEventListener('click', function(e){
     case 'testOn': { if(sh.draft.mid && meReal() === S.adminId){ lsSet(TESTKEY, sh.draft.mid); ui.sheet = null; render(); } break; }
     case 'testOff': lsSet(TESTKEY, ''); ui.sheet = null; render(); break;
     case 'profOpen': ui.sheet = { kind:'profile' }; render(); break;
+    case 'emRj': if(ui.sheet && ui.sheet.draft){ ui.sheet.draft.rj = ui.sheet.draft.rj === d.v ? '' : d.v; render(); } break;
     case 'rjToggle': ui.rjOpen = !ui.rjOpen; render(); break;
     case 'rjPick': { var rjf = meInfo(); if(rjf){ var rjn = rjf.m.rj === d.v ? '' : d.v; if(rjn) rjf.m.rj = rjn; else delete rjf.m.rj; if(!meTest()) SB.setRj(rjf.m.id, rjn); save(); } ui.rjOpen = false; render(); break; }
     case 'profPick': profSet(d.v); ui.sheet = null; render(); window.scrollTo(0,0); break;
