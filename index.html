@@ -211,7 +211,10 @@ label.f.tmlab,span.f.tmlab{margin:0;font-size:15px;font-weight:700;color:var(--i
 .shirt.shirt-xl input.snum.l2{font-size:24px}.shirt.shirt-xl input.snum.l3{font-size:17px}
 .shirt.shirt-s{width:44px;height:44px;vertical-align:middle;margin-right:6px}
 .plist input.pnum{width:58px;min-height:44px;text-align:center;font-family:var(--font-d);font-weight:700;font-size:22px;padding:2px}
-.plist .nm{flex:1;overflow-wrap:anywhere}
+.plist .nm{flex:1;overflow-wrap:anywhere;container-type:inline-size}
+.rjsub{display:block;margin-top:1px;font-size:13px;color:var(--muted);line-height:1.25}
+.rjshort{display:none}
+@container (max-width:250px){.rjfull{display:none}.rjshort{display:inline}}
 .plist .pos{font-size:13px;color:var(--muted);white-space:nowrap}
 .del{border:0;background:transparent;padding:0;min-width:36px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
 .res{display:flex;flex-direction:column;gap:6px;margin-top:8px}
@@ -5672,6 +5675,11 @@ function addPlayerSheet(t){
     '<button class="btn wide primary" data-act="addP" data-team="' + t + '">Ajouter</button></div>' +
     '<p class="numerr" data-numerr="' + t + '" role="alert" style="display:none"></p>';
 }
+function rjSubHtml(p){
+  var lm = p.mid && findMember(p.mid), rj = lm && lm.m.rj && rjLabel(lm.m.rj) ? lm.m.rj : '';
+  if(!p.licence && !rj) return '';
+  return '<small class="rjsub">' + esc(p.licence || '') + (p.licence && rj ? ' · ' : '') + (rj ? '<span class="rjfull">' + esc(rjLabel(rj)) + '</span><span class="rjshort">' + esc(rj === 'recep' ? 'Récep.-att.' : rjLabel(rj)) + '</span>' : '') + '</small>';
+}
 function teamCard(t){
   var team = S.teams[t];
   var onN = onCourt(t).length;
@@ -5680,7 +5688,7 @@ function teamCard(t){
     var linked = p.mid && findMember(p.mid);
     var avb = '<button class="avbtn" data-act="' + (linked ? 'editMember' : 'pickPhoto') + '" data-team="' + t + '" data-pid="' + p.id + '"' + (linked ? ' data-mid="' + p.mid + '"' : '') + ' aria-label="' + (linked ? 'Modifier la fiche et la photo de ' : 'Ajouter une photo à ') + esc(p.name || 'ce joueur') + '">' + avatar(photoOfPlayer(p), 40, p.name) + '</button>';
     return '<li>' + avb + '<span class="shirt' + (teamSpec(t) ? ' cs" style="' + csVars(teamSpec(t)) : '') + '">' + '<input class="snum ' + numCls(p.num) + '"' + (teamSpec(t) ? ' style="' + csNumCss(teamSpec(t)) + '"' : '') + ' type="text" inputmode="numeric" maxlength="3" placeholder="N°" value="' + esc(p.num) + '" data-bind="pnum" data-team="' + t + '" data-pid="' + p.id + '"' + (compoLock(t) ? ' readonly' : '') + ' aria-label="Numéro de maillot de ' + esc(p.name || 'ce joueur') + '"></span>' +
-      '<span class="nm">' + esc(p.name) + (p.licence ? ' <small>' + esc(p.licence) + '</small>' : '') + (isCapOf(S, t, p.id) ? capBadge() : '') + '</span>' +
+      '<span class="nm">' + esc(p.name) + (isCapOf(S, t, p.id) ? capBadge() : '') + rjSubHtml(p) + '</span>' +
       ((matchStarted() || compoLock(t)) ? '' : '<button class="del" data-act="delP" data-team="' + t + '" data-pid="' + p.id + '" aria-label="Retirer ' + esc(p.name || p.num) + '">' + xIcon(24) + '</button>') + '</li>';
   }).join('');
   var role = t ? 'Adversaire' : 'Notre équipe', nm = tn(t);
