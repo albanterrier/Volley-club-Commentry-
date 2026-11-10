@@ -5384,9 +5384,10 @@ function matchCardHtml(m){
 /* ---------- Matchs en préparation (équipe) et matchs à démarrer le jour J ---------- */
 function adminScope(){ return availRoles() === null || profGet() === 'admin'; }
 function prepInfo(e){
-  var me = profGet() === 'visiteur' ? '' : meGet(), r = { staff:[], player:false, officer:false, pres:false, fol:false, you:[] };
+  var me = profGet() === 'visiteur' ? '' : meGet(), r = { staff:[], player:false, officer:false, pres:false, fol:false, fav:false, you:[] };
   [e.home, e.away].forEach(function(t){
     if(teamStaffRaw(t) && (profGet() !== 'admin' || isFav('team', t) || isFav('club', clubOfEntrant(t)))) r.staff.push(t);
+    if(isFav('team', t) || isFav('club', clubOfEntrant(t))) r.fav = true;
     if(isFav('team', t) || isFav('club', clubOfEntrant(t)) || (!!S.homeClub && clubOfEntrant(t) === S.homeClub)) r.fol = true;
     var c = e.f && e.f.compo && e.f.compo[t];
     if(me && c && (c.pl || []).some(function(p){ return p.mid === me; })){
@@ -5407,13 +5408,22 @@ function prepEntries(today){
   var l = calEntries().filter(function(e){
     return e.kind !== 'event' && e.home && e.away && !e.postponed && !entryResult(e) && !(e.f && e.f.locked) && e.date >= today && !fixStarted(e.fid) && !(typeof MS !== 'undefined' && MS.map[e.fid]);
   }).map(function(e){ return { e:e, i:prepInfo(e) }; })
-    .filter(function(x){ return x.i.any || (x.e.date === today && x.i.fol); })
+    .filter(function(x){ return x.i.any || x.i.fav || (x.e.date === today && x.i.fol); })
     .sort(function(a, b){ return (a.e.date + (a.e.time || '')).localeCompare(b.e.date + (b.e.time || '')); });
+  /* favoris : la prochaine rencontre de chaque équipe (ou club) en favori, complétée jusqu'à 3 rencontres au minimum */
+  var fv = favOf(), keepF = {}, nk = 0;
+  fv.team.map(function(t){ return ['team', t]; }).concat(fv.club.map(function(c){ return ['club', c]; })).forEach(function(k){
+    var x = l.filter(function(y){ return y.e.date > today && [y.e.home, y.e.away].some(function(t){ return k[0] === 'team' ? t === k[1] : clubOfEntrant(t) === k[1]; }); })[0];
+    if(x && !keepF[x.e.fid]){ keepF[x.e.fid] = 1; nk++; }
+  });
+  l.forEach(function(x){ if(nk < 3 && x.i.fav && x.e.date > today && !keepF[x.e.fid]){ keepF[x.e.fid] = 1; nk++; } });
   var ns = 0;
   return l.filter(function(x){
     if(x.e.date === today) return true;
     if(x.i.player || x.i.officer || x.i.pres) return true;
-    return x.i.staff.length ? (ns++ < 3) : false;
+    var keep = !!keepF[x.e.fid];
+    if(x.i.staff.length && ns++ < 3) keep = true;
+    return keep;
   });
 }
 function compoLines(e, tid){
