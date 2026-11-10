@@ -5700,7 +5700,7 @@ function teamCard(t){
     (memHide() ? '' : '<p class="muted" style="margin:12px 0 0">' + onN + '/6 en jeu · ' + team.players.length + ' joueur' + (team.players.length > 1 ? 's' : '') + '</p>' +
     '<p class="numerr" data-numerr="' + t + '" role="alert" style="display:none"></p>' +
     '<ul class="plist">' + list + '</ul>') +
-    compositionHtml(t) + captainHtml(t) + '</section>';
+    captainHtml(t) + compositionHtml(t) + '</section>';
 }
 /* Équipes du match : deux menus côte à côte (domicile à gauche, extérieur à droite), ou affichage seul si le match vient du calendrier */
 /* Match libre : seuls l'administrateur, les présidents et responsables de club peuvent y mettre une équipe de leur club.
