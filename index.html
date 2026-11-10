@@ -883,7 +883,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .nav button .pill{position:relative}
 .tag.live .livedot{width:8px;height:8px;margin-right:5px;border:1px solid rgba(255,255,255,.8)}
 @media (prefers-reduced-motion:reduce){.livedot{animation:none}}
-.livedot.idle{animation:none;background:#1D6FE0}.prepc.pale{opacity:.6}.prepvs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.prepside{display:flex;flex-direction:column;gap:6px;min-width:0}.prepside.r{text-align:right;align-items:flex-end}.prepside .prepopen{display:flex;flex-direction:column;gap:2px;align-items:inherit;text-align:inherit;padding:6px 0}.prepside .nm{font-weight:700}.youline{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:rgba(255,193,7,.28);box-shadow:inset 3px 0 0 var(--gold);font-weight:700}
+.livedot.idle{animation:none;background:#1D6FE0}.prepc{position:relative}.prepc.pale{opacity:.6}.prepc.hasgo .msc-top{padding-right:96px}.prepgos{position:absolute;top:8px;right:10px;display:flex;gap:6px;z-index:1}.prepgos .prepgo{min-height:30px;height:30px;padding:0 12px;font-size:14px;margin:0;width:auto}.prepgos .prepgo small{font-size:11px;font-weight:500;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}.prepside .nm{font-size:20px!important;line-height:1.15;font-family:var(--font-d);letter-spacing:.01em}.prepvs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.prepside{display:flex;flex-direction:column;gap:6px;min-width:0}.prepside.r{text-align:right;align-items:flex-end}.prepside .prepopen{display:flex;flex-direction:column;gap:2px;align-items:inherit;text-align:inherit;padding:6px 0}.prepside .nm{font-weight:700}.youline{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:rgba(255,193,7,.28);box-shadow:inset 3px 0 0 var(--gold);font-weight:700}
 
 .modecard{padding:12px}
 .modegrid{display:flex;gap:8px;align-items:stretch;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:2px 10% 8px;margin:0 -4px;scrollbar-width:none}
@@ -5384,7 +5384,7 @@ function matchCardHtml(m){
 /* ---------- Matchs en préparation (équipe) et matchs à démarrer le jour J ---------- */
 function adminScope(){ return availRoles() === null || profGet() === 'admin'; }
 function prepInfo(e){
-  var me = meGet(), r = { staff:[], player:false, officer:false, pres:false, fol:false, you:[] };
+  var me = profGet() === 'visiteur' ? '' : meGet(), r = { staff:[], player:false, officer:false, pres:false, fol:false, you:[] };
   [e.home, e.away].forEach(function(t){
     if(teamStaffRaw(t) && (profGet() !== 'admin' || isFav('team', t) || isFav('club', clubOfEntrant(t)))) r.staff.push(t);
     if(isFav('team', t) || isFav('club', clubOfEntrant(t)) || (!!S.homeClub && clubOfEntrant(t) === S.homeClub)) r.fol = true;
@@ -5426,14 +5426,16 @@ function prepCardHtml(e, i, today, day){
   var canP = i.staff.length && !(e.f && e.f.locked);
   function side(tid, right){
     var c = e.f && e.f.compo && e.f.compo[tid], n = c && c.pl ? c.pl.length : 0;
-    var st = n ? n + ' joueur' + (n > 1 ? 's' : '') + ' dans la préparation' : 'pas encore préparé';
-    return '<div class="prepside' + (right ? ' r' : '') + '"><button class="msc-main prepopen" ' + op + '><span class="nm">' + esc(clubName(tid)) + '</span><small class="muted">' + st + '</small></button>' +
-      (ui.edit && canP && i.staff.indexOf(tid) >= 0 ? '<button class="btn prepgo" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(tid) + '" data-back="match" aria-label="Préparer ' + esc(clubName(tid)) + '">Préparer</button>' : '') + '</div>';
+    var st = n ? n + ' joueur' + (n > 1 ? 's' : '') : 'pas encore préparé';
+    return '<div class="prepside' + (right ? ' r' : '') + '"><button class="msc-main prepopen" ' + op + '><span class="nm">' + esc(clubName(tid)) + '</span><small class="muted">' + st + '</small></button></div>';
   }
+  /* Bouton « Préparer » : en haut à droite de la carte, sans changer sa taille (une équipe : « Préparer » ; deux : le nom du club) */
+  var pg = ui.edit && canP ? [e.home, e.away].filter(function(t){ return i.staff.indexOf(t) >= 0; }) : [];
+  var prep = pg.length ? '<span class="prepgos">' + pg.map(function(t){ return '<button class="btn prepgo" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(t) + '" data-back="match" aria-label="Préparer ' + esc(clubName(t)) + '">Préparer' + (pg.length > 1 ? ' <small>' + esc(clubName(t)) + '</small>' : '') + '</button>'; }).join('') + '</span>' : '';
   var btns = '';
   if(day && entryScoreOk(e)) btns += '<button class="btn primary" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Démarrer</button>';
   var pale = !i.normal && !(day && i.fol);
-  return '<div class="msc prepc' + (pale ? ' pale' : '') + '"><button class="msc-main" ' + op + '>' +
+  return '<div class="msc prepc' + (pale ? ' pale' : '') + (prep ? ' hasgo' : '') + '">' + prep + '<button class="msc-main" ' + op + '>' +
     '<span class="msc-top">' + (day ? '<span class="tag up">À venir</span>' : '<span class="msc-tag">En préparation</span>') + '<span class="msc-date">' + esc(fmtDay(e.date) + (e.time ? ' à ' + e.time : '')) + '</span>' + tmpTag(e) + '</span></button>' +
     '<div class="prepvs">' + side(e.home, false) + side(e.away, true) + '</div>' +
     (btns ? '<div class="btnrow" style="margin:10px 0 0">' + btns + '</div>' : '') +
