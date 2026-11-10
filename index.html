@@ -206,6 +206,9 @@ label.f.tmlab,span.f.tmlab{margin:0;font-size:15px;font-weight:700;color:var(--i
 .shirt.cs input.snum::placeholder{color:inherit;opacity:.65;font-size:11px}
 .shirt.shirt-l{width:84px;height:84px;align-self:center}
 .shirt.shirt-l .snum-t{font-size:30px}
+.shirt.shirt-xl{width:92px;height:92px;margin-left:auto}
+.shirt.shirt-xl input.snum{font-size:32px;line-height:40px;border-radius:6px}
+.shirt.shirt-xl input.snum.l2{font-size:24px}.shirt.shirt-xl input.snum.l3{font-size:17px}
 .shirt.shirt-s{width:44px;height:44px;vertical-align:middle;margin-right:6px}
 .plist input.pnum{width:58px;min-height:44px;text-align:center;font-family:var(--font-d);font-weight:700;font-size:22px;padding:2px}
 .plist .nm{flex:1;overflow-wrap:anywhere}
@@ -2822,6 +2825,7 @@ function jnumSet(f, jv){
   SB.setJnum(f.m.id, jv);
   save();
 }
+function profJnum(f){ return '<span class="shirt cs" style="' + csVars(clubSpec(f.club)) + '"><input class="snum" style="' + csNumCss(clubSpec(f.club)) + '" type="text" inputmode="numeric" maxlength="3" placeholder="N°" id="mejnum" data-bind="mejnum" value="' + esc(f.m.jnum || '') + '" aria-label="Mon numéro de maillot"' + (meTest() ? ' disabled' : '') + '></span>'; }
 function profMeHtml(f){
   var sv = ui.statClub; ui.statClub = null;
   var idx; try{ idx = playerIndex(); }finally{ ui.statClub = sv; }
@@ -2829,7 +2833,6 @@ function profMeHtml(f){
   var pts = 0, best = 0, nb = 0;
   if(mine){ nb = mine.matches.length; mine.matches.forEach(function(x){ pts += x.st.pts; if(x.st.streak > best) best = x.st.streak; }); }
   out += '<div class="sq3">' + [['Matchs joués', nb], ['Points gagnés', pts], ['Meilleure série de service', best]].map(function(c){ return '<div><b>' + c[1] + '</b><span>' + c[0] + '</span></div>'; }).join('') + '</div>' +
-    '<div class="jnumrow"><span class="shirt cs" style="' + csVars(clubSpec(f.club)) + '"><input class="snum" style="' + csNumCss(clubSpec(f.club)) + '" type="text" inputmode="numeric" maxlength="3" placeholder="N°" id="mejnum" data-bind="mejnum" value="' + esc(f.m.jnum || '') + '" aria-label="Mon numéro de maillot"' + (meTest() ? ' disabled' : '') + '></span><span class="muted">Mon numéro de maillot<br>Proposé automatiquement dans les compositions.</span></div>' +
     '<div class="btnrow"><button class="btn wide" data-act="profStats" data-cid="' + esc(f.club.id) + '">Mes statistiques détaillées</button></div>';
   var today = isoOf(new Date()), nx = null;
   calEntries().some(function(e){ if(e && e.date >= today && !e.postponed && !entryResult(e) && presCan(e, today)){ nx = e; return true; } return false; });
@@ -2862,7 +2865,7 @@ function profSheetHtml0(){
     return out + '<div class="btnrow"><button class="btn wide" data-act="invCodeOpen">J\'ai un code d\'invitation</button></div>';
   }
   var sc = scopeTxtFor(cur);
-  out += '<div class="profid">' + (meTest() ? avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) : f.m.photo ? '<button type="button" class="avlab" data-act="mePhotoView" title="Voir ma photo" aria-label="Voir ma photo en grand">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M3.8 12c2-3.4 4.8-5 8.2-5s6.2 1.6 8.2 5c-2 3.4-4.800 5-8.2 5s-6.200-1.600-8.200-5z" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg></span></button>' : '<label class="avlab" for="mephoto" title="Ajouter ma photo">' + avatar('', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M12 6.5v11M6.5 12h11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></span></label>') + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div></div>' +
+  out += '<div class="profid">' + (meTest() ? avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) : f.m.photo ? '<button type="button" class="avlab" data-act="mePhotoView" title="Voir ma photo" aria-label="Voir ma photo en grand">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M3.8 12c2-3.4 4.8-5 8.2-5s6.2 1.6 8.2 5c-2 3.4-4.800 5-8.2 5s-6.200-1.600-8.200-5z" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg></span></button>' : '<label class="avlab" for="mephoto" title="Ajouter ma photo">' + avatar('', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M12 6.5v11M6.5 12h11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></span></label>') + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div>' + profJnum(f).replace('class="shirt cs"', 'class="shirt cs shirt-xl"') + '</div>' +
     (av.length > 1 ? '<p class="hint2" style="margin:14px 0 6px">Changer de rôle</p>' : '') + '<div class="btnrow">';
   if(av.length > 1) PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
   out += '</div>' + profMeHtml(f);
