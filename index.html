@@ -883,6 +883,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .nav button .pill{position:relative}
 .tag.live .livedot{width:8px;height:8px;margin-right:5px;border:1px solid rgba(255,255,255,.8)}
 @media (prefers-reduced-motion:reduce){.livedot{animation:none}}
+.livedot.idle{animation:none;background:#1D6FE0}.prepc.pale{opacity:.6}.prepvs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.prepside{display:flex;flex-direction:column;gap:6px;min-width:0}.prepside.r{text-align:right;align-items:flex-end}.prepside .prepopen{display:flex;flex-direction:column;gap:2px;align-items:inherit;text-align:inherit;padding:6px 0}.prepside .nm{font-weight:700}.youline{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:rgba(255,193,7,.28);box-shadow:inset 3px 0 0 var(--gold);font-weight:700}
 
 .modecard{padding:12px}
 .modegrid{display:flex;gap:8px;align-items:stretch;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:2px 10% 8px;margin:0 -4px;scrollbar-width:none}
@@ -2167,11 +2168,12 @@ var NAVICONS = {
 function navOn(){ return true; }
 /* Petit voyant « en direct » : alterne du vert au bleu (fixe, vert, si l'animation est réduite) */
 function liveDot(corner){ return '<span class="livedot' + (corner ? ' corner' : '') + '" role="img" aria-label="Match en direct"></span>'; }
+function dayDueToday(){ try{ var t = isoOf(new Date()); return prepEntries(t).some(function(x){ return x.e.date === t && (x.i.normal || x.i.fol); }); }catch(e){ return false; } }
 function navHtml(){
   var items = [['match','Match'],['clubs','Clubs'],['champ','Championnat'],['cal','Calendrier'],['tournoi','Tournoi']];
   return '<nav class="nav" aria-label="Navigation principale">' + items.map(function(it){
     var on = ui.tab === it[0] || (it[0] === 'clubs' && ui.tab === 'data');
-    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length || remoteFav().length ? liveDot(true) : '') : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
+    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length || remoteFav().length ? liveDot(true) : (dayDueToday() ? '<span class="livedot corner idle" role="img" aria-label="Match aujourd\'hui"></span>' : '')) : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
   }).join('') + '</nav>';
 }
 /* Bouton « Accueil » (logo) : présent sur toutes les pages, toujours à gauche, à 90 % de la taille d'un bouton rond */
@@ -5382,22 +5384,37 @@ function matchCardHtml(m){
 /* ---------- Matchs en préparation (équipe) et matchs à démarrer le jour J ---------- */
 function adminScope(){ return availRoles() === null || profGet() === 'admin'; }
 function prepInfo(e){
-  var me = meGet(), r = { staff:[], player:false, officer:false };
+  var me = meGet(), r = { staff:[], player:false, officer:false, pres:false, fol:false, you:[] };
   [e.home, e.away].forEach(function(t){
     if(teamStaffRaw(t) && (profGet() !== 'admin' || isFav('team', t) || isFav('club', clubOfEntrant(t)))) r.staff.push(t);
+    if(isFav('team', t) || isFav('club', clubOfEntrant(t)) || (!!S.homeClub && clubOfEntrant(t) === S.homeClub)) r.fol = true;
     var c = e.f && e.f.compo && e.f.compo[t];
-    if(me && c && (c.pl || []).some(function(p){ return p.mid === me; })) r.player = true;
+    if(me && c && (c.pl || []).some(function(p){ return p.mid === me; })){
+      r.player = true;
+      var L = c.lu && c.lu[1], at = L ? L.indexOf(me) : -1;
+      r.you.push(at >= 0 ? 'Vous démarrez au poste ' + (at + 1) + ' au 1er set' : ((L && L.some(Boolean)) ? 'Vous démarrez sur le banc au 1er set' : 'Vous êtes dans la préparation (poste pas encore choisi)'));
+    }
   });
   if(me) ['compteur', 'arbitre'].forEach(function(k){ var x = entryRoleOf(e.fid, k); if(x && x.mid === me) r.officer = true; });
-  r.any = !!(r.staff.length || r.player || r.officer);
+  if(me) r.pres = presMapFor(e.cid, e.fid)[me] === 'p';
+  r.normal = !!(r.staff.length || r.player || r.officer);
+  r.any = r.normal || r.pres;
   return r;
 }
 function fixStarted(fid){ return savedMatches().some(function(it){ return it.m.fixtureRef && it.m.fixtureRef.fid === fid; }); }
+/* Rencontres à venir qui concernent la personne : staff (les 3 prochaines), joueur dans la préparation, officiel, ou présent (ton pâle). Le jour J, les équipes suivies s'ajoutent. */
 function prepEntries(today){
-  return calEntries().filter(function(e){
+  var l = calEntries().filter(function(e){
     return e.kind !== 'event' && e.home && e.away && !e.postponed && !entryResult(e) && !(e.f && e.f.locked) && e.date >= today && !fixStarted(e.fid) && !(typeof MS !== 'undefined' && MS.map[e.fid]);
-  }).map(function(e){ return { e:e, i:prepInfo(e) }; }).filter(function(x){ return x.i.any; })
+  }).map(function(e){ return { e:e, i:prepInfo(e) }; })
+    .filter(function(x){ return x.i.any || (x.e.date === today && x.i.fol); })
     .sort(function(a, b){ return (a.e.date + (a.e.time || '')).localeCompare(b.e.date + (b.e.time || '')); });
+  var ns = 0;
+  return l.filter(function(x){
+    if(x.e.date === today) return true;
+    if(x.i.player || x.i.officer || x.i.pres) return true;
+    return x.i.staff.length ? (ns++ < 3) : false;
+  });
 }
 function compoLines(e, tid){
   var c = e.f && e.f.compo && e.f.compo[tid];
@@ -5407,28 +5424,29 @@ function compoLines(e, tid){
 function prepCardHtml(e, i, today, day){
   var op = 'data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '" aria-label="Ouvrir ' + esc(clubName(e.home) + ' – ' + clubName(e.away)) + '"';
   var canP = i.staff.length && !(e.f && e.f.locked);
-  function row(tid){
+  function side(tid, right){
     var c = e.f && e.f.compo && e.f.compo[tid], n = c && c.pl ? c.pl.length : 0;
-    var st = n ? n + ' joueur' + (n > 1 ? 's' : '') : 'pas encore composé';
-    return '<div class="msc-row prepr"><button class="msc-main prepopen" ' + op + '><span class="nm">' + esc(clubName(tid)) + '</span><small class="muted">' + st + '</small></button>' +
-      (canP && i.staff.indexOf(tid) >= 0 ? '<button class="btn prepgo" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(tid) + '" data-back="match" aria-label="Préparer ' + esc(clubName(tid)) + '">Préparer</button>' : '') + '</div>';
+    var st = n ? n + ' joueur' + (n > 1 ? 's' : '') + ' dans la préparation' : 'pas encore préparé';
+    return '<div class="prepside' + (right ? ' r' : '') + '"><button class="msc-main prepopen" ' + op + '><span class="nm">' + esc(clubName(tid)) + '</span><small class="muted">' + st + '</small></button>' +
+      (ui.edit && canP && i.staff.indexOf(tid) >= 0 ? '<button class="btn prepgo" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(tid) + '" data-back="match" aria-label="Préparer ' + esc(clubName(tid)) + '">Préparer</button>' : '') + '</div>';
   }
   var btns = '';
   if(day && entryScoreOk(e)) btns += '<button class="btn primary" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Démarrer</button>';
-  return '<div class="msc prepc"><button class="msc-main" ' + op + '>' +
-    '<span class="msc-top"><span class="msc-tag">' + (day ? 'À démarrer' : 'En préparation') + '</span><span class="msc-date">' + esc(fmtDay(e.date) + (e.time ? ' à ' + e.time : '')) + '</span>' + tmpTag(e) + '</span></button>' +
-    row(e.home) + row(e.away) +
-    (btns ? '<div class="btnrow" style="margin:10px 0 0">' + btns + '</div>' : '') + '</div>';
+  var pale = !i.normal && !(day && i.fol);
+  return '<div class="msc prepc' + (pale ? ' pale' : '') + '"><button class="msc-main" ' + op + '>' +
+    '<span class="msc-top">' + (day ? '<span class="tag up">À venir</span>' : '<span class="msc-tag">En préparation</span>') + '<span class="msc-date">' + esc(fmtDay(e.date) + (e.time ? ' à ' + e.time : '')) + '</span>' + tmpTag(e) + '</span></button>' +
+    '<div class="prepvs">' + side(e.home, false) + side(e.away, true) + '</div>' +
+    (btns ? '<div class="btnrow" style="margin:10px 0 0">' + btns + '</div>' : '') +
+    i.you.map(function(t){ return '<p class="youline">' + esc(t) + '</p>'; }).join('') + '</div>';
 }
 function homeView0(){
   var today = isoOf(new Date()), list = savedMatches(), pe = prepEntries(today), day = pe.filter(function(x){ return x.e.date === today; }), soon = pe.filter(function(x){ return x.e.date > today; });
   var nS = list.length + day.length, out = '<div class="stack">', rf = remoteFav();
-  if(rf.length) out += '<div class="clubhead"><h2>' + liveDot() + 'En direct (' + rf.length + ')</h2></div><div class="msc-list">' + liveRemoteHtml(rf) + '</div>';
-  out += '<div class="clubhead">' + (list.length && canScore() ? editBtnHtml() : '') + '<h2>Matchs suivis' + (nS ? ' (' + nS + ')' : '') + '</h2></div>';
-  if(!nS) out += '<section class="card"><p class="muted" style="margin:0">Aucun match suivi en direct pour l\'instant. Touchez le bouton « + » pour jouer un match' + (can('champEdit') ? ' ou ajouter un résultat' : '') + '.</p></section>';
-  else out += '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + day.map(function(x){ return prepCardHtml(x.e, x.i, today, true); }).join('') + '</div>';
-  if(soon.length) out += '<div class="clubhead"><h2>Matchs en préparation</h2></div><div class="msc-list">' + soon.slice(0, 3).map(function(x){ return prepCardHtml(x.e, x.i, today, false); }).join('') + '</div>' +
-    (soon.length > 3 ? '<p class="muted">Les autres matchs à venir sont au calendrier.</p>' : '');
+  var needPen = (list.length && canScore()) || pe.some(function(x){ return x.i.staff.length && !(x.e.f && x.e.f.locked); }), pen = needPen ? editBtnHtml() : '';
+  function head(h){ var r = '<div class="clubhead">' + pen + '<h2>' + h + '</h2></div>'; pen = ''; return r; }
+  if(rf.length) out += head(liveDot() + 'En direct (' + rf.length + ')') + '<div class="msc-list">' + liveRemoteHtml(rf) + '</div>';
+  if(nS) out += head('Matchs suivis (' + nS + ')') + '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + day.map(function(x){ return prepCardHtml(x.e, x.i, today, true); }).join('') + '</div>';
+  if(soon.length) out += head('Matchs en préparation') + '<div class="msc-list">' + soon.map(function(x){ return prepCardHtml(x.e, x.i, today, false); }).join('') + '</div>';
   return out + '</div>';
 }
 
