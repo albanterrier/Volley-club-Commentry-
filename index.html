@@ -452,10 +452,13 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .rjpick{margin:10px 0 0}
 .rjh{display:grid;gap:8px}
 .rjtitle{margin:20px 0 8px;font-size:16px;font-weight:700}
-.rjr{display:grid;grid-template-columns:120px 1fr 28px;line-height:1.15;gap:8px;align-items:center;font-size:14px}
+.rjr{width:100%;background:none;border:0;padding:4px 0;color:inherit;font:inherit;text-align:left;cursor:pointer;display:grid;grid-template-columns:120px 1fr 28px;line-height:1.15;gap:8px;align-items:center;font-size:14px}
 .rjl{overflow-wrap:anywhere}
 .rjt{height:16px;border-radius:8px;background:var(--line);overflow:hidden}
 .rjt i{display:block;height:100%;border-radius:8px;background:var(--acc)}
+.rjr.open .rjl{font-weight:700}
+.rjlist{margin:2px 0 6px;padding:8px 12px 8px 28px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14px;line-height:1.5}
+.rjlist li.muted{list-style:none;margin-left:-16px}
 .rjr b{text-align:right}
 .hint2{margin:12px 0 0;font-size:14px;color:var(--muted)}
 
@@ -2873,8 +2876,9 @@ function rjHistoHtml(members){
   if(!tot) return '';
   var mx = Math.max.apply(null, RJ.map(function(r){ return cnt[r[0]]; }));
   return '<h3 class="rjtitle">Répartition des rôles de jeu</h3><div class="rjh" role="img" aria-label="' + esc(RJ.map(function(r){ return cnt[r[0]] + ' ' + r[1]; }).join(', ')) + '">' + RJ.map(function(r){
-    var n = cnt[r[0]];
-    return '<div class="rjr"><span class="rjl">' + esc(r[0] === 'recep' ? 'Récep.-att.' : r[1]) + '</span><span class="rjt"><i style="width:' + (mx ? Math.round(100 * n / mx) : 0) + '%"></i></span><b>' + n + '</b></div>';
+    var n = cnt[r[0]], open = ui.rjSel === r[0];
+    var names = (members || []).filter(function(m){ return m && m.rj === r[0]; }).map(function(m){ return memberName(m); }).sort(function(a, b){ return a.localeCompare(b, 'fr'); });
+    return '<button type="button" class="rjr' + (open ? ' open' : '') + '" data-act="rjShow" data-v="' + r[0] + '" aria-expanded="' + open + '"><span class="rjl">' + esc(r[0] === 'recep' ? 'Récep.-att.' : r[1]) + '</span><span class="rjt"><i style="width:' + (mx ? Math.round(100 * n / mx) : 0) + '%"></i></span><b>' + n + '</b></button>' + (open ? '<ul class="rjlist">' + (names.length ? names.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') : '<li class="muted">Aucun licencié</li>') + '</ul>' : '');
   }).join('') + '</div>';
 }
 function profJnum(f){ return '<span class="shirt cs" style="' + csVars(clubSpec(f.club)) + '"><input class="snum" style="' + csNumCss(clubSpec(f.club)) + '" type="text" inputmode="numeric" maxlength="3" placeholder="N°" id="mejnum" data-bind="mejnum" value="' + esc(f.m.jnum || '') + '" aria-label="Mon numéro de maillot"' + (meTest() ? ' disabled' : '') + '></span>'; }
@@ -9046,6 +9050,7 @@ document.addEventListener('click', function(e){
     case 'testOff': lsSet(TESTKEY, ''); ui.sheet = null; render(); break;
     case 'profOpen': ui.sheet = { kind:'profile' }; render(); break;
     case 'emRj': if(ui.sheet && ui.sheet.draft){ ui.sheet.draft.rj = ui.sheet.draft.rj === d.v ? '' : d.v; render(); } break;
+    case 'rjShow': ui.rjSel = ui.rjSel === d.v ? '' : d.v; render(); break;
     case 'rjToggle': ui.rjOpen = !ui.rjOpen; render(); break;
     case 'rjPick': { var rjf = meInfo(); if(rjf){ var rjn = rjf.m.rj === d.v ? '' : d.v; if(rjn) rjf.m.rj = rjn; else delete rjf.m.rj; if(!meTest()) SB.setRj(rjf.m.id, rjn); save(); } ui.rjOpen = false; render(); break; }
     case 'profPick': profSet(d.v); ui.sheet = null; render(); window.scrollTo(0,0); break;
