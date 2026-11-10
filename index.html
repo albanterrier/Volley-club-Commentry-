@@ -442,6 +442,16 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .chip b{font-family:var(--font-d);font-size:24px;font-weight:700}
 .chip.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .panel .close{margin-top:16px;width:100%}
+.rjzone{background:none;border:0;padding:2px 0;margin:0;font:inherit;font-size:.9em;color:var(--acc);border-bottom:1.5px dashed currentColor;cursor:pointer;line-height:1.3}
+.rjzone.set{color:var(--muted);border-bottom-color:transparent}
+.rjpick{margin:10px 0 0}
+.rjh{display:grid;gap:8px}
+.rjtitle{margin:20px 0 8px;font-size:16px;font-weight:700}
+.rjr{display:grid;grid-template-columns:120px 1fr 28px;line-height:1.15;gap:8px;align-items:center;font-size:14px}
+.rjl{overflow-wrap:anywhere}
+.rjt{height:16px;border-radius:8px;background:var(--line);overflow:hidden}
+.rjt i{display:block;height:100%;border-radius:8px;background:var(--acc)}
+.rjr b{text-align:right}
 .hint2{margin:12px 0 0;font-size:14px;color:var(--muted)}
 
 /* ===== Style Stitch : en-tête, barre du bas, cartes, agenda ===== */
@@ -1302,6 +1312,7 @@ var SB = (function(){
         merge(build(R));
         try{ relinkFixtures(S.champs); }catch(e){}
         try{ SB.jqApply(); }catch(e){}
+        try{ SB.rjApply(); }catch(e){}
         var set = {}; R.settings.forEach(function(r){ set[r.k] = r.v; });
         S.adminId = typeof set.admin_id === 'string' ? set.admin_id : '';
         if(typeof set.lic_fin === 'string') S.licFin = set.lic_fin;
@@ -1465,6 +1476,20 @@ var SB = (function(){
     return req('POST', '/rest/v1/rpc/v2c_staff_list', {}).then(function(r){ return r.ok ? (r.json || []) : []; }, function(){ return []; });
   }
   function jqList(){ var q = (S.sb && S.sb.jq) || {}; return Object.keys(q); }
+  function rjList(){ var q = (S.sb && S.sb.rjq) || {}; return Object.keys(q); }
+  function flushRj(){
+    var ks = rjList();
+    if(!ks.length) return Promise.resolve();
+    return ks.reduce(function(chain, mid){
+      return chain.then(function(){
+        var v = S.sb.rjq[mid];
+        return req('POST', '/rest/v1/rpc/v2c_set_rj', { p_mid:mid, p_rj:v || '' }).then(function(r){
+          if(r.ok || r.status === 400 || r.status === 403){ delete S.sb.rjq[mid]; }
+          else if(r.status === 404){ delete S.sb.rjq[mid]; st.msg = 'Rôle de jeu : le script SQL 24 n\'est pas encore installé sur le serveur.'; }
+        }, function(){});
+      });
+    }, Promise.resolve());
+  }
   function flushJq(){
     var ks = jqList();
     if(!ks.length) return Promise.resolve();
@@ -1481,11 +1506,11 @@ var SB = (function(){
   function sync(){
     if(busy || !ses()) return Promise.resolve(false);
     busy = true;
-    return flushJq().then(push).then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); if(typeof reqCheck === 'function') reqCheck(); if(typeof invAuto === 'function') invAuto(); return r; }, function(){ busy = false; });
+    return flushJq().then(flushRj).then(push).then(pushPres).then(pushMsgs).then(pushRep).then(pull).then(pullMsgs).then(pullRep).then(function(r){ busy = false; notify(); if(typeof reqCheck === 'function') reqCheck(); if(typeof invAuto === 'function') invAuto(); return r; }, function(){ busy = false; });
   }
   return {
     status:function(){ var s = ses(); return { logged:!!s, email:s ? s.email : '', at:(S.sb && S.sb.at) || '', pending:S.sync.out.length + ((S.sb && S.sb.pq) ? S.sb.pq.length : 0), busy:busy, msg:st.msg }; },
-    kick:function(){ if(!ses() || !(S.sync.out.length || jqList().length || (S.sb && S.sb.pq && S.sb.pq.length) || (S.sb && S.sb.md && S.sb.md.length) || (S.msgs || []).some(function(m){ return m.p; }) || (S.reports || []).some(function(m){ return m.p; }) || (S.sb && S.sb.rq && S.sb.rq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
+    kick:function(){ if(!ses() || !(S.sync.out.length || jqList().length || rjList().length || (S.sb && S.sb.pq && S.sb.pq.length) || (S.sb && S.sb.md && S.sb.md.length) || (S.msgs || []).some(function(m){ return m.p; }) || (S.reports || []).some(function(m){ return m.p; }) || (S.sb && S.sb.rq && S.sb.rq.length))) return; clearTimeout(timer); timer = setTimeout(function(){ if(!busy) sync(); }, 2500); },
     msPut:function(fid, champ, data){
       return req('POST', '/rest/v1/rpc/v2c_match_put', { p_fid:fid, p_champ:champ || '', p_data:data })
         .then(function(r){ return r.ok ? { ok:true } : { ok:false, status:r.status, msg:(r.status === 404 ? 'Le script SQL 18 n\'est pas encore installé.' : errTxt(r.json, 'Refusé')) }; }, function(){ return { ok:false, msg:'Pas de connexion au serveur.' }; });
@@ -1528,6 +1553,8 @@ var SB = (function(){
       return fetch(URL + '/rest/v1/clubs?select=data&id=eq.' + encodeURIComponent(id), { headers:{ apikey:ANON, Authorization:'Bearer ' + ANON } })
         .then(function(r){ return r.ok ? r.json() : []; }).then(function(a){ return (a && a[0] && a[0].data && a[0].data.logo) || ''; }, function(){ return ''; });
     },
+    setRj:function(mid, v){ S.sb = S.sb || {}; S.sb.rjq = S.sb.rjq || {}; S.sb.rjq[mid] = v || ''; },
+    rjApply:function(){ rjList().forEach(function(mid){ var f = findMember(mid); if(f){ if(S.sb.rjq[mid]) f.m.rj = S.sb.rjq[mid]; else delete f.m.rj; } }); },
     setJnum:function(mid, num){ S.sb = S.sb || {}; S.sb.jq = S.sb.jq || {}; S.sb.jq[mid] = num || ''; },
     jqApply:function(){ jqList().forEach(function(mid){ var f = findMember(mid); if(f){ if(S.sb.jq[mid]) f.m.jnum = S.sb.jq[mid]; else delete f.m.jnum; } }); },
     trnMakeCode:function(tid, role, team){
@@ -2825,6 +2852,26 @@ function jnumSet(f, jv){
   SB.setJnum(f.m.id, jv);
   save();
 }
+var RJ = [['passeur', 'Passeur'], ['pointu', 'Pointu'], ['central', 'Central'], ['recep', 'Réceptionneur-attaquant'], ['libero', 'Libéro']];
+function rjLabel(v){ var r = RJ.filter(function(x){ return x[0] === v; })[0]; return r ? r[1] : ''; }
+function rjZoneHtml(f){
+  var v = rjLabel(f.m.rj) ? f.m.rj : '';
+  return '<br><button type="button" class="rjzone' + (v ? ' set' : '') + '" data-act="rjToggle" aria-expanded="' + (!!ui.rjOpen) + '">' + esc(v ? rjLabel(v) : 'Rôle de jeu') + (v ? '' : ' ▾') + '</button>';
+}
+function rjPickHtml(f){
+  if(!ui.rjOpen) return '';
+  return '<div class="chips rjpick" role="group" aria-label="Rôle de jeu">' + RJ.map(function(r){ return '<button type="button" class="chip' + (f.m.rj === r[0] ? ' sel' : '') + '" data-act="rjPick" data-v="' + r[0] + '" aria-pressed="' + (f.m.rj === r[0]) + '">' + esc(r[1]) + '</button>'; }).join('') + '</div>';
+}
+function rjHistoHtml(members){
+  var cnt = {}, tot = 0; RJ.forEach(function(r){ cnt[r[0]] = 0; });
+  (members || []).forEach(function(m){ if(m && cnt[m.rj] !== undefined){ cnt[m.rj]++; tot++; } });
+  if(!tot) return '';
+  var mx = Math.max.apply(null, RJ.map(function(r){ return cnt[r[0]]; }));
+  return '<h3 class="rjtitle">Répartition des rôles de jeu</h3><div class="rjh" role="img" aria-label="' + esc(RJ.map(function(r){ return cnt[r[0]] + ' ' + r[1]; }).join(', ')) + '">' + RJ.map(function(r){
+    var n = cnt[r[0]];
+    return '<div class="rjr"><span class="rjl">' + esc(r[1]) + '</span><span class="rjt"><i style="width:' + (mx ? Math.round(100 * n / mx) : 0) + '%"></i></span><b>' + n + '</b></div>';
+  }).join('') + '</div>';
+}
 function profJnum(f){ return '<span class="shirt cs" style="' + csVars(clubSpec(f.club)) + '"><input class="snum" style="' + csNumCss(clubSpec(f.club)) + '" type="text" inputmode="numeric" maxlength="3" placeholder="N°" id="mejnum" data-bind="mejnum" value="' + esc(f.m.jnum || '') + '" aria-label="Mon numéro de maillot"' + (meTest() ? ' disabled' : '') + '></span>'; }
 function profMeHtml(f){
   var sv = ui.statClub; ui.statClub = null;
@@ -2865,7 +2912,7 @@ function profSheetHtml0(){
     return out + '<div class="btnrow"><button class="btn wide" data-act="invCodeOpen">J\'ai un code d\'invitation</button></div>';
   }
   var sc = scopeTxtFor(cur);
-  out += '<div class="profid">' + (meTest() ? avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) : f.m.photo ? '<button type="button" class="avlab" data-act="mePhotoView" title="Voir ma photo" aria-label="Voir ma photo en grand">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M3.8 12c2-3.4 4.8-5 8.2-5s6.2 1.6 8.2 5c-2 3.4-4.800 5-8.2 5s-6.200-1.600-8.200-5z" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg></span></button>' : '<label class="avlab" for="mephoto" title="Ajouter ma photo">' + avatar('', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M12 6.5v11M6.5 12h11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></span></label>') + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span></div>' + profJnum(f).replace('class="shirt cs"', 'class="shirt cs shirt-xl"') + '</div>' +
+  out += '<div class="profid">' + (meTest() ? avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) : f.m.photo ? '<button type="button" class="avlab" data-act="mePhotoView" title="Voir ma photo" aria-label="Voir ma photo en grand">' + avatar(photoShown(f.m) ? f.m.photo : '', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M3.8 12c2-3.4 4.8-5 8.2-5s6.2 1.6 8.2 5c-2 3.4-4.800 5-8.2 5s-6.200-1.600-8.200-5z" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="#fff"/></svg></span></button>' : '<label class="avlab" for="mephoto" title="Ajouter ma photo">' + avatar('', 64, memberName(f.m)) + '<span class="avplus" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#000"/><path d="M12 6.5v11M6.5 12h11" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></span></label>') + '<div><b>' + esc(memberName(f.m)) + '</b><br><span class="muted">' + esc(profLabel(cur) + sc + (sc.indexOf(f.club.name) >= 0 ? '' : ' · ' + f.club.name)) + '</span>' + rjZoneHtml(f) + '</div>' + profJnum(f).replace('class="shirt cs"', 'class="shirt cs shirt-xl"') + '</div>' + rjPickHtml(f) +
     (av.length > 1 ? '<p class="hint2" style="margin:14px 0 6px">Changer de rôle</p>' : '') + '<div class="btnrow">';
   if(av.length > 1) PROFS.filter(function(p){ return av.indexOf(p[0]) >= 0; }).forEach(function(p){ out += '<button class="btn wide' + (p[0] === cur ? ' primary' : '') + '" data-act="profPick" data-v="' + p[0] + '" aria-pressed="' + (p[0] === cur) + '">' + p[1] + '</button>'; });
   out += '</div>' + profMeHtml(f);
@@ -7606,7 +7653,7 @@ function dataClubView(){
   if(!c) return out + '<section class="card"><p class="muted" style="margin:0">Aucune donnée statistique pour le moment.</p></section></div>';
   var key = 'c:' + c.id, e = teamIndex().filter(function(k){ return k.key === key; })[0] || { key:key, label:c.name, logo:c.id, items:[] };
   var D = teamSeasonData(e);
-  return out + '<section class="card"><h2 class="pcell">' + logoHtml(c.id, 36) + '<span>' + esc(c.name) + '</span></h2><p class="muted" style="margin:4px 0 0">Toutes les équipes du club · saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(D) + '</section></div>';
+  return out + '<section class="card"><h2 class="pcell">' + logoHtml(c.id, 36) + '<span>' + esc(c.name) + '</span></h2><p class="muted" style="margin:4px 0 0">Toutes les équipes du club · saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(D) + rjHistoHtml(c.members) + '</section></div>';
 }
 function recordOf(items){
   var v = 0, d = 0;
@@ -7744,7 +7791,7 @@ function dataTeamsView(){
   if(tm) tm.D = teamSeasonData(tm);
   var out = '<div class="stack">';
   if(tm){
-    out += backBtn('Toutes les équipes') + '<section class="card"><h2 class="pcell">' + (tm.logo ? logoHtml(tm.logo, 36) : '') + '<span>' + esc(tm.label) + '</span></h2><p class="muted" style="margin:4px 0 0">Saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(tm.D) + '<div style="margin-top:6px">' +
+    out += backBtn('Toutes les équipes') + '<section class="card"><h2 class="pcell">' + (tm.logo ? logoHtml(tm.logo, 36) : '') + '<span>' + esc(tm.label) + '</span></h2><p class="muted" style="margin:4px 0 0">Saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(tm.D) + (tm.key.slice(0, 2) === 'c:' && clubById(tm.key.slice(2)) ? rjHistoHtml(clubById(tm.key.slice(2)).members) : '') + '<div style="margin-top:6px">' +
       tm.D.items.map(function(it){
         var m = it.m, t = it.t, w = setsWonOf(m), mine = w[t], opp = w[1 - t], win = m.finished && mine > opp, loss = m.finished && mine < opp;
         return '<button class="fx" data-act="dataMatchOpen" data-mid="' + esc(m.created) + '" data-from="teams"><span class="fxd">' + esc(shortDate(m)) + '</span>' +
@@ -8992,6 +9039,8 @@ document.addEventListener('click', function(e){
     case 'testOn': { if(sh.draft.mid && meReal() === S.adminId){ lsSet(TESTKEY, sh.draft.mid); ui.sheet = null; render(); } break; }
     case 'testOff': lsSet(TESTKEY, ''); ui.sheet = null; render(); break;
     case 'profOpen': ui.sheet = { kind:'profile' }; render(); break;
+    case 'rjToggle': ui.rjOpen = !ui.rjOpen; render(); break;
+    case 'rjPick': { var rjf = meInfo(); if(rjf){ var rjn = rjf.m.rj === d.v ? '' : d.v; if(rjn) rjf.m.rj = rjn; else delete rjf.m.rj; if(!meTest()) SB.setRj(rjf.m.id, rjn); save(); } ui.rjOpen = false; render(); break; }
     case 'profPick': profSet(d.v); ui.sheet = null; render(); window.scrollTo(0,0); break;
     case 'calIcs': doIcs(); break;
     case 'champCsv': { var cc2 = curChamp(); if(cc2) deliverFile('volley-' + slug(cc2.name) + '-' + stamp() + '.csv', champCsv(cc2), 'csv'); break; }
