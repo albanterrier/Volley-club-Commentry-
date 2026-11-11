@@ -2369,10 +2369,13 @@ function loadCompo(e){
 function whoTxt(mid){ var f = mid ? findMember(mid) : null; return f ? memberName(f.m) + ' (' + f.club.name + ')' : ''; }
 function fixDateOk(fe){ return !!fe && fe.kind !== 'event' && !(fe.f && fe.f.locked) && (can('matchDate', { cid:clubOfEntrant(fe.home) }) || (fe.kind === 'amical' && can('evCreate', { cid:clubOfEntrant(fe.home), tid:fe.home }))); }
 /* ---------- Consultation d'une composition (26/10/2026) : lecture seule, avec mise en évidence du licencié connecté ---------- */
+function fxTc(cid, fid, tid){
+  try{ var fe = calEntry(cid, fid); if(!fe) return null; return teamColors({ teams:[{ clubId:fe.home }, { clubId:fe.away }] })[fe.home === tid ? 0 : 1]; }catch(e){ return null; }
+}
 function compoViewSheet(sh){
   var fe = calEntry(sh.cid, sh.fid), c = fe && fe.f.compo && fe.f.compo[sh.tid];
   if(!fe || !c || !c.pl.length) return '<h2>Composition</h2><p class="muted">Pas encore composée.</p><div class="btnrow"><button class="btn wide" data-act="fixBack">Retour</button></div>';
-  var me = meGet(), k = sh.set || 1, lu = c.lu || {}, ids = lu[k] || lu[1] || [], t = fe.home === sh.tid ? 0 : 1;
+  var me = meGet(), k = sh.set || 1, lu = c.lu || {}, ids = lu[k] || lu[1] || [], t = fe.home === sh.tid ? 0 : 1, xtc = fxTc(sh.cid, sh.fid, sh.tid);
   var byMid = {}; c.pl.forEach(function(p){ byMid[p.mid] = p; });
   function pn(mid){ var f = findMember(mid); return f ? memberName(f.m) : '?'; }
   var tabs = '<div class="chips" role="tablist" aria-label="Composition par set" style="margin:10px 0 0">';
@@ -2380,7 +2383,7 @@ function compoViewSheet(sh){
   tabs += '</div>';
   function pos(i){
     var mid = ids[i], p = mid && byMid[mid], mine = !!(me && mid && mid === me);
-    return '<span class="pl ' + (t ? 'b' : 'a') + (p ? (p.num ? '' : ' dflt') : ' empty') + (mine ? ' me' : '') + '" aria-label="Poste ' + (i + 1) + (p ? ', ' + esc(pn(mid)) : ', vide') + '">' + (p ? esc(p.num || '–') : '–') + (p && mid === c.cap ? '<span class="cap capb" aria-hidden="true"></span>' : '') + '</span>';
+    return '<span class="pl ' + (t ? 'b' : 'a') + (p ? (p.num ? '' : ' dflt') : ' empty') + (mine ? ' me' : '') + '"' + (mine || !xtc ? '' : tcStyle(p, xtc)) + ' aria-label="Poste ' + (i + 1) + (p ? ', ' + esc(pn(mid)) : ', vide') + '">' + (p ? esc(p.num || '–') : '–') + (p && mid === c.cap ? '<span class="cap capb" aria-hidden="true"></span>' : '') + '</span>';
   }
   var front = [3, 2, 1], back = [4, 5, 0];
   var court = '<div class="vcourt"><div class="vnet" aria-hidden="true"><span>FILET</span></div><div class="vhalf t' + t + '" role="group" aria-label="Terrain, filet en haut">' +
@@ -2468,7 +2471,8 @@ function cpCourt(sh, k){
   var L = cpArr(sh, k), front = [3, 2, 1], back = [4, 5, 0];
   function b(i){
     var r = L[i] ? cpRow(sh, L[i]) : null, on = sh.sel === i;
-    return '<button class="pl a' + (r ? (r.num ? '' : ' dflt') : ' empty') + '" data-act="cpPos" data-pos="' + i + '" aria-pressed="' + on + '" style="' + (on ? 'outline:3px solid var(--a);outline-offset:2px' : '') + '" aria-label="Poste ' + (i + 1) + (r ? ', ' + esc(cpLabel(r)) : ', vide') + '">' + (r ? esc(r.num || '–') : '+') + (r && sh.cap === r.mid ? '<span class="cap capb" aria-hidden="true"></span>' : '') + '</button>';
+    var tc = fxTc(sh.cid, sh.fid, sh.tid), cst = (r && tc && !tc.def) ? 'background:' + tc.bg + ';color:' + tc.ink + ';border-color:' + tc.ink + (tc.sh ? ';' + tc.sh : '') + ';' : '';
+    return '<button class="pl a' + (r ? (r.num ? '' : ' dflt') : ' empty') + '" data-act="cpPos" data-pos="' + i + '" aria-pressed="' + on + '" style="' + cst + (on ? 'outline:3px solid var(--gold);outline-offset:2px' : '') + '" aria-label="Poste ' + (i + 1) + (r ? ', ' + esc(cpLabel(r)) : ', vide') + '">' + (r ? esc(r.num || '–') : '+') + (r && sh.cap === r.mid ? '<span class="cap capb" aria-hidden="true"></span>' : '') + '</button>';
   }
   return '<div class="vcourt"><div class="vnet" aria-hidden="true"><span>FILET</span></div><div class="vhalf t0" role="group" aria-label="Terrain, filet en haut">' +
     '<div class="vrow front">' + front.map(b).join('') + '</div><div class="vrow rear">' + back.map(b).join('') + '</div></div></div>';
