@@ -5529,8 +5529,9 @@ function dayCardHtml(e, i, today){
   if(entryScoreOk(e)) btns += '<button class="btn primary" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Démarrer</button>';
   btns += pg.map(function(t){ return '<button class="btn" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(t) + '" data-back="match" aria-label="Préparer ' + esc(clubName(t)) + '">Préparer' + (pg.length > 1 ? ' ' + esc(clubName(t)) : '') + '</button>'; }).join('');
   var pale = !i.normal && !i.fol;
-  return '<div class="mcw' + (pale ? ' pale' : '') + '">' + calRow(e, today) + (btns ? '<div class="btnrow" style="margin:8px 0 0">' + btns + '</div>' : '') +
-    i.you.map(function(t){ return '<p class="youline">' + esc(t) + '</p>'; }).join('') + '</div>';
+  var yl = i.you.map(function(t){ return '<p class="youline" style="margin:8px 0 0;text-align:center">' + esc(t) + '</p>'; }).join(''), card = calRow(e, today);
+  if(yl) card = card.replace(/<\/div>$/, yl + '</div>');
+  return '<div class="mcw' + (pale ? ' pale' : '') + '">' + card + (btns ? '<div class="btnrow" style="margin:8px 0 0">' + btns + '</div>' : '') + '</div>';
 }
 function homeView0(){
   var today = isoOf(new Date()), list = savedMatches(), pe = prepEntries(today), day = pe.filter(function(x){ return x.e.date === today; }), soon = pe.filter(function(x){ return x.e.date > today; });
