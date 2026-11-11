@@ -4041,9 +4041,9 @@ function resultList(){
   var out = [];
   S.champs.forEach(function(ch){
     var dates = {}; ch.fixtures.forEach(function(fx){ if(fx.matchId) dates[fx.matchId] = fx.date; });
-    ch.matches.forEach(function(m){ if(m.ref && have[m.ref]) return; out.push({ date:dates[m.id] || String(m.date || '').slice(0, 10), home:cid(m.home), away:cid(m.away), hs:m.hs, as:m.as, sets:m.sets || null }); });
+    ch.matches.forEach(function(m){ if(m.ref && have[m.ref]) return; out.push({ date:dates[m.id] || String(m.date || '').slice(0, 10), hid:m.home, aid:m.away, home:cid(m.home), away:cid(m.away), hs:m.hs, as:m.as, sets:m.sets || null }); });
   });
-  S.agenda.forEach(function(a){ if(a.kind === 'match' && a.result && !(a.result.ref && have[a.result.ref])) out.push({ date:a.date, home:cid(a.home), away:cid(a.away), hs:a.result.hs, as:a.result.as, sets:a.result.sets || null }); });
+  S.agenda.forEach(function(a){ if(a.kind === 'match' && a.result && !(a.result.ref && have[a.result.ref])) out.push({ date:a.date, hid:a.home, aid:a.away, home:cid(a.home), away:cid(a.away), hs:a.result.hs, as:a.result.as, sets:a.result.sets || null }); });
   return out;
 }
 /* Données d'une équipe pour la saison affichée : matchs terminés (recs), sets gagnés, meilleur écart dans un set, plus grande série de service */
@@ -4121,21 +4121,24 @@ function teamStatsHtml(d){
   function tile(v, lb, sub){ return '<div class="sumt"><b>' + v + '</b><small>' + lb + '</small>' + (sub ? '<small class="sumsub">' + esc(sub) + '</small>' : '') + '</div>'; }
   return out + '<div class="sumg">' + tile(d.sets, 'Sets gagnés') + tile(d.best === null ? '–' : d.best, 'Meilleur écart dans un set') + tile(d.streak || '–', 'Plus grande série de service', d.streak ? d.sInfo : '') + '</div>';
 }
-function teamIndex(){
+function teamKey2(m, i){ var id = m.teams[i].clubId; return (id && findTeam(id)) ? 't:' + id : teamKey(m, i); }
+function keyInClub(k, cid){ if(k.indexOf('t:') === 0){ var c = clubById(k.slice(2)); return !!c && c.id === cid; } return k === 'c:' + cid; }
+/* byTeam : une entrée par équipe (AIA 1, AIA 2…) ; sinon une entrée par club (toutes ses équipes confondues) */
+function teamIndex(byTeam){
   var map = {};
   allMatches().forEach(function(m){
     [0,1].forEach(function(t){
-      var k = teamKey(m, t);
-      if(ui.statClub && k !== 'c:' + ui.statClub) return;
+      var k = byTeam ? teamKey2(m, t) : teamKey(m, t);
+      if(ui.statClub && !keyInClub(k, ui.statClub)) return;
       var e = map[k] || (map[k] = { key:k, label:teamLabel(m, t), logo:teamLogoClub(m, t), items:[] });
       e.items.push({ m:m, t:t });
     });
   });
   resultList().forEach(function(x){
     [0, 1].forEach(function(t){
-      var id = t ? x.away : x.home, c = clubById(id), k = 'c:' + (c ? c.id : id);
-      if(ui.statClub && k !== 'c:' + ui.statClub) return;
-      var e = map[k] || (map[k] = { key:k, label:c ? c.name : id, logo:c ? c.id : '', items:[] });
+      var rid = t ? x.aid : x.hid, id = t ? x.away : x.home, c = clubById(id), k = (byTeam && findTeam(rid)) ? 't:' + rid : 'c:' + (c ? c.id : id);
+      if(ui.statClub && !keyInClub(k, ui.statClub)) return;
+      var e = map[k] || (map[k] = { key:k, label:k.indexOf('t:') === 0 ? clubName(rid) : (c ? c.name : id), logo:c ? c.id : '', items:[] });
       (e.res = e.res || []).push({ hs:x.hs, as:x.as, sets:x.sets, t:t, date:x.date, opp:t ? x.home : x.away });
     });
   });
@@ -7819,13 +7822,18 @@ function playerChartHtml(p, kind){
   return '<section class="card chartcard"><h3>' + (kind === 'won' ? 'Façon dont il gagne les points' : 'Façon dont il perd les points') + '</h3>' + stSelect('st' + k, 'Matchs pris en compte', k, opts, sel) +
     (tot ? barsSvg(cats, [kind === 'won' ? 'var(--ok)' : 'var(--danger)'], alt) : '<p class="muted">' + (kind === 'won' ? 'Aucun point enregistré pour cette sélection.' : 'Aucune faute enregistrée pour cette sélection.') + '</p>') + '</section>';
 }
+function teamRjMembers(key){
+  var id = key.slice(2);
+  if(key.indexOf('t:') === 0){ var ft = findTeam(id); return ft ? (ft.t.players || []).map(function(p){ var fm = p.mid && findMember(p.mid); return fm ? fm.m : null; }).filter(Boolean) : []; }
+  var c = clubById(id); return c ? c.members : [];
+}
 function dataTeamsView(){
-  var teams = teamIndex(), tm = ui.dataTeam ? teams.filter(function(k){ return k.key === ui.dataTeam; })[0] : null;
+  var teams = teamIndex(true), tm = ui.dataTeam ? teams.filter(function(k){ return k.key === ui.dataTeam; })[0] : null;
   if(ui.dataTeam && !tm) ui.dataTeam = null;
   if(tm) tm.D = teamSeasonData(tm);
   var out = '<div class="stack">';
   if(tm){
-    out += backBtn('Toutes les équipes') + '<section class="card"><h2 class="pcell">' + (tm.logo ? logoHtml(tm.logo, 36) : '') + '<span>' + esc(tm.label) + '</span></h2><p class="muted" style="margin:4px 0 0">Saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(tm.D) + (tm.key.slice(0, 2) === 'c:' && clubById(tm.key.slice(2)) ? rjHistoHtml(clubById(tm.key.slice(2)).members) : '') + '<div style="margin-top:6px">' +
+    out += backBtn('Toutes les équipes') + '<section class="card"><h2 class="pcell">' + (tm.logo ? logoHtml(tm.logo, 36) : '') + '<span>' + esc(tm.label) + '</span></h2><p class="muted" style="margin:4px 0 0">Saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(tm.D) + rjHistoHtml(teamRjMembers(tm.key)) + '<div style="margin-top:6px">' +
       tm.D.items.map(function(it){
         var m = it.m, t = it.t, w = setsWonOf(m), mine = w[t], opp = w[1 - t], win = m.finished && mine > opp, loss = m.finished && mine < opp;
         return '<button class="fx" data-act="dataMatchOpen" data-mid="' + esc(m.created) + '" data-from="teams"><span class="fxd">' + esc(shortDate(m)) + '</span>' +
@@ -7838,7 +7846,7 @@ function dataTeamsView(){
       }).join('') + '</div></section>';
     return out + '</div>';
   }
-  out += dataTabsHtml('teams') + (ui.statClub && teams.length ? teamChartsHtml(teams[0].items) : '') + '<section class="card"><h3>Équipes</h3>';
+  out += dataTabsHtml('teams') + (ui.statClub && teams.length ? teamChartsHtml((teamIndex()[0] || teams[0]).items) : '') + '<section class="card"><h3>Équipes</h3>';
   if(!teams.length) out += '<p class="muted">Aucune donnée statistique pour le moment.</p>';
   else out += '<p class="muted" style="margin:6px 0 4px">Choisissez une équipe pour voir ses matchs.</p>' + teams.map(function(k){
     return '<div class="ritem"><button class="fx" data-act="dataTeamSel" data-key="' + esc(k.key) + '"><span class="fxt"><span class="fxteam">' + logoHtml(k.logo, 28) + '<span class="nm">' + esc(k.label) + '</span></span><small>' + (function(){ var q = teamSeasonData(k); return q.items.length + q.res.length; })() + ' match(s)</small></span><span class="rsc">' + (function(){ var q = teamSeasonData(k), w = q.recs.filter(ST_KINDS.win.f).length; return w + 'V ' + (q.recs.length - w) + 'D'; })() + '</span></button></div>';
