@@ -914,7 +914,8 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .nav button .pill{position:relative}
 .tag.live .livedot{width:8px;height:8px;margin-right:5px;border:1px solid rgba(255,255,255,.8)}
 @media (prefers-reduced-motion:reduce){.livedot{animation:none}}
-.livedot.idle{animation:none;background:#1D6FE0}.prepc{position:relative}.prepc.pale{opacity:.6}.prepc.hasgo .msc-top{padding-right:96px}.prepgos{position:absolute;top:8px;right:10px;display:flex;gap:6px;z-index:1}.prepgos .prepgo{min-height:30px;height:30px;padding:0 12px;font-size:14px;margin:0;width:auto}.prepgos .prepgo small{font-size:11px;font-weight:500;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}.prepside .nm{font-size:24px!important;line-height:1.15;font-family:var(--font-d);letter-spacing:.01em}.prepvs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.prepside{display:flex;flex-direction:column;gap:6px;min-width:0}.prepside.r{text-align:right;align-items:flex-end}.prepside .prepopen{display:flex;flex-direction:column;gap:2px;align-items:inherit;text-align:inherit;padding:6px 0}.prepside .nm{font-weight:700}.youline{margin:8px 0 0;padding:4px 8px;line-height:1.25;border-radius:8px;background:rgba(255,193,7,.28);box-shadow:inset 3px 0 0 var(--gold);font-weight:600;font-size:14px}
+.livedot.idle{animation:none;background:#1D6FE0}.prepc{position:relative}.mcw.pale{opacity:.6}
+.prepc.pale{opacity:.6}.prepc.hasgo .msc-top{padding-right:96px}.prepgos{position:absolute;top:8px;right:10px;display:flex;gap:6px;z-index:1}.prepgos .prepgo{min-height:30px;height:30px;padding:0 12px;font-size:14px;margin:0;width:auto}.prepgos .prepgo small{font-size:11px;font-weight:500;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}.prepside .nm{font-size:24px!important;line-height:1.15;font-family:var(--font-d);letter-spacing:.01em}.prepvs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}.prepside{display:flex;flex-direction:column;gap:6px;min-width:0}.prepside.r{text-align:right;align-items:flex-end}.prepside .prepopen{display:flex;flex-direction:column;gap:2px;align-items:inherit;text-align:inherit;padding:6px 0}.prepside .nm{font-weight:700}.youline{margin:8px 0 0;padding:4px 8px;line-height:1.25;border-radius:8px;background:rgba(255,193,7,.28);box-shadow:inset 3px 0 0 var(--gold);font-weight:600;font-size:14px}
 
 .modecard{padding:12px}
 .modegrid{display:flex;gap:8px;align-items:stretch;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:2px 10% 8px;margin:0 -4px;scrollbar-width:none}
@@ -5520,13 +5521,24 @@ function prepCardHtml(e, i, today, day){
     (btns ? '<div class="btnrow" style="margin:10px 0 0">' + btns + '</div>' : '') +
     i.you.map(function(t){ return '<p class="youline">' + esc(t) + '</p>'; }).join('') + '</div>';
 }
+/* match du jour suivi : même carte que dans le reste de l'appli (calendrier, club), avec en dessous Démarrer / Préparer / « vous démarrez… » */
+function dayCardHtml(e, i, today){
+  var canP = i.staff.length && !(e.f && e.f.locked);
+  var pg = ui.edit && canP ? [e.home, e.away].filter(function(t){ return i.staff.indexOf(t) >= 0; }) : [];
+  var btns = '';
+  if(entryScoreOk(e)) btns += '<button class="btn primary" data-act="homePlay" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '">Démarrer</button>';
+  btns += pg.map(function(t){ return '<button class="btn" data-act="compoOpen" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-tid="' + esc(t) + '" data-back="match" aria-label="Préparer ' + esc(clubName(t)) + '">Préparer' + (pg.length > 1 ? ' ' + esc(clubName(t)) : '') + '</button>'; }).join('');
+  var pale = !i.normal && !i.fol;
+  return '<div class="mcw' + (pale ? ' pale' : '') + '">' + calRow(e, today) + (btns ? '<div class="btnrow" style="margin:8px 0 0">' + btns + '</div>' : '') +
+    i.you.map(function(t){ return '<p class="youline">' + esc(t) + '</p>'; }).join('') + '</div>';
+}
 function homeView0(){
   var today = isoOf(new Date()), list = savedMatches(), pe = prepEntries(today), day = pe.filter(function(x){ return x.e.date === today; }), soon = pe.filter(function(x){ return x.e.date > today; });
   var nS = list.length + day.length, out = '<div class="stack">', rf = remoteFav();
   var needPen = (list.length && canScore()) || pe.some(function(x){ return x.i.staff.length && !(x.e.f && x.e.f.locked); }), pen = needPen ? editBtnHtml() : '';
   function head(h){ var r = '<div class="clubhead">' + pen + '<h2>' + h + '</h2></div>'; pen = ''; return r; }
   if(rf.length) out += head(liveDot() + 'En direct (' + rf.length + ')') + '<div class="msc-list">' + liveRemoteHtml(rf) + '</div>';
-  if(nS) out += head('Matchs suivis (' + nS + ')') + '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + day.map(function(x){ return prepCardHtml(x.e, x.i, today, true); }).join('') + '</div>';
+  if(nS) out += head('Matchs suivis (' + nS + ')') + '<div class="msc-list">' + list.map(function(it){ return matchCardHtml(it.m); }).join('') + day.map(function(x){ return dayCardHtml(x.e, x.i, today); }).join('') + '</div>';
   if(soon.length) out += head('Matchs en préparation') + '<div class="msc-list">' + soon.map(function(x){ return prepCardHtml(x.e, x.i, today, false); }).join('') + '</div>';
   return out + '</div>';
 }
