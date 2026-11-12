@@ -2255,7 +2255,19 @@ function meGet(){ return meTest() || meReal(); }
 function meInfo(){ var id = meGet(); return id ? findMember(id) : null; }
 function meSet(v){ lsSet(MEKEY, v || '-'); }
 function profOn(){ var a = availRoles(); return !!a && a.length > 1; }
-function myRoles(){ var me = meGet(); return (S.roles || []).filter(function(r){ return r.mid === me && r.state !== 'invite'; }); }
+/* Rôle de rencontre : le compteur le perd quand le match est terminé (résultat saisi), l'arbitre quand le match est validé et verrouillé */
+function roleLive(r){
+  if(!r || !r.ref || (r.role !== 'compteur' && r.role !== 'arbitre')) return true;
+  var fin = false, lock = false, found = false;
+  (S.champs || []).some(function(ch){
+    var fx = fixtureOf(ch, r.ref); if(!fx) return false;
+    found = true; lock = !!fx.locked; fin = !!(fx.matchId && matchOf(ch, fx.matchId)) || (ch.matches || []).some(function(m){ return m.fid === r.ref; });
+    return true;
+  });
+  if(!found){ var a = (S.agenda || []).filter(function(x){ return x.id === r.ref; })[0]; if(!a) return true; lock = !!a.locked; fin = !!a.result; }
+  return r.role === 'compteur' ? !(fin || lock) : !lock;
+}
+function myRoles(){ var me = meGet(); return (S.roles || []).filter(function(r){ return r.mid === me && r.state !== 'invite' && roleLive(r); }); }
 /* Rôles disponibles pour la personne de l'appareil. null = installation sans administrateur : tout est ouvert. */
 function availRoles(){
   var f = meInfo();
@@ -5473,7 +5485,7 @@ function prepInfo(e){
       r.you.push(at >= 0 ? 'Vous démarrez au poste ' + (at + 1) + ' au 1er set' : ((L && L.some(Boolean)) ? 'Vous démarrez sur le banc au 1er set' : 'Vous êtes dans la préparation (poste pas encore choisi)'));
     }
   });
-  if(me) ['compteur', 'arbitre'].forEach(function(k){ var x = entryRoleOf(e.fid, k); if(x && x.mid === me) r.officer = true; });
+  if(me) ['compteur', 'arbitre'].forEach(function(k){ var x = entryRoleOf(e.fid, k); if(x && x.mid === me && roleLive(x)) r.officer = true; });
   if(me) r.pres = presMapFor(e.cid, e.fid)[me] === 'p';
   r.normal = !!(r.staff.length || r.player || r.officer);
   r.any = r.normal || r.pres;
