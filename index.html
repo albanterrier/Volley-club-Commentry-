@@ -946,11 +946,13 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .modecard{padding:12px}
 .modegrid{display:flex;gap:8px;align-items:stretch;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:2px 10% 8px;margin:0 -4px;scrollbar-width:none}
 .modegrid::-webkit-scrollbar{display:none}
-.modecol{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 10px 14px;border:2px solid var(--line);border-radius:14px;background:var(--surface);min-width:0;cursor:pointer}
+.modecol{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 10px 10px;border:2px solid var(--line);border-radius:14px;background:var(--surface);min-width:0;cursor:pointer}
 .modecol.sel{border-color:var(--acc)}
-.modetop{background:none;border:0;padding:6px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
+.modetop{background:none;border:0;padding:2px;min-width:44px;min-height:28px;display:flex;align-items:center;justify-content:center}
 .modename{font-size:19px;font-weight:800;text-align:center}
-.modecol .pv{width:100%;max-width:200px}
+.modecol .pv{width:100%;max-width:130px;margin-top:4px;padding:5px;gap:4px;border-radius:12px}
+.modecol .pv-tiles i{height:34px}.modecol .pv-tiles b{font-size:16px}.modecol .pv-court{height:34px}.modecol .pv-court .pl{height:24px}.modecol .pv-court .court{height:34px}.modecol .pv-clock .sq{width:14px;height:14px}.modecol .pv-clock em{font-size:11px}
+.modepick .btnrow{position:sticky;bottom:0;background:var(--bg);padding:8px 0 4px;margin-top:4px}
 .modetag{color:var(--muted);font-size:13px;text-align:center;line-height:1.25}
 .modecol .modelist{margin:0;padding-left:16px;font-size:13px;line-height:1.3;align-self:stretch}
 .modecol .modelist li{margin-bottom:4px}
@@ -1903,7 +1905,8 @@ function sbCardHtml(){
 }
 var KEY = 'volley-match-v1';
 var HOW = { attack:'Attaque', block:'Bloc', ace:'Service gagnant', relance:'Relance' };
-var FAULTS = ['Filet','Ballon sorti','Double touche','Quatre touches','Faute de service','Faute de rotation','Pied sur la ligne','Autre'];
+var FAULTS = ['Faute de service','Ballon dehors','Ballon non franchi','Double touche','Filet','Faute de pied'];
+var FAULT_OLD = { 'Ballon sorti':'Ballon dehors', 'Pied sur la ligne':'Faute de pied' };
 var TYPE_FR = { point:'Point', fault:'Faute', forfeit:'Set perdu', injury:'Blessure', card:'Carton', sub:'Remplacement', timeout:'Temps mort', setEnd:'Fin de set', matchEnd:'Fin de match' };
 var RESULTS = ['3-0','3-1','3-2','2-3','1-3','0-3'];
 
@@ -3655,6 +3658,7 @@ function callTimeout(team){
 function manualRotate(t, dir){
   snap(); rotate(t, dir); save(); render();
 }
+function tcFmt(sec, brk){ return brk ? Math.floor(sec / 60) + ':' + ('0' + sec % 60).slice(-2) : sec + ' s'; }
 function endSet(){
   snap();
   var a = S.cur[0], b = S.cur[1];
@@ -3668,6 +3672,7 @@ function endSet(){
   if(!(w[0] >= S.cfg.setsToWin || w[1] >= S.cfg.setsToWin)){
     if(isDecisive()) S.firstSrv = null; else { S.serving = 1 - prevFirst; S.firstSrv = S.serving; }
     S.swap = !S.swap;
+    S.tc = { team:null, brk:true, endsAt:Date.now() + 180000 };
     ui.msg = 'Changement de côté : la saisie des scores est inversée.';
     var pm = planApply(S.sets.length + 1); if(pm) ui.msg += ' ' + pm;
   }
@@ -3797,7 +3802,7 @@ function playerStatOf(m, pid){
       if(e.type === 'point'){ r.pts++; if(r[e.how] != null) r[e.how]++; r.wonBy[HOW[e.how] ? e.how : 'none']++; }
       else if(e.type === 'fault' || (e.type === 'card' && e.card === 'rouge')){
         r.faults++;
-        var lk = e.type === 'card' ? 'Carton rouge' : (FAULT_SHORT[e.how] ? e.how : 'Autre');
+        var lk = e.type === 'card' ? 'Carton rouge' : (FAULT_SHORT[FAULT_OLD[e.how] || e.how] ? (FAULT_OLD[e.how] || e.how) : 'Autre');
         r.lostBy[lk] = (r.lostBy[lk] || 0) + 1;
       }
     }
@@ -5076,8 +5081,8 @@ function liveView(d0, mini){
   out += '<div class="lvhead"><span class="lvstate ' + (d.finished ? 'end' : (stopped || stale ? 'old' : 'on')) + '">' + (d.finished ? 'Terminé' : (stopped ? 'Diffusion stoppée' : (stale ? 'Pause' : 'En direct'))) + '</span>' + (d.title ? '<span class="lvtitle">' + esc(d.title) + '</span>' : '') + '</div>';
   out += '<div class="lvboard">' + team(0, d.home) + '<div class="lvmid"><b class="lvsc" aria-label="Sets gagnés">' + w[0] + ' – ' + w[1] + '</b>' + (d.finished || stopped ? '' : '<span>Set ' + ((d.sets || []).length + 1) + '</span>') + '</div>' + team(1, d.away) + '</div>';
   if((d.sets || []).length) out += '<div class="lvhist">' + d.sets.map(function(x, i){ return '<div>Set ' + (i + 1) + ' : <b>' + x[0] + ' – ' + x[1] + '</b></div>'; }).join('') + '</div>';
-  out += '<p class="lvmsg">' + (stopped ? 'La diffusion de ce match est terminée · dernière mise à jour il y a ' : 'Mis à jour il y a ') + (age < 90 ? age + ' s' : Math.round(age / 60) + ' min') + (stopped ? '' : ' · se met à jour tout seul') + '</p>';
-  if(d.last && d.last.x && !stopped){ var la = Math.max(0, Math.round((Date.now() - new Date(d.last.at).getTime()) / 1000)); out += '<div class="lvlast" role="status"><b>Dernière saisie</b><span>' + esc(d.last.x) + '</span><i>' + (la < 90 ? 'il y a ' + la + ' s' : 'il y a ' + Math.round(la / 60) + ' min') + '</i></div>'; }
+  if(stopped) out += '<p class="lvmsg">La diffusion de ce match est terminée.</p>';
+  if(d.last && d.last.x && !stopped){ var la = Math.max(0, Math.round((Date.now() - new Date(d.last.at).getTime()) / 1000)); out += '<div class="lvlast" role="status"><b>Dernière saisie</b><span>' + esc(d.last.x) + '</span></div>'; }
   return out + '</div>';
 }
 var lvPoll = null;
@@ -5418,7 +5423,7 @@ function matchView(){
     out += '<div class="banner"><span>Match terminé · ' + esc(tn(w[0] > w[1] ? 0 : 1)) + ' gagne ' + Math.max(w[0],w[1]) + ' – ' + Math.min(w[0],w[1]) + '</span><button class="hbtn" data-act="openChamp">Championnat</button></div>';
   }
   if(S.tc && S.tc.endsAt > Date.now()){
-    out += '<div class="tcbar"><span>Temps mort ' + esc(tn(S.tc.team)) + '</span><span id="tcleft">' + Math.ceil((S.tc.endsAt - Date.now())/1000) + ' s</span><button data-act="tcStop">Fermer</button></div>';
+    out += '<div class="tcbar"><span>' + (S.tc.brk ? 'Pause entre les sets' : 'Temps mort ' + esc(tn(S.tc.team))) + '</span><span id="tcleft">' + tcFmt(Math.ceil((S.tc.endsAt - Date.now())/1000), S.tc.brk) + '</span><button data-act="tcStop">Fermer</button></div>';
   }
   var ord = S.swap ? [1, 0] : [0, 1];
   out += '<div class="board">' + tile(ord[0], 'l') + tile(ord[1], 'r') + (showSwap() ? '<button class="swapbtn" data-act="swap"' + (ro() ? ' disabled' : '') + ' aria-label="Inverser la position des équipes" title="Inverser la position des équipes"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/></svg></button>' : '') +
@@ -5451,15 +5456,14 @@ function modePreview(k){
 }
 function modePickView(){
   if(!ui.modeSel || modeKeys().indexOf(ui.modeSel) < 0) ui.modeSel = 'normal';
-  var sel = ui.modeSel, keys = modeKeys(), out = '<div class="stack modepick"><p class="hint2" style="margin:0 4px">Choisissez comment saisir ce match. Vous pourrez changer de mode en cours de match.' + (allowComplet() ? '' : ' Le mode Complet est réservé aux matchs officiels du calendrier (compteur désigné, staff de l\'équipe, administrateur).') + '</p>' +
-    '<div class="modegrid" role="radiogroup" aria-label="Mode de saisie">';
+  var sel = ui.modeSel, keys = modeKeys(), out = '<div class="stack modepick">' + (allowComplet() ? '' : '<p class="hint2" style="margin:0 4px">Le mode Complet est réservé aux matchs officiels du calendrier (compteur désigné, staff de l\'équipe, administrateur).</p>') + '<div class="modegrid" role="radiogroup" aria-label="Mode de saisie">';
   keys.forEach(function(k){
     var m = MODES[k], on = sel === k;
     out += '<div class="modecol' + (on ? ' sel' : '') + '" data-act="modeSel" data-v="' + k + '"><button class="modetop" role="radio" aria-checked="' + on + '" aria-label="Mode ' + m.name + '" data-act="modeSel" data-v="' + k + '"><span class="radio" aria-hidden="true"></span></button>' +
       '<b class="modename">' + m.name + '</b>' + modePreview(k) +
       '<small class="modetag">' + esc(m.tag) + '</small><ul class="modelist">' + m.feats.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
   });
-  out += '</div><div class="btnrow"><button class="btn wide primary" data-act="modeGo">Valider et commencer la saisie en mode ' + MODES[sel].name + '</button></div></div>';
+  out += '</div><div class="btnrow"><button class="btn wide primary" data-act="modeGo">Commencer le match en mode ' + MODES[sel].name + '</button></div></div>';
   return out;
 }
 function modeBtnHtml(){ return '<button class="hmodebtn" data-act="modeChg">Mode de saisie : <b>' + MODES[modeOf()].name + '</b> <span aria-hidden="true">›</span></button>'; }
@@ -7745,7 +7749,7 @@ function recordOf(items){
 }
 /* ---------- Graphiques des statistiques (28/10/2026) : anneau victoires/défaites, histogrammes ---------- */
 var STCATS = [['attack', 'Attaque'], ['block', 'Bloc'], ['ace', 'Service'], ['relance', 'Relance'], ['faute', 'Fautes'], ['none', 'Non précisé']];
-var FAULT_SHORT = { 'Filet':'Filet', 'Ballon sorti':'Sorti', 'Double touche':'Double', 'Quatre touches':'4 touches', 'Faute de service':'Service', 'Faute de rotation':'Rotation', 'Pied sur la ligne':'Ligne', 'Autre':'Autre', 'Carton rouge':'Carton' };
+var FAULT_SHORT = { 'Filet':'Filet', 'Ballon dehors':'Dehors', 'Ballon non franchi':'Non franchi', 'Faute de pied':'Pied', 'Ballon sorti':'Sorti', 'Double touche':'Double', 'Quatre touches':'4 touches', 'Faute de service':'Service', 'Faute de rotation':'Rotation', 'Pied sur la ligne':'Ligne', 'Autre':'Autre', 'Carton rouge':'Carton' };
 /* équipe qui gagne le point d'un événement (null si l'événement ne donne pas de point) et façon dont il est gagné */
 function evWinner(e){
   if(e.type === 'point') return e.team;
@@ -7857,7 +7861,9 @@ function playerChartHtml(p, kind){
       .filter(function(c){ return c.key !== 'none' || c.vals[0]; });
   } else {
     var names = FAULTS.concat(['Carton rouge']);
-    cats = names.map(function(nm){ var n = 0; list.forEach(function(x){ n += x.st.lostBy[nm] || 0; }); return { key:nm, label:FAULT_SHORT[nm] || nm, vals:[n] }; });
+    names = names.concat(['Quatre touches', 'Faute de rotation', 'Autre']);
+    cats = names.map(function(nm){ var n = 0; list.forEach(function(x){ n += x.st.lostBy[nm] || 0; }); return { key:nm, label:FAULT_SHORT[nm] || nm, vals:[n] }; })
+      .filter(function(c){ return FAULTS.indexOf(c.key) >= 0 || c.key === 'Carton rouge' || c.vals[0]; });
   }
   cats.forEach(function(c){ tot += c.vals[0]; });
   alt = cats.map(function(c){ return c.label + ' ' + c.vals[0]; }).join(', ');
@@ -8124,13 +8130,16 @@ function sheetView(){
   if(sh.kind === 'point'){
     var how = Object.keys(HOW).filter(function(k){ return k !== 'ace' || S.serving === sh.team; }).map(function(k){ return chip('pickHow', { how:k }, HOW[k], sh.how === k); }).join('') + chip('pickHow', { how:'oppfault' }, 'Faute adverse', false);
     var hasWho = onCourt(sh.team).length > 0 && modeOf() === 'complet';
-    inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2><div class="cols' + (hasWho ? '' : ' one') + '">' + group('Comment ?', how) +
-      (hasWho ? group('Qui a marqué ?', whoChips(sh.team, sh.pid, false, sh.how) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')) : '') + '</div>';
+    if(hasWho) inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2>' + (sh.how === undefined ? group('Comment ?', how) :
+      '<p class="hint2" style="margin-top:4px">' + esc(HOW[sh.how] || '') + '</p>' + group('Qui a marqué ?', whoChips(sh.team, sh.pid, false, sh.how) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')));
+    else inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2><div class="cols one">' + group('Comment ?', how) + '</div>';
     if(!hasWho && modeOf() === 'complet') inner += '<p class="hint2">Aucun joueur en jeu. Touchez un poste vide du terrain pour placer vos joueurs.</p>';
   } else if(sh.kind === 'fault'){
     var kinds = FAULTS.map(function(k){ return chip('pickHow', { how:k }, esc(k), sh.how === k); }).join('');
+    var fWho = onCourt(sh.team).length && modeOf() === 'complet';
     inner = '<h2>Faute de ' + esc(tn(sh.team)) + '</h2><p class="hint2" style="margin-top:4px">Le point est donné à ' + esc(tn(1 - sh.team)) + '.</p>' +
-      '<div class="cols' + (onCourt(sh.team).length && modeOf() === 'complet' ? '' : ' one') + '">' + group('Type de faute', kinds) + (onCourt(sh.team).length && modeOf() === 'complet' ? group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')) : '') + '</div>';
+      (fWho ? (sh.how === undefined ? group('Type de faute', kinds) : '<p class="hint2" style="margin:4px 0 0"><b>' + esc(sh.how) + '</b></p>' + group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''))) :
+      '<div class="cols one">' + group('Type de faute', kinds) + '</div>');
   } else if(sh.kind === 'clubadd'){
     inner = clubAddSheet(sh);
   } else if(sh.kind === 'champteam'){
@@ -9223,6 +9232,7 @@ document.addEventListener('click', function(e){
     case 'pickHow':
       if(d.how === 'oppfault' && sh.kind === 'point'){ ui.sheet = { kind:'fault', team:1 - sh.team }; if(modeOf() !== 'complet' || !onCourt(1 - sh.team).length) ui.sheet.pid = ''; render(); }
       else { sh.how = d.how; var al = whoAllowed(sh.team, d.how); if(al && sh.pid && al.indexOf(sh.pid) < 0) delete sh.pid;
+        if(modeOf() === 'complet' && ((sh.kind === 'point' && d.how === 'ace') || (sh.kind === 'fault' && d.how === 'Faute de service')) && sh.pid === undefined){ var srv0 = S.lineup[sh.team] && S.lineup[sh.team][0]; if(srv0 && onCourt(sh.team).some(function(p){ return p.id === srv0; })) sh.pid = srv0; }
         if((sh.kind === 'point' || sh.kind === 'fault') && sh.pid === undefined && !(modeOf() === 'complet' && onCourt(sh.team).length)) sh.pid = '';
         tryCommit(); }
       break;
@@ -9898,7 +9908,7 @@ setInterval(function(){
   if(S.tc){
     var left = Math.ceil((S.tc.endsAt - Date.now()) / 1000);
     if(left <= 0){ S.tc = null; save(); render(); }
-    else { var el = document.getElementById('tcleft'); if(el) el.textContent = left + ' s'; }
+    else { var el = document.getElementById('tcleft'); if(el) el.textContent = tcFmt(left, S.tc.brk); }
   }
 }, 250);
 
