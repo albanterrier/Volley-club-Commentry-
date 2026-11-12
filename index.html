@@ -463,6 +463,12 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .rjlist{margin:2px 0 6px;padding:8px 12px 8px 28px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:14px;line-height:1.5}
 .rjlist li.muted{list-style:none;margin-left:-16px}
 .rjr b{text-align:right}
+.offrow{display:flex;justify-content:space-between;gap:12px;margin:8px 0}
+.offcol{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;max-width:50%}
+.offcol.r{align-items:flex-end;text-align:right}
+.offcol b{overflow-wrap:anywhere}
+.offcol .offclub{font-size:12px}
+.offcol .btn{margin-top:6px}
 .hint2{margin:12px 0 0;font-size:14px;color:var(--muted)}
 
 /* ===== Style Stitch : en-tête, barre du bas, cartes, agenda ===== */
@@ -683,8 +689,10 @@ body.hasfab .tmsg{margin-bottom:0}
 .homenext h2{font-size:15px;margin:6px 4px 0;color:var(--muted);font-weight:600}
 
 .formbox h3{margin:14px 0 4px}
-.formbox .frow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0;flex-wrap:wrap}
-.formbox .fchips{display:flex;gap:4px;flex-wrap:wrap}
+.formbox .frow{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin:10px 0}
+.formbox .frow .nm{font-weight:600}
+.formbox .fchips{display:flex;gap:4px;flex-wrap:nowrap;margin-top:0;width:100%}
+.formbox .fchips .tag{flex:1 1 0;min-width:0;justify-content:center;text-align:center;padding-left:2px;padding-right:2px;white-space:nowrap}
 .flowset{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line)}
 .flowset:first-of-type{border-top:0;padding-top:0}
 .flowhead{display:flex;justify-content:space-between;font-size:16px;margin-bottom:4px}
@@ -2415,11 +2423,11 @@ function compoViewSheet(sh){
 function officialsHtml(fe, fm, lock){
   var fid = fe.fid, hc = clubOfEntrant(fe.home), canD = can('designate', { cid:hc }) && !lock && !fm;
   var out = '<div style="margin-top:14px"><h3 style="margin:0 0 4px">Officiels et composition</h3>';
-  [['arbitre', 'Arbitre'], ['compteur', 'Compteur']].forEach(function(r){
-    var x = entryRoleOf(fid, r[0]);
-    out += '<div class="fx" style="justify-content:space-between;gap:8px;margin:6px 0"><span><small class="muted">' + r[1] + '</small><br><b>' + esc(x ? whoTxt(x.mid) || 'Licencié supprimé' : 'Non désigné') + '</b></span>' +
+  out += '<div class="offrow">' + [['arbitre', 'Arbitre'], ['compteur', 'Compteur']].map(function(r, ri){
+    var x = entryRoleOf(fid, r[0]), fm2 = x ? findMember(x.mid) : null;
+    return '<div class="offcol' + (ri ? ' r' : '') + '"><small class="muted">' + r[1] + '</small><b>' + esc(fm2 ? memberName(fm2.m) : (x ? 'Licencié supprimé' : 'Non désigné')) + '</b>' + (fm2 ? '<small class="muted offclub">' + esc(fm2.club.name) + '</small>' : '') +
       (canD ? '<button class="btn" data-act="desigOpen" data-role="' + r[0] + '">' + (x ? 'Changer' : 'Désigner') + '</button>' : '') + '</div>';
-  });
+  }).join('') + '</div>';
   [fe.home, fe.away].forEach(function(tid){
     var c = fe.f.compo && fe.f.compo[tid], cf = c && c.cap ? findMember(c.cap) : null;
     var canC = can('compo', { cid:clubOfEntrant(tid), tid:tid }) && !lock && !fm;
@@ -7017,11 +7025,12 @@ function presSum(e){
   if(!i.p.length && !i.a.length) return '';
   return '<span class="mc-att"><b class="ok">' + i.p.length + ' présent' + (i.p.length > 1 ? 's' : '') + '</b> · <b class="bad">' + i.a.length + ' absent' + (i.a.length > 1 ? 's' : '') + '</b></span>';
 }
-function presSheetHtml(e, today){
+function presSheetHtml(e, today, noList){
+  if(noList && !presCan(e, today)) return '';
   if(!presVisible(e) && !presCan(e, today)) return '';
   var i = presInfo(e), names = function(l){ return l.map(function(m){ return esc(memberName(m)); }).join(', '); };
   return '<h3 style="margin:16px 0 6px">Présences</h3>' + (presCan(e, today) ? '<div class="btnrow">' + presBtn(e, today) + '</div>' : '') +
-    (presVisible(e) ? '<p class="hint2"><b>Présents (' + i.p.length + ')</b>' + (i.p.length ? ' : ' + names(i.p) : '') + '</p><p class="hint2"><b>Absents (' + i.a.length + ')</b>' + (i.a.length ? ' : ' + names(i.a) : '') + '</p><p class="hint2">Sans réponse : ' + i.n + '</p>' : '');
+    (presVisible(e) && !noList ? '<p class="hint2"><b>Présents (' + i.p.length + ')</b>' + (i.p.length ? ' : ' + names(i.p) : '') + '</p><p class="hint2"><b>Absents (' + i.a.length + ')</b>' + (i.a.length ? ' : ' + names(i.a) : '') + '</p><p class="hint2">Sans réponse : ' + i.n + '</p>' : '');
 }
 function calRow(e, today, favArg){
   var res = entryResult(e), late = !res && !e.postponed && e.date < today, fav = favArg === undefined ? favGet() : favArg;
@@ -8288,14 +8297,14 @@ function sheetView(){
       var fPlay = '', fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Amical';
       inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + '</p>' + placeRowHtml(fe, !fLock && (fEd || can('clubEdit', { cid:clubOfEntrant(fe.home) }))) + dateTempHtml(fe);
       if(fm){
-        inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '');
+        inner += '<div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '') + msSheetBtn(fe);
       } else if(fe.postponed){
         inner += '<p class="hint2">Ce match est reporté : il reste à jouer' + (fDate ? '. Quand la nouvelle date est connue, utilisez « Modifier la date ».' : '.') + '</p>';
       } else if(entryScoreOk(fe) && !fLock){
         fPlay = (S.events.length ? '<p class="hint2">Le match en cours (' + S.events.length + ' événement' + (S.events.length > 1 ? 's' : '') + ') sera mis de côté dans « Match existant ».</p>' : '') +
           '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Saisir ce match</button></div>';
       }
-      inner += msWatchBtn(fe) + h2hHtml(fe) + lastResHtml(fe) + officialsHtml(fe, fm, fLock) + presSheetHtml(fe, isoOf(new Date()));
+      inner += msWatchBtn(fe) + h2hHtml(fe) + lastResHtml(fe) + officialsHtml(fe, fm, fLock) + presSheetHtml(fe, isoOf(new Date()), !!(fm || msLive(fe.fid)));
       (function(){ var w = DB.who(fe.f), l = []; if(w.created) l.push('Ajouté le ' + fmtDay(w.created.at.slice(0, 10)) + (w.created.by ? ' par ' + w.created.by : '')); if(w.updated) l.push('modifié le ' + fmtDay(w.updated.at.slice(0, 10)) + (w.updated.by ? ' par ' + w.updated.by : '')); if(l.length) inner += '<p class="hint2" style="margin-top:12px">' + esc(l.join(' · ')) + '</p>'; })();
       if(fEd) inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
         RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
@@ -8303,7 +8312,7 @@ function sheetView(){
         (fm ? '<button class="btn wide" data-act="fixClearAsk">Effacer le résultat</button>' : '') +
         '<button class="btn wide danger" data-act="fixDelAsk">Supprimer du calendrier</button></div>';
       if(fDate && !fm) inner += '<div class="btnrow"><button class="btn wide" data-act="fixDateOpen">Modifier la date</button></div>';
-      inner += msSheetBtn(fe) + fPlay;
+      inner += fPlay;
     }
   } else if(sh.kind === 'fixdate'){
     var de = calEntry(sh.cid, sh.fid);
