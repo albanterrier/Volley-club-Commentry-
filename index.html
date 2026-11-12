@@ -469,12 +469,16 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .offcol b{overflow-wrap:anywhere}
 .offcol .offclub{font-size:12px}
 .offcol .btn{margin-top:6px}
-.scrow{display:grid;grid-template-columns:2fr 1fr;gap:10px;align-items:stretch;margin:6px 0}
-.lockb{float:right;background:none;border:0;padding:0 2px;margin-top:3px;font-size:14px;line-height:1;cursor:pointer}
+.scrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;margin:6px 0}
+.lockb{float:right;width:22px;height:22px;padding:0;margin-top:2px;border:0;cursor:pointer;background-color:var(--ink);-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+.lockb.lk{--ic:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAABnklEQVR4nO2YzUrDQBRGj2ttBV22FgT/duKjtIagT6CCFvRtBMG1lm6lb6C+QavLurRgW5e1I4FxM0xrm0xmOmUOfBBCcud+Nzc3ZCCwXFSAOtAC2sC3VFueu5LXLBxl4BYYAeIf/QCPwDYLwrGssphTQ6DqOvkbYJwi+T+NgWuXldcl/wycAfvAqlRyfA68TGipqu3ktzRtMwDiGe49kdeq7VTCIvdKAn3gcI77jzQm7rBERTNtZqm8yqkSYySfbO7UNT2fhhXgVYl1iQVayqLJC5uWCyXWExboKIvuZYh1oMRKvti5M1QWTcZkWtY00yh31Dm+aPGW00AZaGhmdx4aAE1g12TyPQuJC0U9U1/nhoPkhdSDCQM22kZM0JcJA8KxMhMMEAxkIxjAQwNdIAIKUjXgzRcDXWBDEyc59+GDgWhKrNgHA4UpsdZ9MFD03UBtSqzIBwMdYHPCS/zugwEhp00s26koK58meeHKgEllJhggGMhGMIBjA33ff+qbDg00TBhIdp8/HW1s7WCIktxkstFOfVl5Y8kHAsvMLwQtyKNsKsvHAAAAAElFTkSuQmCC)}
+.lockb.ed{--ic:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAACXBIWXMAAAsTAAALEwEAmpwYAAADi0lEQVR4nO2dPWsVQRSG3xR+pEhADWoSu4g2+gMsRAu/EDStdhpExVpNML3aiIgiCOo/MAbUf6CFiJ0fMQqCH6UmGoskikdGRlgnuTuzu7N79u59HzgQbuaemT3P3tm5CTsLEEIIIYQQQkizOQDgDoBpAD9smJ9vA9ivPbgmsxXAEwDiiccAtmgPtmnsAjATUPx/Ydru1h50k878mQzFT0ow720L1gIYATAJYMrOq6IQHwB0JcbVFTjtpE1Hbr7X9hjvAzgOYA0U6QYwDuCbUsHFiRvO+PZGyLnHyXnT+f0sgAu2FpWyCcDzGhRdEnHIGePdCDnN6ijJcIt2zwAMVln8TzUouDixzRnnqwg5Xzo5t6e0/ViFhO4anvliY50z1u8RcprpNUmfp735JKwuU8B4DQotLSJ5wTT8jpDT5EjSFfCesTJXO2kX3AUA5wEM2Bi1r+VtJxnDJZbYrHlny1odjXg6NoV0GS3QTtpUgIljKIFJT6fmbHYZKNBO2ljABErgbQ4BgwXaSRsLMF/WouNbVSw3tYwVaCdtLMDUKjq+ThdscUMuwiHtpI0FiIYA7XDRzhsd7QILBdQ7XLTzRke7wEIB9Q4X7bzR0S6wUEDFHRakLAGh+aNDAf9DAR4oQBmhAF2EAnQRCtBFKEAXoQBdhAJ0EQrQRShAF6EAXYQCdBEK0EUoQBehAF2EAnQRCtBFKECXhQjFn0/JTwEepiMIeJOSnwI8XI0g4EpKfgrwsBnAYoHimylsKCU/BQRwrYAA8wlKgwICMPdqfcm5VYF716ULBQRyLoeAswF5KSCQlQDeZSj+ewCrAvJSQAaOZhBwJDAnBWQgdOeUp8vc8N0KCsjIjoC753dmyEcBOZhIGf+9jLkoIAdDLf5GtJhjrzgKyMnFZcZuXssKBeRkBYDLAD7buGRfywoFKEMBylCAMhSgDAUoQwHKUIAyFKBM5fXw7ZjVg86hV2PHrKmMWwc3mWFPLcwm39F55On0RYd8CnrtlsZptXhQRsdnAuY9I+FwQ0X02DPfV3wTp8sYgNla8mdA550eiwD6URLu/vkMLInrKJENOR8J0inxFcB6lIx5MgWnIiyJXwAOoiJO2g61D1pqEuaEPIGKMQ8+43SEv9POPijRZ/+9N1+DQojCaucWgI2oAf127fvQPrtlrgYFksgxZ4/NHOOpMpeahBBCCCGEEEIIIQSN5A9nPoPyGbvyGwAAAABJRU5ErkJggg==)}
+.offl{font-weight:700;color:var(--ink);font-size:14px}
+.compo2 .cc .cn{color:var(--muted);font-weight:400}
 .scrow .scl{min-width:0;text-align:center}
 .scrow .scl .bigstat b{margin-right:0}
-.sheetico{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--acc);border:0;border-radius:10px;padding:8px 4px;cursor:pointer;color:var(--acc-ink);font:inherit;font-size:12px;font-weight:600;text-align:center;line-height:1.15;min-height:100px}
-.sheetico svg{width:60%;max-width:72px;height:auto}
+.sheetico{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--acc);border:0;border-radius:10px;padding:5px 6px;cursor:pointer;color:var(--acc-ink);font:inherit;font-size:10px;font-weight:600;text-align:center;line-height:1.15;}
+.sheetico svg{width:52px;height:52px}
 .compo2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0}
 .compo2 .cc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
 .compo2 .cc.r{align-items:flex-end;text-align:right}
@@ -2439,15 +2443,15 @@ function officialsHtml(fe, fm, lock){
   var out = '<div style="margin-top:14px"><h3 style="margin:0 0 4px">Officiels</h3>';
   out += '<div class="offrow">' + [['arbitre', 'Arbitre'], ['compteur', 'Compteur']].map(function(r, ri){
     var x = entryRoleOf(fid, r[0]), fm2 = x ? findMember(x.mid) : null;
-    return '<div class="offcol' + (ri ? ' r' : '') + '"><small class="muted">' + r[1] + '</small><b>' + esc(fm2 ? memberName(fm2.m) : (x ? 'Licencié supprimé' : 'Non désigné')) + '</b>' + (fm2 ? '<small class="muted offclub">' + esc(fm2.club.name) + '</small>' : '') +
+    return '<div class="offcol' + (ri ? ' r' : '') + '"><span class="offl">' + r[1] + '</span><b>' + esc(fm2 ? memberName(fm2.m) : (x ? 'Licencié supprimé' : 'Non désigné')) + '</b>' + (fm2 ? '<small class="muted offclub">' + esc(fm2.club.name) + '</small>' : '') +
       (canD ? '<button class="btn" data-act="desigOpen" data-role="' + r[0] + '">' + (x ? 'Changer' : 'Désigner') + '</button>' : '') + '</div>';
   }).join('') + '</div>';
   out += '<h3 style="margin:16px 0 4px">Composition</h3><div class="compo2">' + [fe.home, fe.away].map(function(tid, ti){
     var c = fe.f.compo && fe.f.compo[tid], cf = c && c.cap ? findMember(c.cap) : null;
     var canC = can('compo', { cid:clubOfEntrant(tid), tid:tid }) && !lock && !fm;
     var canV = c && c.pl.length && (adminScope() || prepInfo(fe).any);
-    return '<div class="cc' + (ti ? ' r' : '') + '"><small class="muted">' + esc(clubName(tid)) + '</small><b>' +
-      (c && c.pl.length ? c.pl.length + ' joueur' + (c.pl.length > 1 ? 's' : '') : 'Pas encore composée') + '</b>' +
+    return '<div class="cc' + (ti ? ' r' : '') + '"><span class="offl">' + esc(clubName(tid)) + '</span><span class="cn">' +
+      (c && c.pl.length ? c.pl.length + ' joueur' + (c.pl.length > 1 ? 's' : '') : 'Pas encore composée') + '</span>' +
       (c && c.pl.length && cf ? '<small class="muted offclub">Capitaine : ' + esc(memberName(cf.m)) + '</small>' : '') +
       ((canV || canC) ? '<div class="btnrow">' + (canV ? '<button class="btn" data-act="compoView" data-tid="' + tid + '">Voir</button>' : '') +
       (canC ? '<button class="btn" data-act="compoOpen" data-tid="' + tid + '">' + (c ? 'Modifier' : 'Préparer') + '</button>' : '') + '</div>' : '') + '</div>';
@@ -8311,7 +8315,8 @@ function sheetView(){
         presSheetHtml(fe, isoOf(new Date())) + (fEd ? '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>' : '');
     } else {
       var fPlay = '', fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Amical';
-      inner = '<h2>' + (fLock ? '<button class="lockb" data-act="lockInfo" aria-label="Résultat verrouillé">🔒</button>' : '') + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + '</p>' + placeRowHtml(fe, !fLock && (fEd || can('clubEdit', { cid:clubOfEntrant(fe.home) }))) + dateTempHtml(fe);
+      var fWho = (function(){ var w = DB.who(fe.f); return !!(w.created || w.updated); })();
+      inner = '<h2>' + (fLock || fm ? '<button class="lockb lk" data-act="lockInfo" aria-label="Résultat verrouillé"></button>' : (fWho ? '<button class="lockb ed" data-act="lockInfo" aria-label="Création et modification"></button>' : '')) + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + '</p>' + placeRowHtml(fe, !fLock && (fEd || can('clubEdit', { cid:clubOfEntrant(fe.home) }))) + dateTempHtml(fe);
       if(fm){
         var shBtn = msSheetBtn(fe, true);
         inner += '<div class="' + (shBtn ? 'scrow' : '') + '"><div class="scl"><div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '') + '</div>' + shBtn + '</div>';
@@ -8322,7 +8327,6 @@ function sheetView(){
           '<div class="btnrow"><button class="btn wide primary" data-act="playFixture">Saisir ce match</button></div>';
       }
       inner += msWatchBtn(fe) + h2hHtml(fe) + lastResHtml(fe) + officialsHtml(fe, fm, fLock) + presSheetHtml(fe, isoOf(new Date()), !!(fm || msLive(fe.fid)));
-      (function(){ var w = DB.who(fe.f), l = []; if(w.created) l.push('Ajouté le ' + fmtDay(w.created.at.slice(0, 10)) + (w.created.by ? ' par ' + w.created.by : '')); if(w.updated) l.push('modifié le ' + fmtDay(w.updated.at.slice(0, 10)) + (w.updated.by ? ' par ' + w.updated.by : '')); if(l.length) inner += '<p class="hint2" style="margin-top:12px">' + esc(l.join(' · ')) + '</p>'; })();
       if(fEd) inner += '<label class="f" for="fres">' + (fm ? 'Modifier le résultat' : 'Ou saisir directement le résultat') + ' (sets, côté ' + esc(clubName(fe.home)) + ')</label><select id="fres">' +
         RESULTS.map(function(r){ return '<option value="' + r + '"' + (fm && (fm.hs + '-' + fm.as) === r ? ' selected' : '') + '>' + r.replace('-', ' – ') + '</option>'; }).join('') + '</select>' +
         '<div class="btnrow"><button class="btn wide" data-act="fixRes">Enregistrer le résultat</button>' +
@@ -8893,7 +8897,7 @@ document.addEventListener('click', function(e){
     case 'ifEdit': ui.ifEdit = d['if']; ui.focus = d['if']; render(); break;
     case 'ifOk': ifCommit(d['if']); break;
     case 'editToggle': ui.edit = !ui.edit; render(); break;
-    case 'lockInfo': { var lfe = calEntry(sh.cid, sh.fid); if(lfe && lfe.f && lfe.f.locked) toastShow(lockTxt(lfe.f.locked)); break; }
+    case 'lockInfo': { var lfe = calEntry(sh.cid, sh.fid); if(!lfe || !lfe.f) break; var lw = DB.who(lfe.f), ll = []; if(lfe.f.locked) ll.push(lockTxt(lfe.f.locked)); if(lw.created) ll.push('Ajouté le ' + fmtDay(lw.created.at.slice(0, 10)) + (lw.created.by ? ' par ' + lw.created.by : '')); if(lw.updated) ll.push('modifié le ' + fmtDay(lw.updated.at.slice(0, 10)) + (lw.updated.by ? ' par ' + lw.updated.by : '')); if(ll.length) toastShow(ll.join(' · ')); break; }
     case 'toastClose': { var tel = document.getElementById('toast'); if(tel) tel.innerHTML = ''; break; }
     case 'matchAddGo': ui.sheet = null; if(d.v === 'play') newMatch(); else { ui.addRes = true; ui.msg = ''; render(); window.scrollTo(0,0); } break;
     case 'matchAddOpen': if(can('champEdit')){ ui.sheet = { kind:'matchadd' }; render(); } else newMatch(); break;
