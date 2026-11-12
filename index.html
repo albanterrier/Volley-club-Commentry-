@@ -8003,7 +8003,7 @@ function dataMatchView(){
   [t, 1 - t].forEach(function(tt){
     out += '<section class="card ' + (tt ? 'b' : 'a') + '"' + cardStyle(m, tt) + '><h3>Performances · ' + pillHtml(m, tt, tnOf(m, tt)) + '</h3>' + statTableOf(m, tt) + '</section>';
   });
-  var log = logHtmlOf(m, 0, false);
+  var log = logHtmlOf(m, 0, true);
   out += '<details class="card"><summary>Feuille de match <small>&nbsp;(' + m.events.length + ' événement' + (m.events.length > 1 ? 's' : '') + ')</small></summary>' +
     (log ? '<ul class="log">' + log + '</ul>' : '<p class="muted">Aucun événement.</p>') + '</details>';
   out += '<section class="card"><h3>Partager et exporter</h3><div class="btnrow">' +
