@@ -469,9 +469,11 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .offcol b{overflow-wrap:anywhere}
 .offcol .offclub{font-size:12px}
 .offcol .btn{margin-top:6px}
-.scrow{display:grid;grid-template-columns:2fr 1fr;gap:10px;align-items:center}
+.scrow{display:grid;grid-template-columns:2fr 1fr;gap:10px;align-items:stretch;margin:6px 0}
+.lockb{background:none;border:0;padding:0 2px;font-size:.8em;cursor:pointer;vertical-align:middle}
 .scrow .scl{min-width:0}
-.sheetico{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:4px;cursor:pointer;color:var(--ink);font:inherit;font-size:12px;font-weight:600;text-align:center;line-height:1.15}
+.sheetico{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 4px;cursor:pointer;color:var(--ink);font:inherit;font-size:12px;font-weight:600;text-align:center;line-height:1.15;min-height:100px}
+.sheetico svg{width:60%;max-width:72px;height:auto}
 .compo2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0}
 .compo2 .cc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
 .compo2 .cc.r{align-items:flex-end;text-align:right}
@@ -2430,6 +2432,7 @@ function compoViewSheet(sh){
     tabs + '<div class="cmpgrid"><ul class="cmplist">' + rows + '</ul><div class="cmpcourt">' + court + '</div></div>' +
     '<div class="btnrow"><button class="btn wide" data-act="fixBack">Retour</button></div>';
 }
+function lockTxt(lock){ return 'Résultat validé et verrouillé le ' + fmtDay(lock.date) + (lock.who ? ' par ' + lock.who : '') + '.'; }
 function officialsHtml(fe, fm, lock){
   var fid = fe.fid, hc = clubOfEntrant(fe.home), canD = can('designate', { cid:hc }) && !lock && !fm;
   var out = '<div style="margin-top:14px"><h3 style="margin:0 0 4px">Officiels</h3>';
@@ -2449,7 +2452,6 @@ function officialsHtml(fe, fm, lock){
       (canC ? '<button class="btn" data-act="compoOpen" data-tid="' + tid + '">' + (c ? 'Modifier' : 'Préparer') + '</button>' : '') + '</div>' : '') + '</div>';
   }).join('') + '</div>';
   if(lock){
-    out += '<p class="hint2" style="margin-top:10px">🔒 Résultat validé et verrouillé le ' + esc(fmtDay(lock.date)) + (lock.who ? ' par ' + esc(lock.who) : '') + '.</p>';
     if(can('unlock')) out += '<div class="btnrow"><button class="btn wide" data-act="unlockAsk">Déverrouiller</button></div>';
   } else if(fm && can('validate', { ref:fid })){
     out += '<div class="btnrow"><button class="btn wide primary" data-act="validAsk">Valider le résultat et verrouiller</button></div>';
@@ -8308,7 +8310,7 @@ function sheetView(){
         presSheetHtml(fe, isoOf(new Date())) + (fEd ? '<div class="btnrow"><button class="btn wide danger" data-act="fixDelAsk">Supprimer l\'événement</button></div>' : '');
     } else {
       var fPlay = '', fm = entryResult(fe), ctx = fe.kind === 'fixture' ? fe.ch.name : 'Amical';
-      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + '</p>' + placeRowHtml(fe, !fLock && (fEd || can('clubEdit', { cid:clubOfEntrant(fe.home) }))) + dateTempHtml(fe);
+      inner = '<h2>' + esc(clubName(fe.home)) + ' – ' + esc(clubName(fe.away)) + (fLock ? ' <button class="lockb" data-act="lockInfo" aria-label="Résultat verrouillé">🔒</button>' : '') + '</h2><p class="hint2" style="margin-top:4px">' + (fe.postponed ? '<s>' : '') + esc(fmtDay(fe.date)) + (fe.time ? ' à ' + esc(fe.time) : '') + (fe.postponed ? '</s><b class="rep">Reporté</b>' : '') + ' · ' + esc(ctx) + '</p>' + placeRowHtml(fe, !fLock && (fEd || can('clubEdit', { cid:clubOfEntrant(fe.home) }))) + dateTempHtml(fe);
       if(fm){
         var shBtn = msSheetBtn(fe, true);
         inner += '<div class="' + (shBtn ? 'scrow' : '') + '"><div class="scl"><div class="bigstat"><b>' + fm.hs + ' – ' + fm.as + '</b></div>' + (fm.sets && fm.sets.length ? '<p class="hint2" style="margin-top:0">' + fm.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(', ') + '</p>' : '') + '</div>' + shBtn + '</div>';
@@ -8890,6 +8892,7 @@ document.addEventListener('click', function(e){
     case 'ifEdit': ui.ifEdit = d['if']; ui.focus = d['if']; render(); break;
     case 'ifOk': ifCommit(d['if']); break;
     case 'editToggle': ui.edit = !ui.edit; render(); break;
+    case 'lockInfo': { var lfe = calEntry(sh.cid, sh.fid); if(lfe && lfe.f && lfe.f.locked) toastShow(lockTxt(lfe.f.locked)); break; }
     case 'toastClose': { var tel = document.getElementById('toast'); if(tel) tel.innerHTML = ''; break; }
     case 'matchAddGo': ui.sheet = null; if(d.v === 'play') newMatch(); else { ui.addRes = true; ui.msg = ''; render(); window.scrollTo(0,0); } break;
     case 'matchAddOpen': if(can('champEdit')){ ui.sheet = { kind:'matchadd' }; render(); } else newMatch(); break;
