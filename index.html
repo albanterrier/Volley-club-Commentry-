@@ -7881,7 +7881,7 @@ function dataTeamsView(){
   if(tm) tm.D = teamSeasonData(tm);
   var out = '<div class="stack">';
   if(tm){
-    out += backBtn('Toutes les équipes') + '<section class="card"><h2 class="pcell">' + (tm.logo ? logoHtml(tm.logo, 36) : '') + '<span>' + esc(tm.label) + '</span></h2><p class="muted" style="margin:4px 0 0">Saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(tm.D) + rjHistoHtml(teamRjMembers(tm.key)) + '<div style="margin-top:6px">' +
+    out += backBtn('Toutes les équipes') + '<section class="card"><h2 class="pcell">' + (tm.logo ? logoHtml(tm.logo, 36) : '') + '<span>' + esc(tm.label) + '</span></h2><p class="muted" style="margin:4px 0 0">Saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(tm.D) + rjHistoHtml(teamRjMembers(tm.key)) + '</section>' + (tm.D.items.length ? teamChartsHtml(tm.D.items) : '') + '<section class="card"><h3>Matchs</h3><div style="margin-top:6px">' +
       tm.D.items.map(function(it){
         var m = it.m, t = it.t, w = setsWonOf(m), mine = w[t], opp = w[1 - t], win = m.finished && mine > opp, loss = m.finished && mine < opp;
         return '<button class="fx" data-act="dataMatchOpen" data-mid="' + esc(m.created) + '" data-from="teams"><span class="fxd">' + esc(shortDate(m)) + '</span>' +
@@ -7894,9 +7894,9 @@ function dataTeamsView(){
       }).join('') + '</div></section>';
     return out + '</div>';
   }
-  out += dataTabsHtml('teams') + (ui.statClub && teams.length ? teamChartsHtml((teamIndex()[0] || teams[0]).items) : '') + '<section class="card"><h3>Équipes</h3>';
+  out += dataTabsHtml('teams') + '<section class="card"><h3>Équipes</h3>';
   if(!teams.length) out += '<p class="muted">Aucune donnée statistique pour le moment.</p>';
-  else out += '<p class="muted" style="margin:6px 0 4px">Choisissez une équipe pour voir ses matchs.</p>' + teams.map(function(k){
+  else out += '<p class="muted" style="margin:6px 0 4px">Choisissez une équipe pour voir ses statistiques et ses matchs.</p>' + teams.map(function(k){
     return '<div class="ritem"><button class="fx" data-act="dataTeamSel" data-key="' + esc(k.key) + '"><span class="fxt"><span class="fxteam">' + logoHtml(k.logo, 28) + '<span class="nm">' + esc(k.label) + '</span></span><small>' + (function(){ var q = teamSeasonData(k); return q.items.length + q.res.length; })() + ' match(s)</small></span><span class="rsc">' + (function(){ var q = teamSeasonData(k), w = q.recs.filter(ST_KINDS.win.f).length; return w + 'V ' + (q.recs.length - w) + 'D'; })() + '</span></button></div>';
   }).join('');
   return out + '</section></div>';
