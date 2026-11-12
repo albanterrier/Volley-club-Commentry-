@@ -8481,6 +8481,7 @@ function fitNames(){
   }
 }
 window.addEventListener('resize', function(){ fitNames(); });
+var shownSheet = null;
 function render(){
   if(ui.watch){
     document.getElementById('app').innerHTML = watchView(); document.getElementById('sheet').innerHTML = '';
@@ -8503,7 +8504,11 @@ function render(){
   document.getElementById('app').innerHTML = header() + '<main>' + warn + main + menuBtn() + '</main>' + (navOn() ? navHtml() : '') + (ui.xchg ? '<div class="xshade" data-act="xCancel" aria-hidden="true"></div>' : '');
   document.body.classList.toggle('hasnav', navOn());
   document.body.classList.toggle('hasfab', !ui.sheet && ((ui.tab === 'cal' && ui.calView !== 'create') || (ui.tab === 'clubs' && (ui.clubView === 'home' || ui.clubView === 'list')) || (ui.tab === 'champ') || (ui.tab === 'match' && S.stage === 'home' && !ui.addRes)));
+  /* même fenêtre redessinée (synchronisation, photo…) : pas de nouvelle animation d'ouverture, et on garde le défilement (évite le « sursaut ») */
+  var shOld = document.querySelector('#sheet .panel'), shSame = !!shOld && !!ui.sheet && shownSheet === ui.sheet, shY = shSame ? shOld.scrollTop : 0;
   document.getElementById('sheet').innerHTML = ui.sheet ? sheetView() : '';
+  shownSheet = ui.sheet || null;
+  if(shSame){ var shNew = document.querySelector('#sheet .panel'); if(shNew){ shNew.style.animation = 'none'; shNew.scrollTop = shY; } }
   fitNames();
   homePost();
   if(ui.msgScroll){ ui.msgScroll = false; window.scrollTo(0, document.body.scrollHeight); }
