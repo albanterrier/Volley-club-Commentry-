@@ -238,8 +238,17 @@ td.pts{font-weight:800;font-size:16px}
 .sortb{background:none;border:0;padding:6px 4px;min-height:40px;font-weight:600;color:var(--muted)}
 .sortb.on{color:var(--ink)}
 .rank{color:var(--muted);font-variant-numeric:tabular-nums;padding-right:4px}
-.setline{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
-.setchip{font-family:var(--font-d);font-weight:700;font-size:22px;border:1px solid var(--line);border-radius:8px;padding:4px 12px}
+.setline{display:flex;gap:6px;flex-wrap:nowrap;margin-top:6px}
+.setchip{font-family:var(--font-d);font-weight:700;font-size:22px;border:1px solid var(--line);border-radius:8px;padding:4px 10px;white-space:nowrap;min-width:0;flex:0 1 auto;text-align:center}
+.setline:has(.setchip:nth-child(4)){gap:4px}
+.setline:has(.setchip:nth-child(4)) .setchip{font-size:18px;padding:4px 6px}
+.setline:has(.setchip:nth-child(5)) .setchip{font-size:15px;padding:3px 4px}
+.setline:has(.setchip:nth-child(6)) .setchip{font-size:13px;padding:3px 3px}
+.logh{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:0;min-height:44px;color:var(--ink);font-family:var(--font-d);font-weight:700;font-size:20px;text-align:left;cursor:pointer}
+.logh.sub{font-size:16px;border-top:1px solid var(--line);margin-top:6px}
+.logh small{font-weight:400;color:var(--muted);font-size:13px}
+.chev{width:10px;height:10px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin:0 6px 4px 8px;transition:transform .15s}
+.chev.up{transform:rotate(-135deg);margin-bottom:-2px}
 .log{list-style:none;margin:8px 0 0;padding:0}
 .log li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
 .log .t{font-variant-numeric:tabular-nums;color:var(--muted);min-width:46px}
@@ -409,6 +418,17 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 .nav button{background:none;border:0;border-top:4px solid transparent;min-height:60px;font-weight:600;font-size:12.5px;color:var(--muted);padding:0 2px}
 .nav button.on{border-top-color:var(--gold);color:var(--ink)}
+.nav button.dis{opacity:.35;filter:grayscale(1);pointer-events:none}
+.welcome-ic{display:inline-flex;vertical-align:middle;width:30px;height:30px;border-radius:50%;background:var(--acc);color:var(--acc-ink);align-items:center;justify-content:center}
+.welcome-ic svg{width:24px;height:24px}
+.lockban{display:flex;align-items:center;gap:12px;margin:12px 16px 0;padding:12px 14px;border-radius:14px;background:var(--acc);color:var(--acc-ink);font-weight:700;line-height:1.3}
+.lockban span{flex:1}
+.lockban .lockban-ic{flex:none;width:52px;height:52px;border-radius:50%;border:0;padding:0;background:var(--acc-ink);color:var(--acc);display:flex;align-items:center;justify-content:center;cursor:pointer;animation:nlpulse2 1.3s ease-out infinite}
+.lockban .lockban-ic svg{width:40px;height:40px}
+@keyframes nlpulse2{0%{box-shadow:0 0 0 0 rgba(0,0,0,.45)}100%{box-shadow:0 0 0 12px rgba(0,0,0,0)}}
+.ibtn.needlog{animation:nlpulse 1.3s ease-out infinite}
+@keyframes nlpulse{0%{box-shadow:0 0 0 0 rgba(255,122,26,.9)}100%{box-shadow:0 0 0 14px rgba(255,122,26,0)}}
+@media (prefers-reduced-motion:reduce){.lockban .lockban-ic,.ibtn.needlog{animation:none}}
 
 /* Feuille de saisie */
 #sheet .back{position:fixed;inset:0;z-index:40;background:rgba(5,12,20,.55);display:flex;align-items:flex-end;justify-content:center}
@@ -1699,7 +1719,7 @@ var SB = (function(){
 function sbLoginSheet(sh){
   var dr = sh.draft, dis = dr.busy ? ' disabled' : '', out = '<h2>Se connecter</h2>';
   if(dr.step === 'code'){
-    out += '<p class="hint2" style="margin-top:4px">Un code à 6 chiffres vient d\'être envoyé à <b>' + esc(dr.email) + '</b>. Saisissez-le ci-dessous (regardez aussi les courriers indésirables).</p>' +
+    out += '<p class="hint2" style="margin-top:4px">Un code à 8 chiffres vient d\'être envoyé à <b>' + esc(dr.email) + '</b>. Saisissez-le ci-dessous (regardez aussi les courriers indésirables).</p>' +
       rsField('sb_code', 'Code reçu par e-mail', 'code', dr.code) + sheetErr(sh) +
       '<div class="btnrow"><button class="btn wide primary" data-act="sbVerify"' + dis + '>' + (dr.busy ? 'Vérification…' : 'Valider') + '</button><button class="btn wide" data-act="sbBack">Changer d\'adresse</button></div>';
   } else {
@@ -2244,6 +2264,9 @@ var NAVICONS = {
   tournoi:'<rect x="8" y="3.5" width="8" height="5" rx="1.2"/><path d="M12 8.5v5M6 17v-3.5h12V17"/><rect x="2.5" y="17" width="7" height="4.5" rx="1.2"/><rect x="14.5" y="17" width="7" height="4.5" rx="1.2"/>'
 };
 function navOn(){ return true; }
+/* Première installation : tant qu'on n'est ni connecté ni identifié, seuls Match et Tournoi sont accessibles */
+function needLogin(){ try{ return !SB.status().logged && !meInfo(); }catch(e){ return false; } }
+var OPEN_TABS = ['menu', 'match', 'tournoi', 'settings'];
 /* Petit voyant « en direct » : alterne du vert au bleu (fixe, vert, si l'animation est réduite) */
 function liveDot(corner){ return '<span class="livedot' + (corner ? ' corner' : '') + '" role="img" aria-label="Match en direct"></span>'; }
 function dayDueToday(){ try{ var t = isoOf(new Date()); return prepEntries(t).some(function(x){ return x.e.date === t && (x.i.normal || x.i.fol); }); }catch(e){ return false; } }
@@ -2251,7 +2274,8 @@ function navHtml(){
   var items = [['match','Match'],['clubs','Clubs'],['champ','Championnat'],['cal','Calendrier'],['tournoi','Tournoi']];
   return '<nav class="nav" aria-label="Navigation principale">' + items.map(function(it){
     var on = ui.tab === it[0] || (it[0] === 'clubs' && ui.tab === 'data');
-    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : '') + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length || remoteFav().length ? liveDot(true) : (dayDueToday() ? '<span class="livedot corner idle" role="img" aria-label="Match aujourd\'hui"></span>' : '')) : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
+    var dis = needLogin() && OPEN_TABS.indexOf(it[0]) < 0;
+    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : (dis ? ' class="dis" disabled aria-disabled="true"' : '')) + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length || remoteFav().length ? liveDot(true) : (dayDueToday() ? '<span class="livedot corner idle" role="img" aria-label="Match aujourd\'hui"></span>' : '')) : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
   }).join('') + '</nav>';
 }
 /* Bouton « Accueil » (logo) : présent sur toutes les pages, toujours à gauche, à 90 % de la taille d'un bouton rond */
@@ -2616,7 +2640,7 @@ function reqCheck(){
 function profBtnHtml(){
   var a = meInfo(), photo = (a && photoShown(a.m) && profGet() !== 'visiteur') ? a.m.photo : '';
   var rq = pendingRequests().length;
-  return '<button class="ibtn" data-act="profOpen" aria-label="Profil' + (a ? ' : ' + esc(profLabel(profGet())) : '') + (rq ? ' · ' + rq + ' demande' + (rq > 1 ? 's' : '') + ' à valider' : '') + '">' + (rq ? '<span class="dotred" aria-hidden="true"></span>' : '') + (photo ? '<img class="av" src="' + esc(photo) + '" alt="" width="30" height="30">' :
+  return '<button class="ibtn' + (needLogin() ? ' needlog' : '') + '" data-act="profOpen" aria-label="Profil' + (a ? ' : ' + esc(profLabel(profGet())) : '') + (rq ? ' · ' + rq + ' demande' + (rq > 1 ? 's' : '') + ' à valider' : '') + '">' + (rq ? '<span class="dotred" aria-hidden="true"></span>' : '') + (photo ? '<img class="av" src="' + esc(photo) + '" alt="" width="30" height="30">' :
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>') + '</button>';
 }
 function profPickerHtml(){
@@ -3013,8 +3037,9 @@ function settingsView(){
     chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
     '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
   out += '<section class="card"><h2>Saison</h2><p class="muted" style="margin:6px 0 10px">Les championnats, le calendrier et les résultats dépendent de la saison choisie.</p>' + seasonBtn(true) + '</section>';
-  if(can('live')) out += liveSettingsHtml();
-  out += '<section class="card"><h2>Diagnostic du direct</h2><p class="muted" style="margin:6px 0 10px">Si un match en cours n\'apparaît pas chez les autres, ce test montre ce qui bloque.</p><div class="btnrow"><button class="btn wide" data-act="liveDiag">Lancer le diagnostic</button></div></section>';
+  var pf0 = meInfo() ? profGet() : 'visiteur';
+  if(can('live') && pf0 !== 'visiteur' && pf0 !== 'licencie') out += liveSettingsHtml();
+  if(pf0 === 'admin') out += '<section class="card"><h2>Diagnostic du direct</h2><p class="muted" style="margin:6px 0 10px">Si un match en cours n\'apparaît pas chez les autres, ce test montre ce qui bloque.</p><div class="btnrow"><button class="btn wide" data-act="liveDiag">Lancer le diagnostic</button></div></section>';
   out += pushCardHtml();
   if(can('perms')) out += '<section class="card"><h2>Permissions</h2><p class="muted" style="margin:6px 0 10px">Réservé à l\'administrateur. S\'applique à toutes les rencontres.</p>' +
     [['arbPlayer', 'L\'arbitre peut être un joueur d\'une des deux équipes'], ['cptPlayer', 'Le compteur peut être un joueur d\'une des deux équipes'], ['sameOff', 'Le compteur et l\'arbitre peuvent être la même personne']].map(function(r){
@@ -3399,6 +3424,7 @@ function leaveMatchTab(){
 function setTab(t){
   var from = ui.tab;
   if(t === from) return;
+  if(OPEN_TABS.indexOf(t) < 0 && needLogin()) return;
   if(t === 'cal'){ ui.calJump = true; ui.calPast = false; ui.calDay = null; }
   if(from === 'match') leaveMatchTab();
   if(t === 'menu'){
@@ -4955,7 +4981,7 @@ function watchView(){
   if(!m) return out + '<div class="stack"><p class="muted" style="margin:14px 4px">' + (w.missing ? 'Ce match n\'est pas (ou plus) suivi en direct.' : 'Chargement du match…') + '</p></div>';
   ui.dataMatch = m.created; ui.dataFrom = ''; ui.dataView = 'match';
   var board = liveView({ title:m.title || '', home:tnOf(m, 0), away:tnOf(m, 1), sets:m.sets || [], cur:m.cur || [0, 0], serving:m.serving == null ? null : m.serving, finished:!!m.finished, ua:w.ua || new Date().toISOString(), hc:m.teams[0].clubId || '', ac:m.teams[1].clubId || '', last:(function(){ var sv = S; S = m; try{ return liveLast(); } finally { S = sv; } })() }, true);
-  return out + '<div class="lvdemo" style="margin:0 12px 12px">' + board + '</div>' + dataMatchView().replace('<details class="card"><summary>Feuille de match', '<details class="card" open><summary>Feuille de match');
+  return out + '<div class="lvdemo" style="margin:0 12px 12px">' + board + '</div>' + dataMatchView();
 }
 /* match en cours (haut de la fiche) */
 function msWatchBtn(fe){
@@ -7465,6 +7491,10 @@ function homePager(list, key){
   return '<div class="homegrp"><div class="clubnav homenav">' + slArrow(key, n, -1, true) + '<span class="clubdots" role="group" aria-label="Favori ' + (i + 1) + ' sur ' + n + '">' + list.map(function(x, k){ return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('') + '</span>' + slArrow(key, n, 1, true) + '</div>' + list[i] + '</div>';
 }
 function menuView(){
+  var h = menuView1();
+  return h;
+}
+function menuView1(){
   var today = isoOf(new Date()), f = favOf(), bt = [], bc = [], bh = [], other = 0, total = 0;
   f.team.forEach(function(id){ if(!findTeam(id)) return; total++; bt.push(teamBlock(id, today)); });
   f.club.forEach(function(id){ var c = clubById(id); if(!c) return; total++; var h = clubBlock(c, today); if(h) bc.push(h); });
@@ -7986,6 +8016,24 @@ function flowHtml(m){
   });
   return out + '</section>';
 }
+function logOpenGet(k, def){ var o = ui.logOpen || {}; return o[k] !== undefined ? o[k] : def; }
+function logSheetHtml(m){
+  var sets = [], by = {};
+  m.events.forEach(function(e){ if(!by[e.set]){ by[e.set] = []; sets.push(e.set); } by[e.set].push(e); });
+  sets.sort(function(a, b){ return b - a; });
+  var kAll = m.created + ':all', dAll = !!ui.watch, openAll = logOpenGet(kAll, dAll);
+  var out = '<section class="card logcard"><button class="logh" data-act="logTog" data-k="' + esc(kAll) + '" data-def="' + (dAll ? 1 : 0) + '" aria-expanded="' + openAll + '"><span>Feuille de match <small>&nbsp;(' + m.events.length + ' événement' + (m.events.length > 1 ? 's' : '') + ')</small></span><i class="chev' + (openAll ? ' up' : '') + '"></i></button>';
+  if(openAll){
+    if(!sets.length) out += '<p class="muted">Aucun événement.</p>';
+    sets.forEach(function(n, i){
+      var k = m.created + ':s' + n, d = i === 0, o = logOpenGet(k, d), ev = by[n].slice().reverse();
+      var sc = ev[0] && ev[0].score ? ev[0].score[0] + '–' + ev[0].score[1] : '';
+      out += '<div class="logset"><button class="logh sub" data-act="logTog" data-k="' + esc(k) + '" data-def="' + (d ? 1 : 0) + '" aria-expanded="' + o + '"><span>Set ' + n + ' <small>&nbsp;(' + ev.length + ')' + (sc ? ' · ' + sc : '') + '</small></span><i class="chev' + (o ? ' up' : '') + '"></i></button>' +
+        (o ? '<ul class="log">' + ev.map(function(e){ return '<li><span class="t">' + fmt(e.t) + '</span><span>' + esc(evTextOf(m, e)).replace(CAPMARK, capBadge()) + '</span><span class="sc">' + e.score[0] + '–' + e.score[1] + '</span></li>'; }).join('') + '</ul>' : '') + '</div>';
+    });
+  }
+  return out + '</section>';
+}
 function dataMatchView(){
   var m = matchById(ui.dataMatch);
   if(!m || m.created !== ui.dataMatch){ ui.dataView = 'home'; return dataHomeView(); }
@@ -7999,13 +8047,10 @@ function dataMatchView(){
     '<span class="fxteam">' + logoHtml(teamLogoClub(m,1), 28) + '<span class="nm">' + esc(tnOf(m,1)) + '</span><b>' + w[1] + '</b></span></div>' +
     '<div class="setline">' + m.sets.map(function(s,i){ return '<span class="setchip" title="Set ' + (i+1) + '">' + s[0] + '–' + s[1] + '</span>'; }).join('') +
     (m.finished ? '' : '<span class="setchip" style="border-color:var(--gold)" title="Set en cours">' + m.cur[0] + '–' + m.cur[1] + '</span>') + '</div></section>';
-  out += flowHtml(m);
+  out += logSheetHtml(m) + flowHtml(m);
   [t, 1 - t].forEach(function(tt){
     out += '<section class="card ' + (tt ? 'b' : 'a') + '"' + cardStyle(m, tt) + '><h3>Performances · ' + pillHtml(m, tt, tnOf(m, tt)) + '</h3>' + statTableOf(m, tt) + '</section>';
   });
-  var log = logHtmlOf(m, 0, true);
-  out += '<details class="card"><summary>Feuille de match <small>&nbsp;(' + m.events.length + ' événement' + (m.events.length > 1 ? 's' : '') + ')</small></summary>' +
-    (log ? '<ul class="log">' + log + '</ul>' : '<p class="muted">Aucun événement.</p>') + '</details>';
   out += '<section class="card"><h3>Partager et exporter</h3><div class="btnrow">' +
     '<button class="btn wide primary" data-act="share" data-mid="' + esc(m.created) + '">Partager le score</button>' +
     (m === S && S.finished ? '<button class="btn wide" data-act="openChamp">Ajouter au championnat</button>' : '') +
@@ -8140,6 +8185,9 @@ function sheetView(){
     inner = '<h2>Faute de ' + esc(tn(sh.team)) + '</h2><p class="hint2" style="margin-top:4px">Le point est donné à ' + esc(tn(1 - sh.team)) + '.</p>' +
       (fWho ? (sh.how === undefined ? group('Type de faute', kinds) : '<p class="hint2" style="margin:4px 0 0"><b>' + esc(sh.how) + '</b></p>' + group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''))) :
       '<div class="cols one">' + group('Type de faute', kinds) + '</div>');
+  } else if(sh.kind === 'welcome'){
+    inner = '<h2>Bienvenue au V2C 🏐</h2><p style="font-size:16px;line-height:1.45;margin:8px 0 14px">Pour profiter de tous les résultats des équipes, touchez l\'icône <span class="welcome-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg></span> en haut à droite de l\'écran, puis connectez-vous.</p>' +
+      '<div class="btnrow"><button class="btn wide primary" data-act="profOpen">Me connecter</button></div><div class="btnrow"><button class="btn wide" data-act="closeSheet">Plus tard</button></div>';
   } else if(sh.kind === 'clubadd'){
     inner = clubAddSheet(sh);
   } else if(sh.kind === 'champteam'){
@@ -8468,7 +8516,7 @@ function sheetView(){
   } else if(sh.kind === 'livecfg'){
     inner = '<h2>Paramètres de diffusion</h2><p class="hint2" style="font-size:16px;margin-top:12px"><b>En projet.</b> Les réglages de la page de diffusion (logos, couleurs, texte affiché…) arriveront plus tard.</p>';
   }
-  var own = ['memmerge','licinv','sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
+  var own = ['welcome','memmerge','licinv','sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
@@ -8908,6 +8956,7 @@ document.addEventListener('click', function(e){
     case 'ifOk': ifCommit(d['if']); break;
     case 'editToggle': ui.edit = !ui.edit; render(); break;
     case 'lockInfo': { var lfe = calEntry(sh.cid, sh.fid); if(!lfe || !lfe.f) break; var lw = DB.who(lfe.f), ll = []; if(lfe.f.locked) ll.push(lockTxt(lfe.f.locked)); if(lw.created) ll.push('Ajouté le ' + fmtDay(lw.created.at.slice(0, 10)) + (lw.created.by ? ' par ' + lw.created.by : '')); if(lw.updated) ll.push('modifié le ' + fmtDay(lw.updated.at.slice(0, 10)) + (lw.updated.by ? ' par ' + lw.updated.by : '')); if(ll.length) toastShow(ll.join(' · ')); break; }
+    case 'logTog': { ui.logOpen = ui.logOpen || {}; ui.logOpen[d.k] = !logOpenGet(d.k, d.def === '1'); render(); break; }
     case 'toastClose': { var tel = document.getElementById('toast'); if(tel) tel.innerHTML = ''; break; }
     case 'matchAddGo': ui.sheet = null; if(d.v === 'play') newMatch(); else { ui.addRes = true; ui.msg = ''; render(); window.scrollTo(0,0); } break;
     case 'matchAddOpen': if(can('champEdit')){ ui.sheet = { kind:'matchadd' }; render(); } else newMatch(); break;
@@ -9958,6 +10007,9 @@ try{
     history.replaceState(history.state, '', location.pathname + location.hash);
     if(!ui.sheet) ui.sheet = { kind:'invcode', err:'', draft:{ code:iv0 } };
   }
+}catch(e){}
+try{
+  if(!ui.sheet && needLogin() && !DB.dev.get('volley-welcome-v1')){ DB.dev.set('volley-welcome-v1', '1'); ui.sheet = { kind:'welcome' }; }
 }catch(e){}
 render();
 if(navY){ window.scrollTo(0, navY); }
