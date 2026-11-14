@@ -5642,10 +5642,10 @@ function findHtml(t){
   return shown + (list.length > 8 ? '<p class="muted">' + (list.length - 8) + ' autres résultats. Précisez votre recherche.</p>' : '');
 }
 function captainHtml(t){
-  var on = S.lineup[t].map(function(id){ return findPlayer(t, id); }).filter(Boolean), cur = S.teams[t].captain || '';
-  if(cur && !on.some(function(p){ return p.id === cur; }) && !findPlayer(t, cur)) cur = '';
+  var on = (S.teams[t].players || []).slice(), cur = S.teams[t].captain || '';
+  if(cur && !on.some(function(p){ return p.id === cur; })) cur = '';
   var dis = !on.length || compoLock(t);
-  var opts = '<option value="">' + (dis ? 'Composez d\'abord l\'équipe de départ' : '— Aucun —') + '</option>' +
+  var opts = '<option value="">' + (!on.length ? 'Ajoutez d\'abord des joueurs' : '— Aucun —') + '</option>' +
     on.slice().sort(sortP).map(function(p){ return '<option value="' + p.id + '"' + (p.id === cur ? ' selected' : '') + '>' + esc(plabel(effNum(p), p.name)) + '</option>'; }).join('');
   return '<label class="f" for="capsel' + t + '">Capitaine de l\'équipe</label><select id="capsel' + t + '" data-bind="captain" data-team="' + t + '"' + (dis ? ' disabled' : '') + '>' + opts + '</select>';
 }
@@ -8516,7 +8516,7 @@ function sheetView(){
   } else if(sh.kind === 'livecfg'){
     inner = '<h2>Paramètres de diffusion</h2><p class="hint2" style="font-size:16px;margin-top:12px"><b>En projet.</b> Les réglages de la page de diffusion (logos, couleurs, texte affiché…) arriveront plus tard.</p>';
   }
-  var own = ['welcome','memmerge','licinv','sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
+  var own = ['compoView','welcome','memmerge','licinv','sblogin','sbclaim','desig','compo','validfix','unlockfix','meCreate','roleAdd','roledel','invcode','request','testas','modechg','favdel','setend','endask','newmatch','evpick','delclub','delchamp','champlvl','msgev','msgdm','msgdel','report','replist','repdel','champ','delmember','dellib','editmember','restore','subask','dellogo','undoask','setupask','delteam','seasonnew','delres','clrres','delfix','fixdate','leavech','prevrestore','resdup'];
   var closeBtn = own.indexOf(sh.kind) >= 0 ? '' : '<button class="btn wide close" data-act="closeSheet">Fermer</button>';
   return '<div class="back" data-act="backdrop"><div class="panel" role="dialog" aria-modal="true">' + inner + closeBtn + '</div></div>';
 }
