@@ -455,6 +455,8 @@ details.card>summary{cursor:pointer;font-family:var(--font-d);font-weight:700;fo
 .clubhead h2 .hlg .logo{object-fit:contain;border-radius:8px}
 .group{margin-top:14px}
 .group>p{margin:0 0 6px;font-weight:600;color:var(--muted);font-size:14px}
+.gcol .chips{flex-direction:column;flex-wrap:nowrap;gap:8px}
+.gcol .chip{width:100%;justify-content:flex-start;min-width:0;text-align:left;line-height:1.15}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;align-items:start}
 .cols.one{grid-template-columns:1fr}
@@ -4856,7 +4858,8 @@ function msList(){
     var m = {};
     (a || []).forEach(function(r){ m[r.fid] = r; });
     (live || []).forEach(function(r){ m[r.fid] = Object.assign({}, m[r.fid] || {}, r); });
-    var sig = msSigOf(m); MS.map = m; if(msLogged()){ msBackfill(); msLoadAll(); }
+    var sig = msSigOf(m); MS.map = m;
+    if(msLogged()){ msBackfill(); var fn = Object.keys(m).filter(function(k){ return m[k].finished; }).length; if(MS.finN !== undefined && fn !== MS.finN) MS.all = false; MS.finN = fn; msLoadAll(); }
     if(sig !== MS.sig){
       MS.sig = sig;
       var ae = document.activeElement;
@@ -8110,6 +8113,7 @@ function chip(act, data, html, sel){
   var d = Object.keys(data).map(function(k){ return ' data-' + k + '="' + esc(data[k]) + '"'; }).join('');
   return '<button class="chip ' + (sel ? 'sel' : '') + '" data-act="' + act + '"' + d + '>' + html + '</button>';
 }
+function groupC(label, inner){ return '<div class="group gcol"><p>' + label + '</p><div class="chips">' + inner + '</div></div>'; }
 function group(label, inner){ return '<div class="group"><p>' + label + '</p><div class="chips">' + inner + '</div></div>'; }
 /* Service gagnant : seul le serveur (poste 1) ; bloc : les trois joueurs avant (postes 2, 3, 4) */
 function whoAllowed(t, how){
@@ -8131,7 +8135,7 @@ function replacementBlock(t, out, act, extra, forfeitAct){
   var h = '<p class="hint2" style="margin-top:4px">' + esc(tn(t)) + ' · remplacement de <b>' + esc(plabel(effNum(o), o.name)) + '</b></p>';
   if(!rc.list.length) return h + '<p class="hint2" role="alert">Aucun joueur disponible sur le banc. ' + (forfeitAct ? esc(tn(1 - t)) + ' gagne le set : les points nécessaires lui sont attribués.</p><div class="btnrow"><button class="btn wide primary" data-act="' + forfeitAct + '">Confirmer</button></div>' : 'Le remplacement n\'est pas possible.</p>');
   if(rc.exc) h += '<p class="hint2">Les règles de remplacement ne permettent plus de remplacement normal : remplacement exceptionnel avec un joueur du banc.</p>';
-  return h + group('Qui entre ?', rc.list.slice().sort(sortP).map(function(p){ return plChip(act, p, t, extra); }).join(''));
+  return h + groupC('Qui entre ?', rc.list.slice().sort(sortP).map(function(p){ return plChip(act, p, t, extra); }).join(''));
 }
 function injRecSheet(sh){
   var t = sh.team, o = findPlayer(t, sh.out), left = Math.max(0, Math.ceil((sh.endsAt - Date.now()) / 1000));
@@ -8145,7 +8149,7 @@ function injurySheet(sh){
   if(sh.step === 'in') return '<h2>Joueur blessé</h2>' + replacementBlock(t, sh.out, 'injIn');
   var list = onCourt(t).slice().sort(sortP);
   return '<h2><span class="ic ic-croix ich" aria-hidden="true"></span> Joueur blessé</h2><p class="hint2" style="margin-top:4px">' + esc(tn(t)) + '</p>' +
-    (list.length ? group('Quel joueur est blessé ?', list.map(function(p){ return plChip('injWho', p, t); }).join('')) : '<p class="hint2">Aucun joueur en jeu.</p>');
+    (list.length ? groupC('Quel joueur est blessé ?', list.map(function(p){ return plChip('injWho', p, t); }).join('')) : '<p class="hint2">Aucun joueur en jeu.</p>');
 }
 var CARDRULES = {
   jaune:'Avertissement formel : pas de perte de point, noté sur la feuille de match.',
@@ -8165,9 +8169,9 @@ function cardSheet(sh){
     return '<h2>' + CARDS[sh.card] + '</h2>' + replacementBlock(t, sh.pid, 'cardIn', null, 'cardForfeit');
   }
   var court = onCourt(t).slice().sort(sortP), bench = availBench(t).slice().sort(sortP);
-  var inner = group('Sur le terrain', court.map(function(p){ return plChip('cardWho', p, t); }).join('') || '<span class="muted">aucun</span>');
-  if(bench.length) inner += group('Banc', bench.map(function(p){ return plChip('cardWho', p, t); }).join(''));
-  if(sh.card === 'jaune' || sh.card === 'rouge') inner += group('Autre', chip('cardWho', { pid:'' }, 'Non précisé (entraîneur, staff…)', false));
+  var inner = groupC('Sur le terrain', court.map(function(p){ return plChip('cardWho', p, t); }).join('') || '<span class="muted">aucun</span>');
+  if(bench.length) inner += groupC('Banc', bench.map(function(p){ return plChip('cardWho', p, t); }).join(''));
+  if(sh.card === 'jaune' || sh.card === 'rouge') inner += groupC('Autre', chip('cardWho', { pid:'' }, 'Non précisé (entraîneur, staff…)', false));
   return '<h2><span class="ic ' + CARDIC[sh.card] + ' ich" aria-hidden="true"></span> ' + CARDS[sh.card] + '</h2><p class="hint2" style="margin-top:4px">' + esc(tn(t)) + ' · ' + CARDRULES[sh.card] + '</p>' + inner;
 }
 function sheetView(){
@@ -8175,16 +8179,16 @@ function sheetView(){
   if(sh.kind === 'point'){
     var how = Object.keys(HOW).filter(function(k){ return k !== 'ace' || S.serving === sh.team; }).map(function(k){ return chip('pickHow', { how:k }, HOW[k], sh.how === k); }).join('') + chip('pickHow', { how:'oppfault' }, 'Faute adverse', false);
     var hasWho = onCourt(sh.team).length > 0 && modeOf() === 'complet';
-    if(hasWho) inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2>' + (sh.how === undefined ? group('Comment ?', how) :
-      '<p class="hint2" style="margin-top:4px">' + esc(HOW[sh.how] || '') + '</p>' + group('Qui a marqué ?', whoChips(sh.team, sh.pid, false, sh.how) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')));
-    else inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2><div class="cols one">' + group('Comment ?', how) + '</div>';
+    if(hasWho) inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2>' + (sh.how === undefined ? groupC('Comment ?', how) :
+      '<p class="hint2" style="margin-top:4px">' + esc(HOW[sh.how] || '') + '</p>' + groupC('Qui a marqué ?', whoChips(sh.team, sh.pid, false, sh.how) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === '')));
+    else inner = '<h2>Point pour ' + esc(tn(sh.team)) + '</h2><div class="cols one">' + groupC('Comment ?', how) + '</div>';
     if(!hasWho && modeOf() === 'complet') inner += '<p class="hint2">Aucun joueur en jeu. Touchez un poste vide du terrain pour placer vos joueurs.</p>';
   } else if(sh.kind === 'fault'){
     var kinds = FAULTS.map(function(k){ return chip('pickHow', { how:k }, esc(k), sh.how === k); }).join('');
     var fWho = onCourt(sh.team).length && modeOf() === 'complet';
     inner = '<h2>Faute de ' + esc(tn(sh.team)) + '</h2><p class="hint2" style="margin-top:4px">Le point est donné à ' + esc(tn(1 - sh.team)) + '.</p>' +
-      (fWho ? (sh.how === undefined ? group('Type de faute', kinds) : '<p class="hint2" style="margin:4px 0 0"><b>' + esc(sh.how) + '</b></p>' + group('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''))) :
-      '<div class="cols one">' + group('Type de faute', kinds) + '</div>');
+      (fWho ? (sh.how === undefined ? groupC('Type de faute', kinds) : '<p class="hint2" style="margin:4px 0 0"><b>' + esc(sh.how) + '</b></p>' + groupC('Qui ?', whoChips(sh.team, sh.pid, false) + chip('pickWho', { pid:'' }, 'Non précisé', sh.pid === ''))) :
+      '<div class="cols one">' + groupC('Type de faute', kinds) + '</div>');
   } else if(sh.kind === 'welcome'){
     inner = '<h2>Bienvenue au V2C 🏐</h2><p style="font-size:16px;line-height:1.45;margin:8px 0 14px">Pour profiter de tous les résultats des équipes, touchez l\'icône <span class="welcome-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg></span> en haut à droite de l\'écran, puis connectez-vous.</p>' +
       '<div class="btnrow"><button class="btn wide primary" data-act="profOpen">Me connecter</button></div><div class="btnrow"><button class="btn wide" data-act="closeSheet">Plus tard</button></div>';
@@ -8214,12 +8218,12 @@ function sheetView(){
     var outChips = outsP.map(function(p){ return chip('pickOut', { pid:p.id }, '<b' + (p.num ? '' : ' class="dflt"') + '>' + esc(effNum(p)) + '</b>' + esc(p.name) + (isCapOf(S, tm, p.id) ? capBadge() : ''), sh.out === p.id); }).join('');
     inner = '<h2>' + (sh.exc ? 'Remplacement exceptionnel' : 'Remplacement') + ' · ' + esc(tn(tm)) + ' <small>' + S.subs[tm] + '/6</small></h2>' +
       '<p class="hint2" style="margin-top:4px">' + (sh.exc ? 'Blessure : le joueur remplacé ne pourra plus revenir dans ce set.' : 'Un titulaire ne sort qu\'une fois par set et ne revient qu\'à sa position, à la place de son remplaçant.') + '</p>' +
-      group('Joueur qui sort', outChips || '<span class="muted">Personne ne peut sortir.</span>');
+      groupC('Joueur qui sort', outChips || '<span class="muted">Personne ne peut sortir.</span>');
     if(sh.out !== undefined){
       var insP = subIns(tm, sh.out, sh.exc).slice().sort(sortP);
       var inChips = insP.map(function(p){ return chip('pickIn', { pid:p.id }, '<b' + (p.num ? '' : ' class="dflt"') + '>' + esc(effNum(p)) + '</b>' + esc(p.name) + (isCapOf(S, tm, p.id) ? capBadge() : ''), sh.in === p.id); }).join('');
       var pr = !sh.exc ? pairOfSub(tm, sh.out) : null;
-      inner += group('Joueur qui entre', inChips || '<span class="muted">Aucun remplaçant disponible.</span>') +
+      inner += groupC('Joueur qui entre', inChips || '<span class="muted">Aucun remplaçant disponible.</span>') +
         (pr && !pr.done ? '<p class="hint2">Seul le titulaire qu\'il a remplacé peut revenir à sa place.</p>' : '');
     }
   } else if(sh.kind === 'player'){
