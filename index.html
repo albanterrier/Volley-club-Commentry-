@@ -7309,7 +7309,7 @@ function champView(){
 }
 function champView0(){
   var out = '<div class="stack">';
-  var chc = curChamp(), chn = chc ? chc.name : '', chl = 11 + (chn ? chn.length + 3 : 0), chf = Math.min(1.5, 1.5 * 22 / chl).toFixed(2);
+  var chc = curChamp(), chn = chc ? chc.name : '', chl = 11 + (chn ? chn.length + 3 : 0), chf = Math.max(0.8, Math.min(1.5, 1.5 * 28 / chl)).toFixed(2);
   out += '<div class="champhead"><div class="clubhead chtl">' + (champs().length && can('champEdit') ? editBtnHtml() : '') + '<h2 style="padding:0;font-size:' + chf + 'rem;white-space:nowrap">Championnat' + (chn ? ' <span class="chn">· ' + esc(chn) + '</span>' : '') + '</h2>' + (chc ? favStar('champ', chc.id) : '') + '</div>';
   if(champs().length) out += champCupsHtml();
   out += '</div>';
