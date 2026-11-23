@@ -924,6 +924,8 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .slview{flex:1;min-width:0;touch-action:pan-y}
 .slbtn{flex:0 0 32px;width:32px;height:56px;border:0;background:none;color:var(--acc-text);font-size:34px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
 .slbtn.ph{visibility:hidden}
+.agbox .slbtn{height:30px;width:40px;flex-basis:40px;font-size:26px}.agbox{padding:2px 4px 4px!important}.agbox h3{font-size:1rem}.agbox .tag{font-size:10px}
+.chtl{white-space:nowrap;padding:0 48px!important;overflow:hidden}.chtl .chn{color:var(--acc-text);font-weight:600}.chtl.clubhead .favstar{position:absolute;right:0}
 .rel{margin:0 0 4px;font-size:13px;font-weight:600;color:var(--muted)}
 .homeplay{margin-top:8px}
 .lg{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);margin-top:8px}
@@ -7307,11 +7309,9 @@ function champView(){
 }
 function champView0(){
   var out = '<div class="stack">';
-  out += '<div class="champhead"><div class="clubhead">' + (champs().length && can('champEdit') ? editBtnHtml() : '') + '<h2>Championnat</h2></div>';
+  var chc = curChamp(), chn = chc ? chc.name : '', chl = 11 + (chn ? chn.length + 3 : 0), chf = Math.min(1.5, 1.5 * 22 / chl).toFixed(2);
+  out += '<div class="champhead"><div class="clubhead chtl">' + (champs().length && can('champEdit') ? editBtnHtml() : '') + '<h2 style="padding:0;font-size:' + chf + 'rem;white-space:nowrap">Championnat' + (chn ? ' <span class="chn">· ' + esc(chn) + '</span>' : '') + '</h2>' + (chc ? favStar('champ', chc.id) : '') + '</div>';
   if(champs().length) out += champCupsHtml();
-  if(champs().length){
-    out += '<div class="selrow champtitle"><h3>' + (curChamp() ? esc(curChamp().name) : '') + '</h3>' + (curChamp() ? favStar('champ', curChamp().id) : '') + '</div>';
-  }
   out += '</div>';
   var ch = curChamp();
   if(!champs().length) out += emptySeasonHtml();
