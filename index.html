@@ -7393,6 +7393,7 @@ function fedMatches(rows){
       if(String(r[i]).trim() !== '/') continue;
       var h = String(r[i - 1] || '').trim(), a = String(r[i + 1] || '').trim();
       if(!/[A-Za-zÀ-ÿ]/.test(h) || !/[A-Za-zÀ-ÿ]/.test(a)) continue;
+      if(/^(exempt|repos)\b/i.test(h) || /^(exempt|repos)\b/i.test(a)) continue; /* « EXEMPT » : adversaire fictif, l'équipe est exemptée cette journée */
       var sh = String(r[i - 2] || '').trim(), sa = String(r[i + 2] || '').trim();
       out.push({ h:h, a:a, sh:sh, sa:sa, post:/report/i.test(sh + ' ' + sa) });
     }
