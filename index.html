@@ -925,20 +925,23 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .slbtn{flex:0 0 32px;width:32px;height:56px;border:0;background:none;color:var(--acc-text);font-size:34px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
 .slbtn.ph{visibility:hidden}
 .mcc{position:relative;display:block;padding:15px 2px 6px;cursor:pointer}
-.mcc-d{position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:3;width:150px;height:20px;box-sizing:border-box;border-radius:10px;background:#fff;color:#000;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;overflow:hidden;line-height:1}
+.mcc-d{position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:3;width:150px;height:20px;box-sizing:border-box;border-radius:10px;background:#fff;border:2px solid var(--mccl);color:#000;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;overflow:hidden;line-height:1}
 .mcc-r{display:flex;gap:3px;padding:0 26px}
-.mcc-t{flex:1 1 0;min-width:0;position:relative;display:flex;align-items:center;height:46px;box-sizing:border-box;border:2px solid #fff;border-radius:0}
+.mcc-t{flex:1 1 0;min-width:0;position:relative;display:flex;align-items:center;height:46px;box-sizing:border-box;border:2px solid var(--mccl);border-radius:0}
 .mcc-t.away{flex-direction:row-reverse}
 .mcc-t.neutral{background:var(--surface2);color:var(--ink)}
 .mcc-fade{display:none;position:absolute;top:0;bottom:0;left:0;right:0;background:linear-gradient(90deg,#fff 0,#fff 46px,rgba(255,255,255,0) 62px);pointer-events:none}
 .mcc-t.away .mcc-fade{background:linear-gradient(270deg,#fff 0,#fff 46px,rgba(255,255,255,0) 62px)}
-.mcc-logo{flex:0 0 auto;position:absolute;top:50%;left:-26px;transform:translateY(-50%);width:52px;height:52px;border-radius:50%;background:#fff;border:2px solid #fff;overflow:hidden;padding:0;box-sizing:border-box;box-shadow:0 1px 3px rgba(0,0,0,.35);z-index:2}
+.mcc-logo{flex:0 0 auto;position:absolute;top:50%;left:-26px;transform:translateY(-50%);width:52px;height:52px;border-radius:50%;background:#fff;border:2px solid var(--mccl);overflow:hidden;padding:0;box-sizing:border-box;box-shadow:0 1px 3px rgba(0,0,0,.35);z-index:2}
 .mcc-t.away .mcc-logo{left:auto;right:-26px}
 .mcc-logo img{display:block;width:100%;height:100%;object-fit:cover;transform:scale(1.15)}
 .mcc-nm{position:relative;flex:1;min-width:0;padding:0 8px 0 32px;font-weight:700;font-size:13px;line-height:1.05;text-align:left;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
 .mcc-t.away .mcc-nm{padding:0 32px 0 8px;text-align:right}.mcc-t.win .mcc-nm{font-weight:900}
 .mcc-sc{position:absolute;left:50%;top:38px;transform:translate(-50%,-50%);z-index:3;background:#fff;color:#000;border-radius:12px;padding:3px 9px;font-family:var(--font-d);font-weight:800;font-size:18px;line-height:1;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .mcbox .mcc{padding:15px 8px 4px;cursor:default}
+:root{--mccl:#000}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--mccl:#fff}}
+:root[data-theme="dark"]{--mccl:#fff}
 .agbox .slbtn{height:30px;width:40px;flex-basis:40px;font-size:26px}.agbox{padding:2px 4px 4px!important}.agbox h3{font-size:1rem}.agbox .tag{font-size:10px}
 .chtl{white-space:nowrap;padding:0 48px!important;overflow:hidden}.chtl .chn{color:var(--acc-text);font-weight:600}.chtl.clubhead .favstar{position:absolute;right:0}
 .rel{margin:0 0 4px;font-size:13px;font-weight:600;color:var(--muted)}
