@@ -7458,14 +7458,17 @@ function fedOpen(cid){
   var ch = champById(cid); if(!ch) return;
   var url = String(ch.fedUrl || '').trim();
   if(!/^https:\/\/docs\.google\.com\//.test(url)){ toastShow('Collez d\'abord le lien CSV publié de la fédération.'); return; }
+  /* lien « pubhtml » ou sans output=csv : corrigé automatiquement ; lien de modification : refusé avec explication */
+  if(/\/spreadsheets\/d\/e\//.test(url)){ url = url.replace('/pubhtml', '/pub'); if(!/output=csv/.test(url)) url += (url.indexOf('?') < 0 ? '?' : '&') + 'output=csv'; }
   ui.sheet = { kind:'fed', cid:cid, state:'load' }; render();
   var sh = ui.sheet;
+  if(!/\/spreadsheets\/d\/e\//.test(url)){ sh.state = 'err'; sh.msg = 'Ce lien n\'est pas un lien publié. Dans Google Sheets : Fichier › Partager › Publier sur le web, choisissez l\'onglet et le format CSV, puis collez le lien obtenu (il contient /d/e/…).'; render(); return; }
   fetch(url, { cache:'no-store' }).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(t){
     var ms = fedMatches(fedCsv(t));
     if(!ms.length){ sh.state = 'err'; sh.msg = 'Aucun match reconnu dans ce fichier. Vérifiez que le lien est bien celui du CSV de l\'onglet.'; }
     else { sh.state = 'ok'; sh.ms = ms; }
     if(ui.sheet === sh) render();
-  }).catch(function(){ sh.state = 'err'; sh.msg = 'Impossible de lire le fichier (réseau, ou lien non publié en CSV).'; if(ui.sheet === sh) render(); });
+  }).catch(function(){ sh.state = 'err'; sh.msg = 'Impossible de lire le fichier. Vérifiez la connexion, puis que cet onglet est bien publié sur le web au format CSV (Fichier › Partager › Publier sur le web) : si la publication a été arrêtée ou si le lien est celui d\'un autre onglet, il faut en refaire un.'; if(ui.sheet === sh) render(); });
 }
 
 /* Ajouter le résultat d'un match (depuis l'espace Match) */
