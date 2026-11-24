@@ -7317,7 +7317,9 @@ function champView0(){
   if(!champs().length) out += emptySeasonHtml();
   if(!ch) return out + '</div>';
   if(ui.edit && can('champEdit')){
-    out += '<section class="card"><label class="f" for="chname">Nom du championnat</label><div style="display:flex;gap:10px;align-items:center"><div style="flex:1">' + ifield('chname', { value:ch.name, attrs:'data-bind="chname"', aria:'Nom du championnat' }) + '</div>' + addBtn('Ajouter une équipe').replace('class="addbtn"', 'class="addbtn" style="position:static"').replace('data-act="clubAddOpen"', 'data-act="champTeamOpen"') + '</div></section>';
+    out += '<section class="card"><label class="f" for="chname">Nom du championnat</label><div style="display:flex;gap:10px;align-items:center"><div style="flex:1">' + ifield('chname', { value:ch.name, attrs:'data-bind="chname"', aria:'Nom du championnat' }) + '</div>' + addBtn('Ajouter une équipe').replace('class="addbtn"', 'class="addbtn" style="position:static"').replace('data-act="clubAddOpen"', 'data-act="champTeamOpen"') + '</div>' +
+      '<label class="f" for="chfed">Lien CSV de la fédération (feuille Google publiée)</label><input type="text" inputmode="url" id="chfed" data-bind="chfed" value="' + esc(ch.fedUrl || '') + '" placeholder="https://docs.google.com/spreadsheets/d/e/…" autocomplete="off">' +
+      '<div class="btnrow"><button class="btn wide" data-act="fedOpen" data-cid="' + ch.id + '">Comparer avec la fédération</button></div></section>';
     out += '<section class="card"><h3>Équipes</h3>' + (entrantsOf(ch.clubIds).slice().sort(function(a,b){ return entrantLabel(a).localeCompare(entrantLabel(b), 'fr'); }).map(function(c){
       return '<div class="ritem"><div class="fx rinfo"><span class="fxt"><span class="fxteam">' + logoHtml(c.id, 28) + '<span class="nm">' + esc(entrantLabel(c)) + '</span></span></span></div>' +
         '<button class="delwrap" data-act="toggleChampClub" data-cid="' + c.id + '" aria-label="Retirer ' + esc(entrantLabel(c)) + ' du championnat"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
@@ -7366,6 +7368,103 @@ function champView0(){
   }
   if(ui.edit) out += '<section class="card"><div class="btnrow" style="margin:0"><button class="btn wide danger" data-act="delChampAsk">Supprimer ce championnat</button></div></section>';
   return out + '</div>';
+}
+
+
+/* ---------- fedCmp : comparaison avec le fichier de la fédération (feuille Google publiée en CSV) ---------- */
+function fedCsv(t){
+  var rows = [], r = [], c = '', q = false, i = 0, n = t.length;
+  for(; i < n; i++){
+    var ch = t[i];
+    if(q){ if(ch === '"'){ if(t[i + 1] === '"'){ c += '"'; i++; } else q = false; } else c += ch; }
+    else if(ch === '"') q = true;
+    else if(ch === ','){ r.push(c); c = ''; }
+    else if(ch === '\n' || ch === '\r'){ if(ch === '\r' && t[i + 1] === '\n') i++; r.push(c); c = ''; rows.push(r); r = []; }
+    else c += ch;
+  }
+  if(c !== '' || r.length){ r.push(c); rows.push(r); }
+  return rows;
+}
+/* matchs repérés par le motif : score, ÉQUIPE DOMICILE, « / », ÉQUIPE EXTÉRIEUR, score (le score peut être vide ou « report ») */
+function fedMatches(rows){
+  var out = [];
+  rows.forEach(function(r){
+    for(var i = 2; i < r.length - 1; i++){
+      if(String(r[i]).trim() !== '/') continue;
+      var h = String(r[i - 1] || '').trim(), a = String(r[i + 1] || '').trim();
+      if(!/[A-Za-zÀ-ÿ]/.test(h) || !/[A-Za-zÀ-ÿ]/.test(a)) continue;
+      var sh = String(r[i - 2] || '').trim(), sa = String(r[i + 2] || '').trim();
+      out.push({ h:h, a:a, sh:sh, sa:sa, post:/report/i.test(sh + ' ' + sa) });
+    }
+  });
+  return out;
+}
+function fedKey(s){ return norm(String(s || '').replace(/\s+\d+\s*$/, '')); }
+function fedTeamOf(ch, name){
+  var map = ch.fedMap || {};
+  if(map[name] && chHas(ch, map[name])) return map[name];
+  var k = fedKey(name), ents = entrantsOf(ch.clubIds), ex = ents.filter(function(e){ return fedKey(e.name) === k; });
+  if(ex.length === 1) return ex[0].id;
+  var part = ents.filter(function(e){ var x = fedKey(e.name); return x.length >= 4 && k.length >= 4 && (x.indexOf(k) >= 0 || k.indexOf(x) >= 0); });
+  return part.length === 1 ? part[0].id : '';
+}
+function fedCompute(ch, ms){
+  var names = [], seen = {}, list = [], miss = 0, bad = 0;
+  ms.forEach(function(m){ [m.h, m.a].forEach(function(n){ if(!seen[n]){ seen[n] = 1; names.push(n); } }); });
+  var unm = names.filter(function(n){ return !fedTeamOf(ch, n); });
+  ms.forEach(function(m){
+    var H = fedTeamOf(ch, m.h), A = fedTeamOf(ch, m.a);
+    if(!H || !A) return;
+    var f = ch.fixtures.filter(function(x){ return x.home === H && x.away === A; })[0];
+    var played = /^\d$/.test(m.sh) && /^\d$/.test(m.sa);
+    if(!f){ if(played || m.post) miss++; return; }
+    var cur = matchOf(ch, f.matchId), fs = m.sh + '-' + m.sa, lab = clubName(H) + ' – ' + clubName(A);
+    if(f.locked){ return; }
+    if(played){
+      if(RESULTS.indexOf(fs) < 0){ bad++; return; }
+      if(!cur) list.push({ k:'add', fid:f.id, lab:lab, to:fs, from:'' });
+      else if(cur.hs + '-' + cur.as !== fs){ list.push({ k:cur.source === 'manual' ? 'mod' : 'live', fid:f.id, lab:lab, to:fs, from:cur.hs + '-' + cur.as }); }
+    } else if(m.post && !f.postponed && !cur){ list.push({ k:'post', fid:f.id, lab:lab, to:'reporté', from:'' }); }
+  });
+  return { names:names, unm:unm, list:list, miss:miss, bad:bad };
+}
+function fedApply(ch, it){
+  var f = fixtureOf(ch, it.fid); if(!f || f.locked) return;
+  if(it.k === 'post'){ f.postponed = true; if(!f.origW && f.date) f.origW = weekStart(f.date); save(); }
+  else if(it.k === 'add' || it.k === 'mod') setFixtureResult(ch, f, it.to);
+}
+function fedSheet(sh){
+  var ch = champById(sh.cid), out = '<h2>Fichier de la fédération</h2>';
+  if(!ch) return out + '<p class="hint2">Championnat introuvable.</p>';
+  if(sh.state === 'load') return out + '<p class="hint2">Lecture du fichier…</p>';
+  if(sh.state === 'err') return out + '<p class="hint2">' + esc(sh.msg || 'Lecture impossible.') + '</p>';
+  var r = fedCompute(ch, sh.ms), ents = entrantsOf(ch.clubIds).sort(function(a, b){ return entrantLabel(a).localeCompare(entrantLabel(b), 'fr'); });
+  if(r.unm.length){
+    out += '<p class="hint2">Associez les équipes du fichier à celles du championnat :</p>' + r.unm.map(function(n){
+      return '<label class="f">' + esc(n) + '</label><select data-bind="fedmap" data-k="' + esc(n) + '"><option value="">— choisir —</option>' + ents.map(function(e){ return '<option value="' + e.id + '">' + esc(entrantLabel(e)) + '</option>'; }).join('') + '</select>';
+    }).join('');
+  }
+  var lbl = { add:'Ajouter', mod:'Modifier', post:'Reporter', live:'Saisi en direct' };
+  if(!r.list.length) out += '<p class="hint2" style="font-size:16px;margin-top:8px">' + (r.unm.length ? 'Les différences apparaîtront une fois les équipes associées.' : 'Rien à changer : l\'appli est à jour avec le fichier.') + '</p>';
+  else out += '<div style="max-height:46vh;overflow:auto">' + r.list.map(function(it, i){
+    return '<div class="ritem"><div class="rinfo" style="flex:1"><b>' + esc(it.lab) + '</b><br><span class="muted">' + lbl[it.k] + (it.from ? ' : ' + esc(it.from) + ' → ' : ' : ') + '<b>' + esc(it.to) + '</b></span></div>' +
+      (it.k === 'live' ? '<span class="tag">non modifié</span>' : '<button class="btn" data-act="fedOne" data-fid="' + it.fid + '" data-i="' + it.k + '">Appliquer</button>') + '</div>';
+  }).join('') + '</div>' + (r.list.some(function(x){ return x.k !== 'live'; }) ? '<div class="btnrow"><button class="btn wide primary" data-act="fedAll">Tout appliquer</button></div>' : '');
+  if(r.miss || r.bad) out += '<p class="hint2">' + (r.miss ? r.miss + ' match(s) du fichier absent(s) du calendrier. ' : '') + (r.bad ? r.bad + ' score(s) illisible(s) ignoré(s).' : '') + '</p>';
+  return out;
+}
+function fedOpen(cid){
+  var ch = champById(cid); if(!ch) return;
+  var url = String(ch.fedUrl || '').trim();
+  if(!/^https:\/\/docs\.google\.com\//.test(url)){ toastShow('Collez d\'abord le lien CSV publié de la fédération.'); return; }
+  ui.sheet = { kind:'fed', cid:cid, state:'load' }; render();
+  var sh = ui.sheet;
+  fetch(url, { cache:'no-store' }).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(t){
+    var ms = fedMatches(fedCsv(t));
+    if(!ms.length){ sh.state = 'err'; sh.msg = 'Aucun match reconnu dans ce fichier. Vérifiez que le lien est bien celui du CSV de l\'onglet.'; }
+    else { sh.state = 'ok'; sh.ms = ms; }
+    if(ui.sheet === sh) render();
+  }).catch(function(){ sh.state = 'err'; sh.msg = 'Impossible de lire le fichier (réseau, ou lien non publié en CSV).'; if(ui.sheet === sh) render(); });
 }
 
 /* Ajouter le résultat d'un match (depuis l'espace Match) */
@@ -8197,6 +8296,8 @@ function sheetView(){
       '<div class="btnrow"><button class="btn wide primary" data-act="profOpen">Me connecter</button></div><div class="btnrow"><button class="btn wide" data-act="closeSheet">Plus tard</button></div>';
   } else if(sh.kind === 'clubadd'){
     inner = clubAddSheet(sh);
+  } else if(sh.kind === 'fed'){
+    inner = fedSheet(sh);
   } else if(sh.kind === 'champteam'){
     var avail = allEntrants().filter(function(c){ return !champOfTeam(c.id); }).sort(function(a,b){ return entrantLabel(a).localeCompare(entrantLabel(b), 'fr'); });
     inner = '<h2>Ajouter une équipe</h2>' + (avail.length ? '<p class="hint2">Touchez une équipe pour l\'ajouter au championnat.</p><div style="max-height:50vh;overflow:auto">' + avail.map(function(c){
@@ -9016,6 +9117,9 @@ document.addEventListener('click', function(e){
     case 'champLvl': { var cll = champLvlList(+d.v); if(cll.length === 1 && +d.v) champPick(cll[0].id); else if(cll.length){ ui.sheet = { kind:'champlvl', lvl:+d.v }; render(); } break; }
     case 'champLvlPick': if(champById(d.cid)) champPick(d.cid); break;
     case 'champTab': ui.edit = false; ui.champTab = d.v; ui.msg = ''; render(); break;
+    case 'fedOpen': if(can('champEdit')) fedOpen(d.cid); break;
+    case 'fedOne': { var fch = ui.sheet && champById(ui.sheet.cid); if(fch && can('champEdit')){ var fr = fedCompute(fch, ui.sheet.ms).list.filter(function(x){ return x.fid === d.fid && x.k === d.i; })[0]; if(fr) fedApply(fch, fr); } render(); break; }
+    case 'fedAll': { var fch2 = ui.sheet && champById(ui.sheet.cid); if(fch2 && can('champEdit')){ fedCompute(fch2, ui.sheet.ms).list.forEach(function(x){ if(x.k !== 'live') fedApply(fch2, x); }); } render(); break; }
     case 'champTeamOpen': ui.sheet = { kind:'champteam' }; render(); break;
     case 'champTeamAdd': { var chA = curChamp(); if(chA && !champOfTeam(d.cid)) chA.clubIds.push(d.cid); save(); render(); break; }
     case 'hideResume': ui.resume = false; render(); break;
@@ -9793,6 +9897,8 @@ document.addEventListener('input', function(e){
     render(); return;
   }
   else if(bind === 'tmadd'){ var tfa = findTeam(ui.teamSel); if(tfa && v && tfa.t.memberIds.indexOf(v) < 0){ tfa.t.memberIds.push(v); save(); } render(); return; }
+  else if(bind === 'chfed'){ var chf2 = curChamp(); if(chf2 && can('champEdit')){ chf2.fedUrl = v.trim(); save(); } return; }
+  else if(bind === 'fedmap'){ var fch3 = ui.sheet && champById(ui.sheet.cid); if(fch3 && can('champEdit') && v){ fch3.fedMap = fch3.fedMap || {}; fch3.fedMap[ds.k] = v; save(); render(); } return; }
   else if(bind === 'chname'){ var chn = curChamp(); if(chn && can('champEdit') && v.trim()){ chn.name = v.trim(); save(); } return; }
   else if(bind === 'tmname'){ var tff = findTeam(ui.teamSel); if(tff) tff.t.name = v; save(); return; }
   else if(bind === 'cname'){ var c = curClub(); if(c){ var dt = defaultTeam(c); if(dt && dt.name === c.name) dt.name = v; c.name = v; } }
