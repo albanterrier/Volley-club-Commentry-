@@ -960,6 +960,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 @keyframes livecol{0%,100%{background:#22C55E;box-shadow:0 0 0 0 rgba(34,197,94,.6)}50%{background:#3B82F6;box-shadow:0 0 0 5px rgba(59,130,246,0)}}
 .livedot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#22C55E;vertical-align:middle;margin-right:6px;animation:livecol 1.6s ease-in-out infinite;flex:0 0 auto}
 .lgl{position:relative;display:inline-flex;flex:0 0 auto;line-height:0}.lgl .livedot.corner{top:-3px;right:-3px;border-width:2px}
+.fedb{position:absolute;top:-4px;right:6px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#F97316;color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center}
 .livedot.corner{position:absolute;top:0;right:11px;margin:0;width:10px;height:10px;border:2px solid var(--surface);box-sizing:content-box}
 .nav button .pill{position:relative}
 .tag.live .livedot{width:8px;height:8px;margin-right:5px;border:1px solid rgba(255,255,255,.8)}
@@ -2279,7 +2280,7 @@ function navHtml(){
   return '<nav class="nav" aria-label="Navigation principale">' + items.map(function(it){
     var on = ui.tab === it[0] || (it[0] === 'clubs' && ui.tab === 'data');
     var dis = needLogin() && OPEN_TABS.indexOf(it[0]) < 0;
-    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : (dis ? ' class="dis" disabled aria-disabled="true"' : '')) + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length || remoteFav().length ? liveDot(true) : (dayDueToday() ? '<span class="livedot corner idle" role="img" aria-label="Match aujourd\'hui"></span>' : '')) : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + '</span>' + it[1] + '</button>';
+    return '<button data-act="tab" data-tab="' + it[0] + '"' + (on ? ' class="on" aria-current="page"' : (dis ? ' class="dis" disabled aria-disabled="true"' : '')) + '><span class="pill">' + (it[0] === 'match' ? '<span class="ballico" aria-hidden="true"></span>' + (savedMatches().length || remoteFav().length ? liveDot(true) : (dayDueToday() ? '<span class="livedot corner idle" role="img" aria-label="Match aujourd\'hui"></span>' : '')) : '<svg viewBox="0 0 24 24" aria-hidden="true">' + NAVICONS[it[0]] + '</svg>') + (it[0] === 'champ' && fedTotal() ? '<span class="fedb" role="img" aria-label="Résultats à importer">' + fedTotal() + '</span>' : '') + '</span>' + it[1] + '</button>';
   }).join('') + '</nav>';
 }
 /* Bouton « Accueil » (logo) : présent sur toutes les pages, toujours à gauche, à 90 % de la taille d'un bouton rond */
@@ -7325,6 +7326,7 @@ function champView0(){
         '<button class="delwrap" data-act="toggleChampClub" data-cid="' + c.id + '" aria-label="Retirer ' + esc(entrantLabel(c)) + ' du championnat"><span class="delc" aria-hidden="true">' + xIcon(24) + '</span></button></div>';
     }).join('') || '<p class="muted" style="margin:0">Aucune équipe.</p>') + '</section>';
   }
+  if(fedIsAdmin() && FED.n[ch.id]) out += '<button class="btn wide primary" data-act="fedOpen" data-cid="' + ch.id + '">' + FED.n[ch.id] + ' résultat' + (FED.n[ch.id] > 1 ? 's' : '') + ' de la fédération à importer</button>';
   var tab = ui.champTab === 'agenda' ? 'agenda' : 'results';
   out += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">' + [['results','Classement'],['agenda','Agenda']].map(function(x){
     return '<button class="btn' + (tab === x[0] ? ' primary' : '') + '" style="justify-content:center;text-align:center" data-act="champTab" data-v="' + x[0] + '" aria-pressed="' + (tab === x[0] ? 'true' : 'false') + '">' + x[1] + '</button>';
@@ -7466,10 +7468,49 @@ function fedOpen(cid){
   fetch(url, { cache:'no-store' }).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(t){
     var ms = fedMatches(fedCsv(t));
     if(!ms.length){ sh.state = 'err'; sh.msg = 'Aucun match reconnu dans ce fichier. Vérifiez que le lien est bien celui du CSV de l\'onglet.'; }
-    else { sh.state = 'ok'; sh.ms = ms; }
+    else { sh.state = 'ok'; sh.ms = ms; FED.n[cid] = fedCompute(ch, ms).list.filter(function(x){ return x.k !== 'live'; }).length; }
     if(ui.sheet === sh) render();
   }).catch(function(){ sh.state = 'err'; sh.msg = 'Impossible de lire le fichier. Vérifiez la connexion, puis que cet onglet est bien publié sur le web au format CSV (Fichier › Partager › Publier sur le web) : si la publication a été arrêtée ou si le lien est celui d\'un autre onglet, il faut en refaire un.'; if(ui.sheet === sh) render(); });
 }
+
+
+/* fedScan : vérifie en arrière-plan (administrateur seulement) s'il y a des résultats du fichier fédération à importer */
+var FED = { n:{}, seen:{}, at:0, busy:false };
+function fedUrlOf(ch){
+  var url = String(ch.fedUrl || '').trim();
+  if(!/^https:\/\/docs\.google\.com\/spreadsheets\/d\/e\//.test(url)) return '';
+  url = url.replace('/pubhtml', '/pub'); if(!/output=csv/.test(url)) url += (url.indexOf('?') < 0 ? '?' : '&') + 'output=csv';
+  return url;
+}
+function fedIsAdmin(){ try{ return !!S.adminId && meGet() === S.adminId; }catch(e){ return false; } }
+function fedTotal(){ var t = 0; Object.keys(FED.n).forEach(function(k){ t += FED.n[k] || 0; }); return fedIsAdmin() ? t : 0; }
+function fedScan(force){
+  if(!fedIsAdmin() || FED.busy || document.visibilityState !== 'visible' || ui.watch) return;
+  if(!force && Date.now() - FED.at < 5 * 60 * 1000) return;
+  var chs = (S.champs || []).filter(function(c){ return fedUrlOf(c); });
+  if(!chs.length) return;
+  FED.busy = true; FED.at = Date.now();
+  var fresh = [];
+  chs.reduce(function(p, ch){
+    return p.then(function(){
+      return fetch(fedUrlOf(ch), { cache:'no-store' }).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(t){
+        var list = fedCompute(ch, fedMatches(fedCsv(t))).list.filter(function(x){ return x.k !== 'live'; });
+        FED.n[ch.id] = list.length;
+        list.forEach(function(x){ var k = ch.id + '|' + x.fid + '|' + x.k + '|' + x.to; if(!FED.seen[k]){ FED.seen[k] = 1; fresh.push(ch.name); } });
+      }).catch(function(){});
+    });
+  }, Promise.resolve()).then(function(){
+    FED.busy = false;
+    if(fresh.length){
+      var one = fresh.filter(function(x, i){ return fresh.indexOf(x) === i; });
+      toastShow(fresh.length + ' résultat' + (fresh.length > 1 ? 's' : '') + ' de la fédération à importer (' + one.join(', ') + ').');
+    }
+    var ae = document.activeElement;
+    if(!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) && !ui.sheet) render();
+  });
+}
+setTimeout(function(){ fedScan(true); }, 6000); setInterval(function(){ fedScan(false); }, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible') setTimeout(function(){ fedScan(false); }, 1500); });
 
 /* Ajouter le résultat d'un match (depuis l'espace Match) */
 function addResultView(){
@@ -9122,8 +9163,8 @@ document.addEventListener('click', function(e){
     case 'champLvlPick': if(champById(d.cid)) champPick(d.cid); break;
     case 'champTab': ui.edit = false; ui.champTab = d.v; ui.msg = ''; render(); break;
     case 'fedOpen': if(can('champEdit')) fedOpen(d.cid); break;
-    case 'fedOne': { var fch = ui.sheet && champById(ui.sheet.cid); if(fch && can('champEdit')){ var fr = fedCompute(fch, ui.sheet.ms).list.filter(function(x){ return x.fid === d.fid && x.k === d.i; })[0]; if(fr) fedApply(fch, fr); } render(); break; }
-    case 'fedAll': { var fch2 = ui.sheet && champById(ui.sheet.cid); if(fch2 && can('champEdit')){ fedCompute(fch2, ui.sheet.ms).list.forEach(function(x){ if(x.k !== 'live') fedApply(fch2, x); }); } render(); break; }
+    case 'fedOne': { var fch = ui.sheet && champById(ui.sheet.cid); if(fch && can('champEdit')){ var fr = fedCompute(fch, ui.sheet.ms).list.filter(function(x){ return x.fid === d.fid && x.k === d.i; })[0]; if(fr) fedApply(fch, fr); FED.n[fch.id] = fedCompute(fch, ui.sheet.ms).list.filter(function(x){ return x.k !== 'live'; }).length; } render(); break; }
+    case 'fedAll': { var fch2 = ui.sheet && champById(ui.sheet.cid); if(fch2 && can('champEdit')){ fedCompute(fch2, ui.sheet.ms).list.forEach(function(x){ if(x.k !== 'live') fedApply(fch2, x); }); FED.n[fch2.id] = 0; } render(); break; }
     case 'champTeamOpen': ui.sheet = { kind:'champteam' }; render(); break;
     case 'champTeamAdd': { var chA = curChamp(); if(chA && !champOfTeam(d.cid)) chA.clubIds.push(d.cid); save(); render(); break; }
     case 'hideResume': ui.resume = false; render(); break;
