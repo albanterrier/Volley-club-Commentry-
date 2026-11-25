@@ -4394,7 +4394,7 @@ function exemptOf(ch, w){
 }
 function exemptHtml(items, withName){
   return items.filter(function(it){ return it.ids.length; }).map(function(it){
-    return '<p class="exempt"><i>Exempt</i>' + (withName ? ' · ' + esc(it.ch.name) : '') + ' : <b>' + it.ids.map(function(id){ return esc(clubName(id)); }).join(', ') + '</b></p>';
+    return '<p class="exempt"><i>Exempt</i>' + (withName ? ' · ' + esc(it.ch.name) : '') + ' : <b>' + it.ids.map(function(id){ return esc(shortNm(clubName(id))); }).join(', ') + '</b></p>';
   }).join('');
 }
 /* Une « entrée » du calendrier : match de championnat (dans ch.fixtures), match amical ou autre événement (dans S.agenda) */
@@ -4958,7 +4958,7 @@ function liveRemoteHtml(list){
   return list.map(function(r){
     var t = rTeams(r), w = [0, 0], fe = r.champ_id ? calEntry(r.champ_id, r.fid) : null;
     (r.sets || []).forEach(function(x){ if(x[0] > x[1]) w[0]++; else w[1]++; });
-    function team(i, nm){ return '<span class="mc-team">' + (t[i] ? logoHtml(t[i], 44) : '') + '<span class="nm">' + esc(nm || (t[i] ? clubName(t[i]) : (i ? 'Équipe B' : 'Équipe A'))) + '</span></span>'; }
+    function team(i, nm){ return '<span class="mc-team">' + (t[i] ? logoHtml(t[i], 44) : '') + '<span class="nm">' + esc(shortNm(nm || (t[i] ? clubName(t[i]) : (i ? 'Équipe B' : 'Équipe A')))) + '</span></span>'; }
     return '<button class="mc live" data-act="msWatch" data-fid="' + esc(r.fid) + '" data-cid="' + esc(r.champ_id || '') + '"><span class="mc-top"><span class="mc-b"><span class="tag live">' + liveDot() + 'En cours</span></span><span class="mc-ctx">' + esc(fe && fe.ch ? fe.ch.name : (r.title || 'Match amical')) + '</span></span>' +
       '<span class="mc-body">' + team(0, r.home) + '<span class="mc-mid">' + w[0] + ' – ' + w[1] + '</span>' + team(1, r.away) + '</span>' +
       '<span class="mc-sets">Set ' + ((r.sets || []).length + 1) + ' · ' + r.cur[0] + ' – ' + r.cur[1] + '</span><span class="mc-foot"><span>Suivre le match en direct</span></span></button>';
@@ -7133,7 +7133,7 @@ function calRow(e, today, favArg){
   } else foot = '<span class="mc-foot c">' + when + '</span>';
   var mpb = presBtn(e, today);
   if(bm || mpb) foot = '<span class="mc-foot3"><span class="fl">' + bm + '</span><span class="fm">' + foot + '</span><span class="fr">' + mpb + '</span></span>';
-  function team(id, win){ return '<span class="mc-team' + (win ? ' win' : '') + '">' + (id ? logoHtml(id, 44) + '<span class="nm">' + esc(clubName(id)) + '</span>' : '') + '</span>'; }
+  function team(id, win){ return '<span class="mc-team' + (win ? ' win' : '') + '">' + (id ? logoHtml(id, 44) + '<span class="nm">' + esc(shortNm(clubName(id))) + '</span>' : '') + '</span>'; }
   return '<div class="mc' + sel + '" role="button" tabindex="0"' + attrs + '><span class="mc-top"><span class="mc-b">' + b + '</span><span class="mc-ctx">' + dotHtml(entryType(e)) + esc(ctx) + '</span></span>' +
     '<span class="mc-body">' + team(e.home, hw) + (res ? '<span class="mc-mid">' + res.hs + ' – ' + res.as + '</span>' : '<span class="mc-mid vs">VS</span>') + team(e.away, aw) + '</span>' +
     (res && res.sets && res.sets.length ? '<span class="mc-sets">' + res.sets.map(function(x){ return x[0] + '-' + x[1]; }).join(' · ') + '</span>' : '') +
@@ -7141,11 +7141,25 @@ function calRow(e, today, favArg){
 }
 
 /* ---------- Rencontre compacte (agenda du championnat) : bandeaux aux couleurs des équipes, logos au centre ---------- */
+/* nom d'équipe pour les blocs de rencontre : la précision entre parenthèses (souvent le championnat) est abrégée en initiales, ex. « Riom 2 (Féminine Excellence A) » → « Riom 2 (FE A) » */
+function shortNm(name){
+  var m = String(name || '').match(/^(.*?)\s*\(([^()]*)\)\s*$/);
+  if(!m || !m[1]) return name;
+  var words = m[2].trim().split(/\s+/).filter(Boolean);
+  if(words.length < 2) return words[0].length > 1 ? m[1] + ' (' + words[0].charAt(0).toUpperCase() + ')' : name;
+  var parts = [], init = '';
+  words.forEach(function(w){
+    if(w.length === 1 || /^\d+$/.test(w)){ if(init){ parts.push(init); init = ''; } parts.push(w.toUpperCase()); }
+    else init += w.charAt(0).toUpperCase();
+  });
+  if(init) parts.push(init);
+  return m[1] + ' (' + parts.join(' ') + ')';
+}
 function mccBand(id, win, away){
   var c = clubById(id), cd = c ? candidatesOf(c)[0] : null, sp = cd ? buildSpec(cd.style, cd.cols) : null;
   var st = sp ? 'background:' + sp.bg + ';color:' + sp.ink + ';' + sp.sh : '';
   var logo = '<span class="mcc-logo">' + (c && c.logo ? '<img src="' + esc(c.logo) + '" alt="">' : '') + '</span>';
-  return '<span class="mcc-t' + (away ? ' away' : '') + (win ? ' win' : '') + (sp ? '' : ' neutral') + '" style="' + st + '"><span class="mcc-fade"></span>' + logo + '<span class="mcc-nm">' + esc(clubName(id)) + '</span></span>';
+  return '<span class="mcc-t' + (away ? ' away' : '') + (win ? ' win' : '') + (sp ? '' : ' neutral') + '" style="' + st + '"><span class="mcc-fade"></span>' + logo + '<span class="mcc-nm">' + esc(shortNm(clubName(id))) + '</span></span>';
 }
 function calRowC(e, today){
   var res = entryResult(e), live = msLive(e.fid) && !e.postponed;
@@ -7621,7 +7635,7 @@ function standHtml(rows, hi, sortable){
   var out = '<div class="lg" role="table"><div class="lgh" role="row"><span>#</span>' + hd('club', 'Équipe', 'lgn') + hd('j', 'MJ', 'lgj') + hd('g', 'V-D', 'lgv') + hd('pts', 'Pts', 'lgp') + '</div>';
   rows.forEach(function(r){
     var lgc = clubOfEntrant(r.id) || (clubById(r.id) ? r.id : ''), me = standHl(r, hi), tone = me ? 'me' : (n > 1 && r.rank === firstRank && lastRank !== firstRank ? 'up' : (n > 1 && r.rank === lastRank && lastRank !== firstRank ? 'down' : '')), diff = r.sp - r.sc;
-    out += '<div class="lgr ' + tone + '" role="row"><span class="lgk">' + r.rank + '</span><span class="lgn">' + (lgc ? '<button class="lgbtn" data-act="favGo" data-kind="club" data-id="' + esc(lgc) + '" aria-label="Ouvrir la page du club ' + esc(r.name) + '">' : '') + logoHtml(r.id, 26) + '<span class="lgx"><b title="' + esc(r.name) + '">' + esc(r.name) + '</b><small>Sets: ' + r.sp + '-' + r.sc + (me ? ' (' + (diff > 0 ? '+' : '') + diff + ')' : '') + '</small></span>' + (lgc ? '</button>' : '') + '</span>' +
+    out += '<div class="lgr ' + tone + '" role="row"><span class="lgk">' + r.rank + '</span><span class="lgn">' + (lgc ? '<button class="lgbtn" data-act="favGo" data-kind="club" data-id="' + esc(lgc) + '" aria-label="Ouvrir la page du club ' + esc(r.name) + '">' : '') + logoHtml(r.id, 26) + '<span class="lgx"><b title="' + esc(r.name) + '">' + esc(shortNm(r.name)) + '</b><small>Sets: ' + r.sp + '-' + r.sc + (me ? ' (' + (diff > 0 ? '+' : '') + diff + ')' : '') + '</small></span>' + (lgc ? '</button>' : '') + '</span>' +
       '<span class="lgj">' + r.j + '</span><span class="lgv">' + r.g + '-' + r.p + '</span><span class="lgp">' + r.pts + '</span></div>';
   });
   return out + '</div>';
