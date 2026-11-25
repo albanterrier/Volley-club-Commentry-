@@ -7436,16 +7436,27 @@ function fedCsv(t){
   return rows;
 }
 /* matchs repérés par le motif : score, ÉQUIPE DOMICILE, « / », ÉQUIPE EXTÉRIEUR, score (le score peut être vide ou « report ») */
+var FED_MOIS = { janvier:0, fevrier:1, mars:2, avril:3, mai:4, juin:5, juillet:6, aout:7, septembre:8, octobre:9, novembre:10, decembre:11 };
+/* « Journée 3 du 16 au 20 novembre » → date du lundi (le fichier ne donne ni année ni jour exact ; saison = septembre à août) */
+function fedJourDate(txt){
+  var m = norm(txt).match(/^(\d{1,2})(?:er)?([a-z]*)au(\d{1,2})(?:er)?([a-z]+)/);
+  if(!m) return '';
+  var m2 = FED_MOIS[m[4]], m1 = m[2] ? FED_MOIS[m[2]] : m2;
+  if(m1 === undefined) return '';
+  var now = new Date(), fy = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+  return isoOf(new Date(m1 >= 8 ? fy : fy + 1, m1, parseInt(m[1], 10)));
+}
 function fedMatches(rows){
-  var out = [];
+  var out = [], hdr = {};
   rows.forEach(function(r){
+    r.forEach(function(c, ci){ var h = String(c || '').match(/^\s*Journ[ée]e\s+\d+\s+du\s+(.+)$/i); if(h) hdr[ci] = fedJourDate(h[1]); });
     for(var i = 2; i < r.length - 1; i++){
       if(String(r[i]).trim() !== '/') continue;
       var h = String(r[i - 1] || '').trim(), a = String(r[i + 1] || '').trim();
       if(!/[A-Za-zÀ-ÿ]/.test(h) || !/[A-Za-zÀ-ÿ]/.test(a)) continue;
       if(/^(exempt|repos)\b/i.test(h) || /^(exempt|repos)\b/i.test(a)) continue; /* « EXEMPT » : adversaire fictif, l'équipe est exemptée cette journée */
       var sh = String(r[i - 2] || '').trim(), sa = String(r[i + 2] || '').trim();
-      out.push({ h:h, a:a, sh:sh, sa:sa, post:/report/i.test(sh + ' ' + sa) });
+      out.push({ h:h, a:a, sh:sh, sa:sa, post:/report/i.test(sh + ' ' + sa), d:hdr[i - 2] || '' });
     }
   });
   return out;
@@ -7460,7 +7471,7 @@ function fedTeamOf(ch, name){
   return part.length === 1 ? part[0].id : '';
 }
 function fedCompute(ch, ms){
-  var names = [], seen = {}, list = [], miss = 0, bad = 0;
+  var names = [], seen = {}, list = [], news = [], miss = 0, bad = 0;
   ms.forEach(function(m){ [m.h, m.a].forEach(function(n){ if(!seen[n]){ seen[n] = 1; names.push(n); } }); });
   var unm = names.filter(function(n){ return !fedTeamOf(ch, n); });
   ms.forEach(function(m){
@@ -7468,7 +7479,7 @@ function fedCompute(ch, ms){
     if(!H || !A) return;
     var f = ch.fixtures.filter(function(x){ return x.home === H && x.away === A; })[0];
     var played = /^\d$/.test(m.sh) && /^\d$/.test(m.sa);
-    if(!f){ if(played || m.post) miss++; return; }
+    if(!f){ if(m.d){ news.push({ h:H, a:A, d:m.d, sh:m.sh, sa:m.sa, post:m.post, played:played, lab:clubName(H) + ' – ' + clubName(A) }); } else if(played || m.post) miss++; return; }
     var cur = matchOf(ch, f.matchId), fs = m.sh + '-' + m.sa, lab = clubName(H) + ' – ' + clubName(A);
     if(f.locked){ return; }
     if(played){
@@ -7477,7 +7488,7 @@ function fedCompute(ch, ms){
       else if(cur.hs + '-' + cur.as !== fs){ list.push({ k:cur.source === 'manual' ? 'mod' : 'live', fid:f.id, lab:lab, to:fs, from:cur.hs + '-' + cur.as }); }
     } else if(m.post && !f.postponed && !cur){ list.push({ k:'post', fid:f.id, lab:lab, to:'reporté', from:'' }); }
   });
-  return { names:names, unm:unm, list:list, miss:miss, bad:bad };
+  return { names:names, unm:unm, list:list, news:news, miss:miss, bad:bad };
 }
 function fedApply(ch, it){
   var f = fixtureOf(ch, it.fid); if(!f || f.locked) return;
@@ -7501,6 +7512,10 @@ function fedSheet(sh){
     return '<div class="ritem"><div class="rinfo" style="flex:1"><b>' + esc(it.lab) + '</b><br><span class="muted">' + lbl[it.k] + (it.from ? ' : ' + esc(it.from) + ' → ' : ' : ') + '<b>' + esc(it.to) + '</b></span></div>' +
       (it.k === 'live' ? '<span class="tag">non modifié</span>' : '<button class="btn" data-act="fedOne" data-fid="' + it.fid + '" data-i="' + it.k + '">Appliquer</button>') + '</div>';
   }).join('') + '</div>' + (r.list.some(function(x){ return x.k !== 'live'; }) ? '<div class="btnrow"><button class="btn wide primary" data-act="fedAll">Tout appliquer</button></div>' : '');
+  if(r.news.length){
+    var nplay = r.news.filter(function(x){ return x.played && RESULTS.indexOf(x.sh + '-' + x.sa) >= 0; }).length;
+    out += '<p class="hint2" style="margin-top:10px"><b>' + r.news.length + ' rencontre' + (r.news.length > 1 ? 's' : '') + '</b> du fichier absente' + (r.news.length > 1 ? 's' : '') + ' du calendrier' + (nplay ? ' (dont ' + nplay + ' déjà jouée' + (nplay > 1 ? 's' : '') + ', avec leur score)' : '') + '. La date créée est le lundi de la journée, à confirmer ensuite.</p><div class="btnrow"><button class="btn wide" data-act="fedNew">Créer les rencontres manquantes</button></div>';
+  }
   if(r.miss || r.bad) out += '<p class="hint2">' + (r.miss ? r.miss + ' match(s) du fichier absent(s) du calendrier. ' : '') + (r.bad ? r.bad + ' score(s) illisible(s) ignoré(s).' : '') + '</p>';
   return out;
 }
@@ -9212,6 +9227,12 @@ document.addEventListener('click', function(e){
     case 'champTab': ui.edit = false; ui.champTab = d.v; ui.msg = ''; render(); break;
     case 'fedOpen': if(can('champEdit')) fedOpen(d.cid); break;
     case 'fedOne': { var fch = ui.sheet && champById(ui.sheet.cid); if(fch && can('champEdit')){ var fr = fedCompute(fch, ui.sheet.ms).list.filter(function(x){ return x.fid === d.fid && x.k === d.i; })[0]; if(fr) fedApply(fch, fr); FED.n[fch.id] = fedCompute(fch, ui.sheet.ms).list.filter(function(x){ return x.k !== 'live'; }).length; } render(); break; }
+    case 'fedNew': { var nch = ui.sheet && champById(ui.sheet.cid); if(nch && can('champEdit')){ fedCompute(nch, ui.sheet.ms).news.forEach(function(x){
+      var nf = { id:uid(), date:x.d, time:'', place:'', home:x.h, away:x.a, matchId:null };
+      nch.fixtures.push(nf);
+      if(x.post){ nf.postponed = true; nf.origW = weekStart(x.d); }
+      else if(x.played && RESULTS.indexOf(x.sh + '-' + x.sa) >= 0) setFixtureResult(nch, nf, x.sh + '-' + x.sa);
+    }); save(); toastShow('Rencontres créées.'); } render(); break; }
     case 'fedAll': { var fch2 = ui.sheet && champById(ui.sheet.cid); if(fch2 && can('champEdit')){ fedCompute(fch2, ui.sheet.ms).list.forEach(function(x){ if(x.k !== 'live') fedApply(fch2, x); }); FED.n[fch2.id] = 0; } render(); break; }
     case 'champTeamOpen': ui.sheet = { kind:'champteam' }; render(); break;
     case 'champTeamAdd': { var chA = curChamp(); if(chA && !champOfTeam(d.cid)) chA.clubIds.push(d.cid); save(); render(); break; }
