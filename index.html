@@ -924,6 +924,10 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .slview{flex:1;min-width:0;touch-action:pan-y}
 .slbtn{flex:0 0 32px;width:32px;height:56px;border:0;background:none;color:var(--acc-text);font-size:34px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
 .slbtn.ph{visibility:hidden}
+.stack.accs{gap:0}.acc{border-bottom:1px solid var(--line)}.acc:first-child{border-top:1px solid var(--line)}
+.acch{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:56px;padding:8px 4px;background:transparent;border:0;color:var(--ink);font:inherit;font-family:var(--font-d);font-weight:800;font-size:1.25rem;text-align:left;cursor:pointer}
+.accv{flex:0 0 auto;transition:transform .15s;color:var(--muted)}.acc.open .accv{transform:rotate(180deg)}
+.accb{padding:0 4px 14px}.accb[hidden]{display:none}
 .mcc{position:relative;display:block;padding:15px 2px 6px;cursor:pointer}
 .mcc-d{position:absolute;top:5px;left:50%;transform:translateX(-50%);z-index:3;width:150px;height:20px;box-sizing:border-box;border-radius:10px;background:#fff;border:2px solid var(--mccl);color:#000;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;overflow:hidden;line-height:1}
 .mcc-r{display:flex;gap:3px;padding:0 26px}
@@ -3054,8 +3058,18 @@ function tabSub(){
   if(ui.tab === 'backup') return 'Données';
   return '';
 }
+/* Paramètres : chaque bloc devient un menu déroulant (titre + chevron), séparés par un trait */
+function accWrap(html){
+  ui.setOpen = ui.setOpen || {};
+  return html.replace(/<section class="card"[^>]*>\s*<h2[^>]*>([\s\S]*?)<\/h2>([\s\S]*?)<\/section>/g, function(all, ttl, body){
+    var k = norm(ttl.replace(/<[^>]*>/g, '')) || 'x', open = !!ui.setOpen[k];
+    return '<div class="acc' + (open ? ' open' : '') + '"><button class="acch" data-act="setTog" data-k="' + k + '" aria-expanded="' + (open ? 'true' : 'false') + '"><span>' + ttl + '</span>' +
+      '<svg class="accv" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+      '<div class="accb"' + (open ? '' : ' hidden') + '>' + body + '</div></div>';
+  });
+}
 function settingsView(){
-  var bk = bkStatus(), th = themeGet(), out = '<div class="stack">';
+  var bk = bkStatus(), th = themeGet(), out = '<div class="stack accs">';
   out += '<section class="card"><h2>Apparence</h2><div class="chips modes" style="margin-top:10px">' +
     chip('theme', { t:'dark' }, 'Sombre', th === 'dark') + chip('theme', { t:'light' }, 'Clair', th === 'light') + chip('theme', { t:'auto' }, 'Auto', th === 'auto') + '</div>' +
     '<p class="hint2">« Auto » suit le réglage de votre téléphone.</p></section>';
@@ -3074,7 +3088,7 @@ function settingsView(){
   out += sbCardHtml();
   out += installCardHtml();
   out += '<section class="card"><h2>À propos</h2><p class="muted" style="margin:6px 0 0">Volley-Club Commentry · feuille de match et suivi des rencontres. Les données restent sur cet appareil.</p></section>';
-  return out + '</div>';
+  return accWrap(out) + '</div>';
 }
 /* Choix de saison : le bouton n'est plus dans les en-têtes ni sur l'accueil (décision du 23/10/2026), seulement dans Paramètres.
    Pour le remettre partout, passer SEASON_BTN_QUICK à true : seasonBtnQuick() réaffiche le bouton dans l'en-tête de Match, Clubs, Championnat, Calendrier et sur l'accueil. */
@@ -9227,6 +9241,7 @@ document.addEventListener('click', function(e){
     case 'champTab': ui.edit = false; ui.champTab = d.v; ui.msg = ''; render(); break;
     case 'fedOpen': if(can('champEdit')) fedOpen(d.cid); break;
     case 'fedOne': { var fch = ui.sheet && champById(ui.sheet.cid); if(fch && can('champEdit')){ var fr = fedCompute(fch, ui.sheet.ms).list.filter(function(x){ return x.fid === d.fid && x.k === d.i; })[0]; if(fr) fedApply(fch, fr); FED.n[fch.id] = fedCompute(fch, ui.sheet.ms).list.filter(function(x){ return x.k !== 'live'; }).length; } render(); break; }
+    case 'setTog': ui.setOpen = ui.setOpen || {}; ui.setOpen[d.k] = !ui.setOpen[d.k]; render(); break;
     case 'fedNew': { var nch = ui.sheet && champById(ui.sheet.cid); if(nch && can('champEdit')){ fedCompute(nch, ui.sheet.ms).news.forEach(function(x){
       var nf = { id:uid(), date:x.d, time:'', place:'', home:x.h, away:x.a, matchId:null };
       nch.fixtures.push(nf);
