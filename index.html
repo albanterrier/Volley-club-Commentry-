@@ -998,6 +998,8 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .cvc{border:1px solid var(--line);background:var(--surface);border-radius:9px;min-height:66px;padding:3px 2px 2px;display:flex;flex-direction:column;align-items:stretch;gap:2px;color:var(--ink);font:inherit;text-align:center;min-width:0;cursor:pointer}
 .cvc b{font-size:12px;font-weight:800;text-align:left;padding-left:3px;line-height:1.2}
 .cvc.oth{opacity:.4}
+.cvc.past{opacity:.5}
+.cvc.past.oth{opacity:.3}
 .cvc.today{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}.cvc.today b{color:var(--acc-text)}
 .cvg{display:block;border-radius:4px;font-size:9px;font-weight:800;line-height:1.35;padding:0 2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#111}
 .cvg.tt{background:#35b26a}.cvg.tc{background:#e5484d;color:#fff}.cvg.ta{background:#f0c235}.cvg.to{background:#8b97b3}
@@ -7335,14 +7337,12 @@ function calListHtml(){
   });
   if(mode === 'done'){ order.reverse(); order.forEach(function(k){ weeks[k].reverse(); }); }
   if(!champs().length && !all.length) out += emptySeasonHtml();
-  else if(calAnyFilter()) out += '<p class="muted" style="margin:0 2px">' + shown.length + ' résultat' + (shown.length > 1 ? 's' : '') + ' sur ' + all.length + '</p>';
   if(!order.length && (champs().length || all.length)){
-    out += '<section class="card"><p class="muted" style="margin:0">' + (!all.length ? 'Aucune rencontre ni événement pour la saison ' + esc(curSeason().label) + '. Créez-en avec le bouton « + ».' : (filtered.length ? (mode === 'done' ? 'Aucune rencontre terminée.' : 'Rien à venir : tout est terminé.') : 'Aucune rencontre ne correspond à votre recherche.')) + '</p>' +
+    out += '<section class="card"><p class="muted" style="margin:0">' + (!all.length ? 'Aucune rencontre ni événement pour la saison ' + esc(curSeason().label) + '. Créez-en avec le bouton « + ».' : (filtered.length ? 'Rien à afficher avec ces réglages.' : 'Aucune rencontre ne correspond à votre recherche.')) + '</p>' +
       (filtered.length === 0 && all.length && calAnyFilter() ? '<div class="btnrow"><button class="btn wide" data-act="calReset">Tout effacer</button></div>' : '') + '</section>';
   }
   if(win) out = calBannerHtml() + out;
-  var past = (mode === 'done' || win) ? [] : order.filter(function(k){ return meta[k].w < thisWeek; }), fut = (mode === 'done' || win) ? order : order.filter(function(k){ return meta[k].w >= thisWeek; });
-  var collapse = past.length > 0 && fut.length > 0 && !ui.calPast, inRange = inSeason(today) && mode !== 'done';
+  var past = [], fut = order, collapse = false, inRange = inSeason(today) && mode !== 'done';
   function weekCard(k){
     var mt = meta[k], w = mt.w, rel = weekRel(w, thisWeek), ttl, sub;
     if(byDay){
@@ -7357,11 +7357,9 @@ function calListHtml(){
     var nPast = past.reduce(function(n, k){ return n + weeks[k].length; }, 0), unit = byDay ? 'journée' : 'semaine';
     out += '<button class="btn wide" data-act="calPast" aria-expanded="' + (collapse ? 'false' : 'true') + '">' + (collapse ? 'Voir les ' + past.length + ' ' + unit + (past.length > 1 ? 's' : '') + ' passée' + (past.length > 1 ? 's' : '') + ' (' + nPast + ' rencontre' + (nPast > 1 ? 's' : '') + ')' : 'Masquer les ' + unit + 's passées') + '</button>';
   }
-  if(!collapse) past.forEach(function(k){ out += weekCard(k); });
-  var mark = '<div class="todaymark" id="todaymark" role="separator"><span>Aujourd\'hui · ' + esc(fmtDay(today)) + '</span></div>';
-  if(inRange && fut.length && !win) out += mark;
-  fut.forEach(function(k){ out += weekCard(k); });
-  if(inRange && !fut.length && order.length && !win) out += mark;
+  var mark = '<div class="todaymark" id="todaymark" role="separator"><span>Aujourd\'hui · ' + esc(fmtDay(today)) + '</span></div>', marked = false;
+  fut.forEach(function(k){ if(inRange && !marked && meta[k].w >= thisWeek){ out += mark; marked = true; } out += weekCard(k); });
+  if(inRange && !marked && order.length) out += mark;
   return out;
 }
 /* ---------- Calendrier : vue « mois » (tableau) ou vue « liste », choisies par deux icônes en haut ---------- */
@@ -7392,6 +7390,12 @@ function calEntsByDay(){
   Object.keys(by).forEach(function(k){ by[k].sort(function(a, b){ return (a.time || '99') < (b.time || '99') ? -1 : 1; }); });
   return by;
 }
+function calNavHtml(){
+  var mk = calMonthKey(), y = +mk.slice(0, 4), m = +mk.slice(5, 7);
+  var ttl = new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+  var arrow = function(n, p, lab){ return '<button class="ibtn" data-act="calMon" data-n="' + n + '" aria-label="' + lab + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + p + '"/></svg></button>'; };
+  return '<div class="cvnav">' + arrow(-1, 'M15 5l-7 7 7 7', 'Mois précédent') + '<button class="cvt" data-act="calMon" data-n="0" aria-label="Revenir au mois en cours">' + esc(ttl.charAt(0).toUpperCase() + ttl.slice(1)) + '</button>' + arrow(1, 'M9 5l7 7-7 7', 'Mois suivant') + '</div>';
+}
 function calMonthHtml(){
   var today = isoOf(new Date()), mk = calMonthKey(), y = +mk.slice(0, 4), m = +mk.slice(5, 7), by = calEntsByDay();
   var first = new Date(y, m - 1, 1), start = toDate(weekStart(isoOf(first))), days = new Date(y, m, 0).getDate();
@@ -7400,7 +7404,7 @@ function calMonthHtml(){
     var iso = isoOf(dt), es = by[iso] || [], chips = '';
     es.slice(0, 2).forEach(function(e){ chips += '<span class="cvg t' + entryType(e) + '">' + esc(calEvLabel(e)) + '</span>'; });
     if(es.length > 2) chips += '<span class="cvm">+' + (es.length - 2) + '</span>';
-    cells += '<button class="cvc' + (dt.getMonth() !== m - 1 ? ' oth' : '') + (iso === today ? ' today' : '') + '" data-act="calOpenDay" data-d="' + iso + '" aria-label="' + esc(dt.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }) + (es.length ? ', ' + es.length + ' élément' + (es.length > 1 ? 's' : '') : '')) + '"><b>' + dt.getDate() + '</b>' + chips + '</button>';
+    cells += '<button class="cvc' + (dt.getMonth() !== m - 1 ? ' oth' : '') + (iso < today ? ' past' : '') + (iso === today ? ' today' : '') + '" data-act="calOpenDay" data-d="' + iso + '" aria-label="' + esc(dt.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }) + (es.length ? ', ' + es.length + ' élément' + (es.length > 1 ? 's' : '') : '')) + '"><b>' + dt.getDate() + '</b>' + chips + '</button>';
     dt.setDate(dt.getDate() + 1);
   }
   var ttl = new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
@@ -9838,7 +9842,7 @@ document.addEventListener('click', function(e){
     case 'theme': themeSet(d.t); render(); break;
     case 'grpBy': S.prefs.groupBy = d.g; save(); render(); break;
     case 'calMode': ui.calMode = d.m; ui.calJump = d.m !== 'done'; render(); break;
-    case 'calVw': ui.calVw = d.v === 'list' ? 'list' : 'month'; try{ localStorage.setItem('volley-calvw-v1', ui.calVw); }catch(e){} render(); window.scrollTo(0, 0); break;
+    case 'calVw': ui.calVw = d.v === 'list' ? 'list' : 'month'; ui.calJump = ui.calVw === 'list'; try{ localStorage.setItem('volley-calvw-v1', ui.calVw); }catch(e){} render(); if(ui.calVw !== 'list') window.scrollTo(0, 0); break; /* p456 */
     case 'calMon': { var cmk = calMonthKey(), cmy = +cmk.slice(0, 4), cmm = +cmk.slice(5, 7) - 1; if(d.n === '0'){ var cmT = new Date(); cmy = cmT.getFullYear(); cmm = cmT.getMonth(); } else cmm += parseInt(d.n, 10); var cmD = new Date(cmy, cmm, 1); ui.calMonth = cmD.getFullYear() + '-' + ('0' + (cmD.getMonth() + 1)).slice(-2); render(); break; }
     case 'calOpenDay': ui.sheet = { kind:'calday', d:d.d }; render(); break;
     case 'calDay': ui.calDay = d.d; if(d.d < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = d.d; render(); break;
