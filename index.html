@@ -7423,7 +7423,6 @@ function sheetUp(){
 function calendarView(){
   if(ui.calView === 'create') return eventForm();
   var out = '<div class="stack">' + calTopHtml();
-  if(calFilterCount()) out += '<div id="calactive">' + calActiveHtml() + '</div>';
   if(calVw() === 'month') out += calMonthHtml() + '</div>';
   else out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
   return out + (can('evCreate') ? '<button class="fab" data-act="calCreate" aria-label="Créer une rencontre ou un événement">+</button>' : '');
