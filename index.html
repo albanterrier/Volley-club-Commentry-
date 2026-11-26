@@ -916,7 +916,7 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .hsec{margin:14px 0 6px;font-size:15px;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
 .hsep{border:0;border-top:1px solid var(--line);margin:14px 0 4px}
 .slcnt{margin:0;font-size:13px;font-weight:600;color:var(--muted);text-align:center}
-.mcbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 6px 4px;margin-top:10px}
+.mcbox{background:none;border:0;border-radius:0;padding:6px 0 4px;margin-top:10px}
 .slider.slcol{display:block}.slnav{display:flex;align-items:center;justify-content:center;gap:14px}.slnav .slbtn{flex:0 0 44px;width:44px;height:34px;font-size:30px}
 .mcbox .mc{background:none;border:0;border-radius:0;padding:4px 2px}
 .hempty{margin:0 0 4px}
@@ -949,8 +949,8 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .nmc{--nm-bg:#fff;--nm-box:#000;--nm-boxk:#fff;--nm-ink:#111;--nm-ring:rgba(255,255,255,.7);--nm-ban:#000;--nm-bank:#fff}
 :root[data-theme="dark"] .nmc{--nm-bg:#2b3140;--nm-box:#fff;--nm-boxk:#000;--nm-ink:#f2f4f8;--nm-ring:rgba(0,0,0,.25);--nm-ban:#fff;--nm-bank:#000}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .nmc{--nm-bg:#2b3140;--nm-box:#fff;--nm-boxk:#000;--nm-ink:#f2f4f8;--nm-ring:rgba(0,0,0,.25);--nm-ban:#fff;--nm-bank:#000}}
-.nmc{position:relative;display:flex;align-items:stretch;width:100%;height:104px;box-sizing:border-box;background:var(--nm-bg);color:var(--nm-ink);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;text-align:left}
-.nmc.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.nmc{position:relative;display:flex;align-items:stretch;width:100%;height:104px;box-sizing:border-box;background:var(--nm-bg);color:var(--nm-ink);border:0;border-radius:16px;overflow:hidden;cursor:pointer;text-align:left}/*nmc-noborder*/
+.nmc.sel{box-shadow:0 0 0 2px var(--acc)}
 .nmc-t{position:relative;z-index:1;flex:0 0 31%;min-width:0;background:var(--nm-box);color:var(--nm-boxk);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:5px 8px;box-sizing:border-box}
 .nmc-t.l{clip-path:polygon(0 0,calc(100% - 24px) 0,100% 100%,0 100%);padding-right:22px}
 .nmc-t.r{clip-path:polygon(24px 0,100% 0,100% 100%,0 100%);padding-left:22px;margin-left:auto}
@@ -7734,7 +7734,7 @@ function champBlock(ch, today){
   var ents = calEntries().filter(function(e){ return e.kind === 'fixture' && e.cid === ch.id; });
   var pu = splitPast(ents, today), past = pu[0], up = pu[1];
   return '<section class="favblock">' + favHead('champ', ch.id, ch.name, 'Championnat · saison ' + curSeason().label, '') +
-    sepJoin([liveHtml(liveFor([], ch)) + liveRemoteHtml(remoteFor([], ch)), standingsHome(ch, ''), matchSlider('c:' + ch.id + ':p', past, 'last', today, '', 'Match passé', true), matchSlider('c:' + ch.id + ':u', up, 'first', today, '', 'Match à venir', true)]) + '</section>';
+    sepJoin([liveHtml(liveFor([], ch)) + liveRemoteHtml(remoteFor([], ch)), standingsHome(ch, ''), matchSlider('c:' + ch.id + ':p', past, 'last', today, '', 'Match passé'), matchSlider('c:' + ch.id + ':u', up, 'first', today, '', 'Match à venir')]) + '</section>';
 }
 function teamInner(tid, today, keyp){
   var ch = champOfTeam(tid);
