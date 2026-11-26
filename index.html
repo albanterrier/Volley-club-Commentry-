@@ -7324,6 +7324,7 @@ function calListHtml(){
   var shown = filtered.filter(function(e){ return calModeKeep(e, today); });
   var win = false, wk0 = weekStart(calBaseDay());
   if(win){ var wk1 = isoOf((function(d){ d.setDate(d.getDate() + 6); return d; })(toDate(wk0))); shown = shown.filter(function(e){ return e.date >= wk0 && e.date <= wk1; }); }
+  var mk = calMonthKey(); shown = shown.filter(function(e){ return e.date.slice(0, 7) === mk; }); /* p457 */
   var weeks = {}, meta = {}, order = [], thisWeek = weekStart(today), byDay = GRP_BTN && S.prefs.groupBy === 'day';
   shown.forEach(function(e){
     var w = weekStart(e.date), k = byDay ? w + '|' + (e.cid || '~') : w;
@@ -7338,11 +7339,11 @@ function calListHtml(){
   if(mode === 'done'){ order.reverse(); order.forEach(function(k){ weeks[k].reverse(); }); }
   if(!champs().length && !all.length) out += emptySeasonHtml();
   if(!order.length && (champs().length || all.length)){
-    out += '<section class="card"><p class="muted" style="margin:0">' + (!all.length ? 'Aucune rencontre ni événement pour la saison ' + esc(curSeason().label) + '. Créez-en avec le bouton « + ».' : (filtered.length ? 'Rien à afficher avec ces réglages.' : 'Aucune rencontre ne correspond à votre recherche.')) + '</p>' +
+    out += '<section class="card"><p class="muted" style="margin:0">' + (!all.length ? 'Aucune rencontre ni événement pour la saison ' + esc(curSeason().label) + '. Créez-en avec le bouton « + ».' : (filtered.length ? 'Rien de prévu ce mois-ci.' : 'Aucune rencontre ne correspond à votre recherche.')) + '</p>' +
       (filtered.length === 0 && all.length && calAnyFilter() ? '<div class="btnrow"><button class="btn wide" data-act="calReset">Tout effacer</button></div>' : '') + '</section>';
   }
   if(win) out = calBannerHtml() + out;
-  var past = [], fut = order, collapse = false, inRange = inSeason(today) && mode !== 'done';
+  var past = [], fut = order, collapse = false, inRange = inSeason(today) && mode !== 'done' && today.slice(0, 7) === mk;
   function weekCard(k){
     var mt = meta[k], w = mt.w, rel = weekRel(w, thisWeek), ttl, sub;
     if(byDay){
@@ -7428,7 +7429,7 @@ function calendarView(){
   if(ui.calView === 'create') return eventForm();
   var out = '<div class="stack">' + calTopHtml();
   if(calVw() === 'month') out += calMonthHtml() + '</div>';
-  else out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
+  else out += calNavHtml() + '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
   return out + (can('evCreate') ? '<button class="fab" data-act="calCreate" aria-label="Créer une rencontre ou un événement">+</button>' : '');
 }
 /* Deux clubs au choix, puis la question « qui joue à domicile ? » : l'autre joue à l'extérieur */
@@ -9843,7 +9844,7 @@ document.addEventListener('click', function(e){
     case 'grpBy': S.prefs.groupBy = d.g; save(); render(); break;
     case 'calMode': ui.calMode = d.m; ui.calJump = d.m !== 'done'; render(); break;
     case 'calVw': ui.calVw = d.v === 'list' ? 'list' : 'month'; ui.calJump = ui.calVw === 'list'; try{ localStorage.setItem('volley-calvw-v1', ui.calVw); }catch(e){} render(); if(ui.calVw !== 'list') window.scrollTo(0, 0); break; /* p456 */
-    case 'calMon': { var cmk = calMonthKey(), cmy = +cmk.slice(0, 4), cmm = +cmk.slice(5, 7) - 1; if(d.n === '0'){ var cmT = new Date(); cmy = cmT.getFullYear(); cmm = cmT.getMonth(); } else cmm += parseInt(d.n, 10); var cmD = new Date(cmy, cmm, 1); ui.calMonth = cmD.getFullYear() + '-' + ('0' + (cmD.getMonth() + 1)).slice(-2); render(); break; }
+    case 'calMon': { var cmk = calMonthKey(), cmy = +cmk.slice(0, 4), cmm = +cmk.slice(5, 7) - 1; if(d.n === '0'){ var cmT = new Date(); cmy = cmT.getFullYear(); cmm = cmT.getMonth(); } else cmm += parseInt(d.n, 10); var cmD = new Date(cmy, cmm, 1); ui.calMonth = cmD.getFullYear() + '-' + ('0' + (cmD.getMonth() + 1)).slice(-2); ui.calJump = true; window.scrollTo(0, 0); render(); break; }
     case 'calOpenDay': ui.sheet = { kind:'calday', d:d.d }; render(); break;
     case 'calDay': ui.calDay = d.d; if(d.d < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = d.d; render(); break;
     case 'calWeek': { var cwd = toDate(calBaseDay()); cwd.setDate(cwd.getDate() + 7 * parseInt(d.n, 10)); ui.calDay = isoOf(cwd); if(ui.calDay < weekStart(isoOf(new Date()))) ui.calPast = true; if(calAnyFilter()) ui.calGo = ui.calDay; render(); break; }
