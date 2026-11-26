@@ -992,6 +992,8 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .cvf.on{border-color:var(--acc);color:var(--acc-text)}
 .cvf i{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--acc);color:#1a0a00;font:800 11px/18px var(--font-d,inherit);font-style:normal;text-align:center;padding:0 4px;box-sizing:border-box}
 .cvnav{display:flex;align-items:center;justify-content:space-between}
+.cvnav.stk{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--hh,60px));z-index:15;background:var(--bg);padding:6px 0;box-shadow:0 1px 0 var(--line)} /* p458 */
+.cvnav.stk~#callist .todaymark{scroll-margin-top:calc(var(--hh,60px) + 70px)}
 .cvt{border:0;background:none;color:var(--ink);font:inherit;font-size:20px;font-weight:800;cursor:pointer;padding:6px 10px}
 .cvgh{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-weight:800;font-size:12px;margin-bottom:-6px}
 .cvgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
@@ -7391,11 +7393,11 @@ function calEntsByDay(){
   Object.keys(by).forEach(function(k){ by[k].sort(function(a, b){ return (a.time || '99') < (b.time || '99') ? -1 : 1; }); });
   return by;
 }
-function calNavHtml(){
+function calNavHtml(stk){
   var mk = calMonthKey(), y = +mk.slice(0, 4), m = +mk.slice(5, 7);
   var ttl = new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
   var arrow = function(n, p, lab){ return '<button class="ibtn" data-act="calMon" data-n="' + n + '" aria-label="' + lab + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + p + '"/></svg></button>'; };
-  return '<div class="cvnav">' + arrow(-1, 'M15 5l-7 7 7 7', 'Mois précédent') + '<button class="cvt" data-act="calMon" data-n="0" aria-label="Revenir au mois en cours">' + esc(ttl.charAt(0).toUpperCase() + ttl.slice(1)) + '</button>' + arrow(1, 'M9 5l7 7-7 7', 'Mois suivant') + '</div>';
+  return '<div class="cvnav' + (stk ? ' stk' : '') + '">' + arrow(-1, 'M15 5l-7 7 7 7', 'Mois précédent') + '<button class="cvt" data-act="calMon" data-n="0" aria-label="Revenir au mois en cours">' + esc(ttl.charAt(0).toUpperCase() + ttl.slice(1)) + '</button>' + arrow(1, 'M9 5l7 7-7 7', 'Mois suivant') + '</div>';
 }
 function calMonthHtml(){
   var today = isoOf(new Date()), mk = calMonthKey(), y = +mk.slice(0, 4), m = +mk.slice(5, 7), by = calEntsByDay();
@@ -7429,7 +7431,7 @@ function calendarView(){
   if(ui.calView === 'create') return eventForm();
   var out = '<div class="stack">' + calTopHtml();
   if(calVw() === 'month') out += calMonthHtml() + '</div>';
-  else out += calNavHtml() + '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
+  else out += calNavHtml(true) + '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
   return out + (can('evCreate') ? '<button class="fab" data-act="calCreate" aria-label="Créer une rencontre ou un événement">+</button>' : '');
 }
 /* Deux clubs au choix, puis la question « qui joue à domicile ? » : l'autre joue à l'extérieur */
@@ -8999,6 +9001,7 @@ function render(){
       if(cbest) cbest.scrollIntoView({ block:'center' });
     }
   }
+  try{ var hh = document.querySelector('header.top'); if(hh) document.documentElement.style.setProperty('--hh', hh.offsetHeight + 'px'); }catch(e){}
   if(ui.calJump){ ui.calJump = false; var tm = document.getElementById('todaymark'); if(tm && ui.tab === 'cal') tm.scrollIntoView({ block:'start' }); }
   hashSync();
   navSave();
