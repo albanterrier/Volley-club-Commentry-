@@ -620,7 +620,7 @@ header.top .hl>.ibtn[data-tab="menu"]:active{transform:translateY(1px);box-shado
 .exempt{margin:6px 2px 0;font-size:14px;color:var(--muted)}
 .exempt b{color:var(--ink)}
 .exempt i{font-style:normal;color:var(--danger);font-weight:700}
-.mcs{display:flex;flex-direction:column;gap:10px}
+.mcs{display:flex;flex-direction:column;gap:18px}
 .mc{display:flex;flex-direction:column;gap:10px;width:100%;text-align:left;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
 .mc.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
 .mc-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -3322,7 +3322,7 @@ function hashApply(o){
   var ch = o.champ ? champById(o.champ) : null;
   if(ch && ch.seasonId !== S.season) S.season = ch.seasonId;
   ui.fil = { team:(o.equipe && findTeam(o.equipe)) ? o.equipe : '', club:(o.club && clubById(o.club)) ? o.club : '', champ:ch ? ch.id : '' };
-  ui.calQ = o.q || ''; ui.calFOpen = calFilterCount() > 0; ui.favDone = true; ui.calPast = false;
+  ui.calQ = ''; ui.calFOpen = calFilterCount() > 0; ui.favDone = true; ui.calPast = false;
   save();
 }
 function filterChip(k, label){ return '<button class="chip sel fchip" data-act="calClear" data-k="' + k + '" aria-label="Retirer le filtre ' + esc(label) + '">' + label + ' <span aria-hidden="true">✕</span></button>'; }
@@ -3340,10 +3340,9 @@ function calActiveHtml(){
 }
 function calFiltersHtml(){
   var f = ui.fil, n = calFilterCount(), fav = favGet(), open = !!ui.calFOpen;
-  var out = '<section class="card" id="calfilters"><label class="vh" for="calq">Rechercher dans le calendrier</label>' +
-    '<input type="search" id="calq" data-calq="1" value="' + esc(ui.calQ || '') + '" placeholder="Équipe, club, lieu…" autocomplete="off" enterkeyhint="search">' +
+  var out = '<section class="card" id="calfilters">' +
     '<div id="calactive">' + calActiveHtml() + '</div>' +
-    '<button class="btn wide" data-act="calFOpen" aria-expanded="' + (open ? 'true' : 'false') + '" style="margin-top:10px">Filtres' + (n ? ' (' + n + ')' : '') + ' <span aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>';
+    '<button class="btn wide" data-act="calFOpen" aria-expanded="' + (open ? 'true' : 'false') + '" style="margin-top:0">Filtres' + (n ? ' (' + n + ')' : '') + ' <span aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>';
   if(open){
     var ents = allEntrants(), cm = ui.calMode || 'all';
     out += group('Afficher', [['all', 'Tous'], ['up', 'À venir'], ['done', 'Terminés']].map(function(m){ return chip('calMode', { m:m[0] }, m[1], cm === m[0]); }).join('')) +
