@@ -723,6 +723,9 @@ body:not(.hasfab) .fab{display:none}
 .fx.big{min-height:64px}
 body.hasfab .tmsg{margin-bottom:0}
 
+.clubev{display:flex;flex-direction:column;gap:6px}
+.clubev .hsec{margin:14px 4px 0}
+.clubev .mcbox{margin-top:0}
 .homenext{max-width:560px;margin:18px auto 0;padding:0 12px;display:flex;flex-direction:column;gap:10px}
 .homenext h2{font-size:15px;margin:6px 4px 0;color:var(--muted);font-weight:600}
 
@@ -6970,25 +6973,22 @@ function clubsEdit(){
   }
   else if(tab === 'matches'){
     var today = isoOf(new Date()), all = calEntries().filter(function(e){ return e.kind !== 'event' && e.home && e.away && (clubOfEntrant(e.home) === c.id || clubOfEntrant(e.away) === c.id); });
-    var nxt = all.filter(function(e){ return !e.postponed && e.date >= today && !entryResult(e); })[0], lst = all.filter(function(e){ return entryResult(e); }).pop();
-    var trn = calEntries().filter(function(e){ return e.kind === 'event' && e.f && e.f.train && e.f.club === c.id && !e.postponed && e.date >= today; })[0];
-    if(!nxt && !lst && !trn) out += '<section class="card"><p class="muted" style="margin:0">Aucun événement de ce club au calendrier pour le moment.</p></section>';
+    var trn = calEntries().filter(function(e){ return e.kind === 'event' && e.f && e.f.train && e.f.club === c.id && !e.postponed && e.date >= today; }).sort(function(a, b){ return (a.date + (a.time || '')) < (b.date + (b.time || '')) ? -1 : 1; }); /* p459 p460 */
+    var grp = {}, gord = [];
+    all.forEach(function(e){ var k = e.cid || '~'; if(!grp[k]){ grp[k] = { name:(e.ch && e.ch.name) || 'Matchs amicaux', list:[] }; gord.push(k); } grp[k].list.push(e); });
+    gord.sort(function(a, b){ return a === '~' ? 1 : b === '~' ? -1 : grp[a].name.localeCompare(grp[b].name, 'fr'); });
+    if(!trn.length && !gord.length) out += '<section class="card"><p class="muted" style="margin:0">Aucun événement de ce club au calendrier pour le moment.</p></section>';
     else {
-      var sel = !lst ? 'next' : ui.clubEv === 'last' ? 'last' : (ui.clubEv === 'next' ? 'next' : (nxt || !lst ? 'next' : 'last'));
-      out += '<div class="homenext"><div class="evsw" role="tablist">' + (lst ? '<button data-act="clubEv" data-k="last" role="tab" aria-selected="' + (sel === 'last') + '" class="' + (sel === 'last' ? 'on' : '') + '">Dernier match</button>' : '') + '<button data-act="clubEv" data-k="next" role="tab" aria-selected="' + (sel === 'next') + '" class="' + (sel === 'next' ? 'on' : '') + '">Prochain match</button></div>' +
-        (function(){
-          /* un match par équipe du club (le prochain, ou le dernier joué) */
-          var kind = sel === 'next' ? 'nxt' : 'lst', rows = [];
-          clubTeams(c).forEach(function(t){
-            var te = all.filter(function(e){ return e.home === t.id || e.away === t.id; }), x = kind === 'nxt'
-              ? te.filter(function(e){ return !e.postponed && e.date >= today && !entryResult(e); })[0] : te.filter(function(e){ return entryResult(e); }).pop();
-            if(x) rows.push({ t:t, e:x });
-          });
-          if(!rows.length) return '<p class="muted">' + (kind === 'nxt' ? 'Aucun match à venir.' : 'Aucun match joué.') + '</p>';
-          var multi = rows.length > 1;
-          return rows.map(function(r){ return (multi ? '<p class="hint2" style="margin:12px 0 4px"><b>' + esc(r.t.name) + '</b></p>' : '') + calRow(r.e, today); }).join('');
-        })() +
-        (trn ? '<h2>Prochain entraînement</h2>' + calRow(trn, today) : '') + '</div>';
+      out += '<div class="clubev">' + (trn.length ? '<h3 class="hsec">' + (trn.length > 1 ? 'Entraînements' : 'Prochain entraînement') + '</h3>' + matchSlider('clubev:' + c.id + ':train', trn, 'first', today, '', '') : '');
+      gord.forEach(function(k){
+        var g = grp[k], key = 'clubev:' + c.id + ':' + k, i0 = 0;
+        g.list.sort(function(a, b){ return (a.date + (a.time || '')) < (b.date + (b.time || '')) ? -1 : 1; });
+        for(i0 = 0; i0 < g.list.length; i0++){ var q = g.list[i0]; if(!q.postponed && q.date >= today && !entryResult(q)) break; }
+        if(i0 >= g.list.length) i0 = g.list.length - 1;
+        ui.sl = ui.sl || {}; if(ui.sl[key] === undefined || ui.sl[key] === null) ui.sl[key] = i0;
+        out += '<h3 class="hsec">' + esc(g.name) + '</h3>' + matchSlider(key, g.list, 'first', today, '', '');
+      });
+      out += '</div>';
     }
   }
   if(ui.edit) out += '<div class="btnrow"><button class="btn wide danger" data-act="delClubAsk">Supprimer ce club</button></div>';
