@@ -982,6 +982,29 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .evc-h{font-size:18px;line-height:1}
 .evc-pr{flex:1;min-height:0;border:0;margin:0;font:inherit;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px 0 20px;clip-path:polygon(8.5px 0,100% 0,100% 100%,16px 100%);cursor:pointer}
 .evc-pr.ask{background:#d5dae3;color:#1b2230}.evc-pr.ok{background:#5dbb82;color:#fff}.evc-pr.bad{background:#e8706f;color:#fff}
+.cvbar{display:flex;align-items:center;gap:8px}
+.cvbar .sp{flex:1}
+.cvseg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:3px;gap:2px}
+.cvseg button{border:0;background:none;color:var(--muted);width:44px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cvseg button.on{background:var(--acc);color:#1a0a00}
+.cvseg svg,.cvf svg{width:22px;height:22px}
+.cvf{position:relative;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cvf.on{border-color:var(--acc);color:var(--acc-text)}
+.cvf i{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:var(--acc);color:#1a0a00;font:800 11px/18px var(--font-d,inherit);font-style:normal;text-align:center;padding:0 4px;box-sizing:border-box}
+.cvnav{display:flex;align-items:center;justify-content:space-between}
+.cvt{border:0;background:none;color:var(--ink);font:inherit;font-size:20px;font-weight:800;cursor:pointer;padding:6px 10px}
+.cvgh{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:var(--muted);font-weight:800;font-size:12px;margin-bottom:-6px}
+.cvgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cvc{border:1px solid var(--line);background:var(--surface);border-radius:9px;min-height:66px;padding:3px 2px 2px;display:flex;flex-direction:column;align-items:stretch;gap:2px;color:var(--ink);font:inherit;text-align:center;min-width:0;cursor:pointer}
+.cvc b{font-size:12px;font-weight:800;text-align:left;padding-left:3px;line-height:1.2}
+.cvc.oth{opacity:.4}
+.cvc.today{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}.cvc.today b{color:var(--acc-text)}
+.cvg{display:block;border-radius:4px;font-size:9px;font-weight:800;line-height:1.35;padding:0 2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#111}
+.cvg.tt{background:#35b26a}.cvg.tc{background:#e5484d;color:#fff}.cvg.ta{background:#f0c235}.cvg.to{background:#8b97b3}
+.cvm{font-size:9px;font-weight:800;color:var(--muted)}
+.cvleg{display:flex;gap:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.cvleg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+.cvleg i.tt{background:#35b26a}.cvleg i.tc{background:#e5484d}.cvleg i.ta{background:#f0c235}.cvleg i.to{background:#8b97b3}
 
 .agbox .slbtn{height:30px;width:40px;flex-basis:40px;font-size:26px}.agbox{padding:2px 4px 4px!important}.agbox h3{font-size:1rem}.agbox .tag{font-size:10px}
 .chtl{white-space:nowrap;padding:0 48px!important;overflow:hidden}.chtl .chn{color:var(--acc-text);font-weight:600}.chtl.clubhead .favstar{position:absolute;right:0}
@@ -7341,12 +7364,73 @@ function calListHtml(){
   if(inRange && !fut.length && order.length && !win) out += mark;
   return out;
 }
+/* ---------- Calendrier : vue « mois » (tableau) ou vue « liste », choisies par deux icônes en haut ---------- */
+function calVw(){
+  if(!ui.calVw){ try{ ui.calVw = localStorage.getItem('volley-calvw-v1') === 'list' ? 'list' : 'month'; }catch(e){ ui.calVw = 'month'; } }
+  return ui.calVw;
+}
+var CAL_ICO = {
+  month:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  list:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>',
+  fil:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>'
+};
+function calTopHtml(){
+  var v = calVw(), n = calFilterCount(), open = !!ui.calFOpen;
+  return '<div class="cvbar"><div class="cvseg" role="group" aria-label="Vue du calendrier">' +
+    '<button class="' + (v === 'month' ? 'on' : '') + '" data-act="calVw" data-v="month" aria-pressed="' + (v === 'month') + '" aria-label="Vue calendrier">' + CAL_ICO.month + '</button>' +
+    '<button class="' + (v === 'list' ? 'on' : '') + '" data-act="calVw" data-v="list" aria-pressed="' + (v === 'list') + '" aria-label="Vue liste">' + CAL_ICO.list + '</button></div>' +
+    '<span class="sp"></span><button class="cvf' + (n || open ? ' on' : '') + '" data-act="calFOpen" aria-expanded="' + open + '" aria-label="Filtres' + (n ? ' (' + n + ')' : '') + '">' + CAL_ICO.fil + (n ? '<i>' + n + '</i>' : '') + '</button></div>';
+}
+function calEvLabel(e){
+  var t = entryType(e);
+  return t === 't' ? 'Entraîn.' : (t === 'c' || t === 'a' ? 'Match' : String(e.title || 'Événement'));
+}
+function calMonthKey(){ return ui.calMonth || calBaseDay().slice(0, 7); }
+function calEntsByDay(){
+  var today = isoOf(new Date()), by = {};
+  calScope(calEntries()).filter(function(e){ return calModeKeep(e, today); }).forEach(function(e){ (by[e.date] = by[e.date] || []).push(e); });
+  Object.keys(by).forEach(function(k){ by[k].sort(function(a, b){ return (a.time || '99') < (b.time || '99') ? -1 : 1; }); });
+  return by;
+}
+function calMonthHtml(){
+  var today = isoOf(new Date()), mk = calMonthKey(), y = +mk.slice(0, 4), m = +mk.slice(5, 7), by = calEntsByDay();
+  var first = new Date(y, m - 1, 1), start = toDate(weekStart(isoOf(first))), days = new Date(y, m, 0).getDate();
+  var offset = Math.round((first - start) / 86400000), rows = Math.ceil((offset + days) / 7), cells = '', dt = new Date(start), i;
+  for(i = 0; i < rows * 7; i++){
+    var iso = isoOf(dt), es = by[iso] || [], chips = '';
+    es.slice(0, 2).forEach(function(e){ chips += '<span class="cvg t' + entryType(e) + '">' + esc(calEvLabel(e)) + '</span>'; });
+    if(es.length > 2) chips += '<span class="cvm">+' + (es.length - 2) + '</span>';
+    cells += '<button class="cvc' + (dt.getMonth() !== m - 1 ? ' oth' : '') + (iso === today ? ' today' : '') + '" data-act="calOpenDay" data-d="' + iso + '" aria-label="' + esc(dt.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }) + (es.length ? ', ' + es.length + ' élément' + (es.length > 1 ? 's' : '') : '')) + '"><b>' + dt.getDate() + '</b>' + chips + '</button>';
+    dt.setDate(dt.getDate() + 1);
+  }
+  var ttl = new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month:'long', year:'numeric' });
+  var arrow = function(n, p, lab){ return '<button class="ibtn" data-act="calMon" data-n="' + n + '" aria-label="' + lab + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + p + '"/></svg></button>'; };
+  return '<div class="cvnav">' + arrow(-1, 'M15 5l-7 7 7 7', 'Mois précédent') + '<button class="cvt" data-act="calMon" data-n="0" aria-label="Revenir au mois en cours">' + esc(ttl.charAt(0).toUpperCase() + ttl.slice(1)) + '</button>' + arrow(1, 'M9 5l7 7-7 7', 'Mois suivant') + '</div>' +
+    '<div class="cvgh" aria-hidden="true">' + ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(function(x){ return '<span>' + x + '</span>'; }).join('') + '</div><div class="cvgrid">' + cells + '</div>' +
+    '<div class="cvleg"><span><i class="tc"></i>Championnat</span><span><i class="ta"></i>Amical</span><span><i class="tt"></i>Entraînement</span><span><i class="to"></i>Autre</span></div>';
+}
+function calDaySheet(sh){
+  var today = isoOf(new Date()), es = calEntsByDay()[sh.d] || [];
+  var ttl = toDate(sh.d).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  return '<h2>' + esc(ttl.charAt(0).toUpperCase() + ttl.slice(1)) + '</h2>' + (es.length ? '<div class="mcs" style="margin-top:12px">' + es.map(function(e){ return calRow(e, today); }).join('') + '</div>' : '<p class="hint2" style="font-size:16px;margin-top:8px">Rien de prévu ce jour-là.</p>');
+}
+function sheetUp(){
+  var s = ui.sheet, cb = ui.calBack; ui.calBack = null;
+  if(s && s.kind === 'mephoto') return { kind:'profile' };
+  if(s && s.kind === 'fixture' && cb) return { kind:'calday', d:cb };
+  return null;
+}
 function calendarView(){
   if(ui.calView === 'create') return eventForm();
-  var out = '<div class="stack">';
-  out += calStripHtml();
-  out += calFiltersHtml();
-  out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
+  var out = '<div class="stack">' + calTopHtml();
+  if(calVw() === 'month'){
+    if(ui.calFOpen || calFilterCount()) out += calFiltersHtml();
+    out += calBannerHtml() + calMonthHtml() + '</div>';
+  } else {
+    out += calStripHtml();
+    out += calFiltersHtml();
+    out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
+  }
   return out + (can('evCreate') ? '<button class="fab" data-act="calCreate" aria-label="Créer une rencontre ou un événement">+</button>' : '');
 }
 /* Deux clubs au choix, puis la question « qui joue à domicile ? » : l'autre joue à l'extérieur */
@@ -8491,6 +8575,8 @@ function sheetView(){
       '<div class="btnrow"><button class="btn wide primary" data-act="profOpen">Me connecter</button></div><div class="btnrow"><button class="btn wide" data-act="closeSheet">Plus tard</button></div>';
   } else if(sh.kind === 'clubadd'){
     inner = clubAddSheet(sh);
+  } else if(sh.kind === 'calday'){
+    inner = calDaySheet(sh);
   } else if(sh.kind === 'fed'){
     inner = fedSheet(sh);
   } else if(sh.kind === 'champteam'){
@@ -9078,7 +9164,7 @@ document.addEventListener('click', function(e){
   var b = e.target.closest('[data-act]');
   if(!b || b.disabled) return;
   var act = b.dataset.act, d = b.dataset, t = parseInt(d.team, 10), sh = ui.sheet;
-  if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = ui.sheet && ui.sheet.kind === 'mephoto' ? { kind:'profile' } : null; render(); return; }
+  if(act === 'backdrop'){ if(e.target !== b) return; ui.sheet = sheetUp(); render(); return; }
   if(act.indexOf('trn') === 0 && trnAct(act, d)) return;
   /* Lecture seule : qui ne saisit pas le match ne peut agir sur rien (le terrain reste consultable) */
   if(ro() && { openPoint:1, openFault:1, openSub:1, subExc:1, subCount:1, timeout:1, tcStop:1, undo:1, undoAsk:1, undoOk:1, endSetAsk:1, endSetOk:1, clock:1, serve:1, swap:1, xToggle:1, xPick:1, rot:1, injOpen:1, cardOpen:1, openLineup:1, modeChg:1, modeChgOk:1, modeGo:1, modeSel:1, hdrToggle:1 }[act]) return;
@@ -9589,7 +9675,7 @@ document.addEventListener('click', function(e){
     case 'undoAsk': if(S.history.length){ ui.sheet = { kind:'undoask' }; render(); } break;
     case 'endSetAsk': ui.sheet = { kind:'endask' }; render(); break;
     case 'endSetOk': endSet(); break;
-    case 'closeSheet': ui.sheet = ui.sheet && ui.sheet.kind === 'mephoto' ? { kind:'profile' } : null; render(); break;
+    case 'closeSheet': ui.sheet = sheetUp(); render(); break;
     case 'mePhotoDel': { var q_pd = meInfo(); if(q_pd && !meTest()){ delete q_pd.m.photo; save(); } ui.sheet = { kind:'profile' }; render(); break; }
     case 'pickHow':
       if(d.how === 'oppfault' && sh.kind === 'point'){ ui.sheet = { kind:'fault', team:1 - sh.team }; if(modeOf() !== 'complet' || !onCourt(1 - sh.team).length) ui.sheet.pid = ''; render(); }
@@ -9756,10 +9842,13 @@ document.addEventListener('click', function(e){
     case 'theme': themeSet(d.t); render(); break;
     case 'grpBy': S.prefs.groupBy = d.g; save(); render(); break;
     case 'calMode': ui.calMode = d.m; ui.calJump = d.m !== 'done'; render(); break;
+    case 'calVw': ui.calVw = d.v === 'list' ? 'list' : 'month'; try{ localStorage.setItem('volley-calvw-v1', ui.calVw); }catch(e){} render(); window.scrollTo(0, 0); break;
+    case 'calMon': { var cmk = calMonthKey(), cmy = +cmk.slice(0, 4), cmm = +cmk.slice(5, 7) - 1; if(d.n === '0'){ var cmT = new Date(); cmy = cmT.getFullYear(); cmm = cmT.getMonth(); } else cmm += parseInt(d.n, 10); var cmD = new Date(cmy, cmm, 1); ui.calMonth = cmD.getFullYear() + '-' + ('0' + (cmD.getMonth() + 1)).slice(-2); render(); break; }
+    case 'calOpenDay': ui.sheet = { kind:'calday', d:d.d }; render(); break;
     case 'calDay': ui.calDay = d.d; if(d.d < weekStart(isoOf(new Date()))) ui.calPast = true; ui.calGo = d.d; render(); break;
     case 'calWeek': { var cwd = toDate(calBaseDay()); cwd.setDate(cwd.getDate() + 7 * parseInt(d.n, 10)); ui.calDay = isoOf(cwd); if(ui.calDay < weekStart(isoOf(new Date()))) ui.calPast = true; if(calAnyFilter()) ui.calGo = ui.calDay; render(); break; }
     case 'logoDel': { var lc = curClub(); if(lc){ delete lc.logo; delete lc.pal; delete lc.palv; ui.msg = ''; save(); render(); } break; }
-    case 'openFixture': { var oft = !d.cid && S.agenda.filter(function(x){ return x.id === d.fid && x.trn; })[0]; if(oft && trnById(oft.trn)){ setTab('tournoi'); ui.trn = Object.assign(trnU(), { view:'detail', id:oft.trn, tab:'infos', team:null, edit:null, tv:false }); render(); window.scrollTo(0, 0); break; } ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break; }
+    case 'openFixture': { var oft = !d.cid && S.agenda.filter(function(x){ return x.id === d.fid && x.trn; })[0]; if(oft && trnById(oft.trn)){ setTab('tournoi'); ui.trn = Object.assign(trnU(), { view:'detail', id:oft.trn, tab:'infos', team:null, edit:null, tv:false }); render(); window.scrollTo(0, 0); break; } ui.calBack = ui.sheet && ui.sheet.kind === 'calday' ? ui.sheet.d : null; ui.sheet = { kind:'fixture', cid:d.cid || '', fid:d.fid }; render(); break; }
     case 'sbOpen': ui.sheet = { kind:'sblogin', draft:{ step:'email', email:'', code:'' }, err:'' }; render(); break;
     case 'sbBack': sh.draft.step = 'email'; sh.draft.code = ''; sh.err = ''; render(); break;
     case 'sbSend': {
@@ -10290,7 +10379,7 @@ if(!hp0 && routeApply(location.hash)){
   navY = 0;
   try{ history.pushState({ v:'tab' }, ''); histDepth = 1; }catch(e){}
 } else if(hp0){
-  hashApply(hp0); ui.tab = 'cal'; ui.calView = 'list'; ui.calJump = true; navY = 0;
+  hashApply(hp0); ui.tab = 'cal'; ui.calView = 'list'; ui.calVw = 'list'; ui.calJump = true; navY = 0;
   try{ history.pushState({ v:'tab' }, ''); histDepth = 1; }catch(e){}
 } else if(!ui.favDone){
   ui.favDone = true;
@@ -10303,7 +10392,7 @@ window.addEventListener('hashchange', function(){
   if(!hp){ if(routeApply(location.hash)){ render(); window.scrollTo(0,0); } return; }
   hashApply(hp);
   if(ui.tab !== 'cal') setTab('cal');
-  ui.calView = 'list'; ui.calJump = true; render();
+  ui.calView = 'list'; ui.calVw = 'list'; ui.calJump = true; render();
 });
 if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('message', function(ev){
