@@ -3361,9 +3361,9 @@ function calActiveHtml(){
   if((ui.calMode || 'all') !== 'all') chips.push(filterChip('mode', ui.calMode === 'up' ? 'À venir' : 'Terminés'));
   return '<div class="fchips">' + chips.join('') + '<button class="linkbtn" data-act="calReset">Tout effacer</button></div>';
 }
-function calFiltersHtml(){
-  var f = ui.fil, n = calFilterCount(), fav = favGet(), open = !!ui.calFOpen;
-  var out = '<section class="card" id="calfilters">' +
+function calFiltersHtml(sheet){
+  var f = ui.fil, n = calFilterCount(), fav = favGet(), open = sheet ? true : !!ui.calFOpen;
+  var out = sheet ? '<h2>Filtres</h2>' + calBannerHtml() + '<div id="calactive">' + calActiveHtml() + '</div>' : '<section class="card" id="calfilters">' +
     '<div id="calactive">' + calActiveHtml() + '</div>' +
     '<button class="btn wide" data-act="calFOpen" aria-expanded="' + (open ? 'true' : 'false') + '" style="margin-top:0">Filtres' + (n ? ' (' + n + ')' : '') + ' <span aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>';
   if(open){
@@ -3385,7 +3385,7 @@ function calFiltersHtml(){
     if(fe && fav !== f.team) out += '<button class="btn wide" data-act="favApply">★ Voir mon équipe : ' + esc(fe.name) + '</button>';
     out += '<button class="btn wide" data-act="calLink">Partager un lien vers cette vue</button><button class="btn wide" data-act="calIcs">Ajouter les rencontres à venir à mon agenda (.ics)</button><p class="hint2">Le fichier est importé une seule fois : les changements ultérieurs ne se mettent pas à jour dans votre agenda. Les rencontres sans heure sont ajoutées sur la journée entière.</p></div>';
   }
-  return out + '</section>';
+  return out + (sheet ? '' : '</section>');
 }
 /* ---------- Rappel de sauvegarde (retour 8) ----------
    La date de la dernière sauvegarde est gardée dans une clé à part (elle ne fait pas partie des données sauvegardées).
@@ -7320,7 +7320,7 @@ function calListHtml(){
   var out = '', all = calEntries(), today = isoOf(new Date()), mode = ui.calMode || 'all';
   var filtered = calScope(all);
   var shown = filtered.filter(function(e){ return calModeKeep(e, today); });
-  var win = !calAnyFilter() && !GRP_BTN, wk0 = weekStart(calBaseDay());
+  var win = false, wk0 = weekStart(calBaseDay());
   if(win){ var wk1 = isoOf((function(d){ d.setDate(d.getDate() + 6); return d; })(toDate(wk0))); shown = shown.filter(function(e){ return e.date >= wk0 && e.date <= wk1; }); }
   var weeks = {}, meta = {}, order = [], thisWeek = weekStart(today), byDay = GRP_BTN && S.prefs.groupBy === 'day';
   shown.forEach(function(e){
@@ -7423,14 +7423,9 @@ function sheetUp(){
 function calendarView(){
   if(ui.calView === 'create') return eventForm();
   var out = '<div class="stack">' + calTopHtml();
-  if(calVw() === 'month'){
-    if(ui.calFOpen || calFilterCount()) out += calFiltersHtml();
-    out += calBannerHtml() + calMonthHtml() + '</div>';
-  } else {
-    out += calStripHtml();
-    out += calFiltersHtml();
-    out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
-  }
+  if(calFilterCount()) out += '<div id="calactive">' + calActiveHtml() + '</div>';
+  if(calVw() === 'month') out += calMonthHtml() + '</div>';
+  else out += '<div class="stack" id="callist">' + calListHtml() + '</div></div>';
   return out + (can('evCreate') ? '<button class="fab" data-act="calCreate" aria-label="Créer une rencontre ou un événement">+</button>' : '');
 }
 /* Deux clubs au choix, puis la question « qui joue à domicile ? » : l'autre joue à l'extérieur */
@@ -8575,6 +8570,8 @@ function sheetView(){
       '<div class="btnrow"><button class="btn wide primary" data-act="profOpen">Me connecter</button></div><div class="btnrow"><button class="btn wide" data-act="closeSheet">Plus tard</button></div>';
   } else if(sh.kind === 'clubadd'){
     inner = clubAddSheet(sh);
+  } else if(sh.kind === 'calfil'){
+    inner = calFiltersHtml(true);
   } else if(sh.kind === 'calday'){
     inner = calDaySheet(sh);
   } else if(sh.kind === 'fed'){
@@ -9432,7 +9429,7 @@ document.addEventListener('click', function(e){
       ui.sheet = null; save(); render(); break;
     case 'clock': toggleClock(); break;
     case 'swap': S.swap = !S.swap; save(); render(); break;
-    case 'calFOpen': ui.calFOpen = !ui.calFOpen; render(); break;
+    case 'calFOpen': ui.sheet = { kind:'calfil' }; render(); break;
     case 'calClear': if(d.k === 'type') ui.calType = ''; else if(d.k === 'home') ui.calHome = ''; else if(d.k === 'mode') ui.calMode = 'all'; else ui.fil[d.k] = ''; render(); break;
     case 'calReset': ui.fil = { team:'', club:'', champ:'' }; ui.calQ = ''; ui.calType = ''; ui.calHome = ''; ui.calMode = 'all'; render(); break;
     case 'calHome': ui.calHome = d.h; render(); break;
