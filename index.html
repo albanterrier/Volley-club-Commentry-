@@ -968,6 +968,20 @@ textarea[data-bind=rs]{width:100%;resize:vertical;font:inherit;font-size:16px;pa
 .nmc-st{font-size:11px;font-weight:700;color:var(--danger)}
 .nmc-pr{position:absolute;bottom:0;left:23.4px;right:23.4px;height:24px;box-sizing:border-box;border:0;margin:0;font:inherit;font-size:12px;font-weight:700;background:var(--nm-ban);color:var(--nm-bank);clip-path:polygon(0 0,100% 0,calc(100% - 5.6px) 100%,5.6px 100%);display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1;padding:0 8px;cursor:pointer}
 .nmc-pr.ask{background:#d5dae3;color:#1b2230}.nmc-pr.ok{background:#5dbb82;color:#fff}.nmc-pr.bad{background:#e8706f;color:#fff}
+.evc{--ev-bg:#fff;--ev-ink:#111;--ev-db:#000;--ev-dk:#fff}
+:root[data-theme="dark"] .evc{--ev-bg:#2b3140;--ev-ink:#f2f4f8;--ev-db:#fff;--ev-dk:#000}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .evc{--ev-bg:#2b3140;--ev-ink:#f2f4f8;--ev-db:#fff;--ev-dk:#000}}
+.evc{position:relative;display:flex;align-items:stretch;width:100%;height:68px;box-sizing:border-box;border-radius:16px;overflow:hidden;background:var(--ev-bg);color:var(--ev-ink);cursor:pointer;text-align:left}
+.evc.sel{box-shadow:0 0 0 2px var(--acc)}
+.evc-l{flex:0 0 52%;box-sizing:border-box;min-width:0;background:var(--acc);color:#1a0a00;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 100%,0 100%);display:flex;flex-direction:column;justify-content:center;padding:4px 22px 4px 16px}
+.evc-l b{font-size:18px;font-weight:800;line-height:1.1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.evc-l i{font-style:normal;font-size:12px;font-weight:600;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evc-r{flex:1;min-width:0;margin-left:-11px;display:flex;flex-direction:column;gap:4px}
+.evc-d{flex:1;min-height:0;background:var(--ev-db);color:var(--ev-dk);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;clip-path:polygon(0 0,100% 0,100% 100%,7.5px 100%);padding:0 6px 0 14px;white-space:nowrap;text-align:center}
+.evc-d.solo{flex-direction:column;gap:2px;clip-path:polygon(0 0,100% 0,100% 100%,16px 100%)}
+.evc-h{font-size:18px;line-height:1}
+.evc-pr{flex:1;min-height:0;border:0;margin:0;font:inherit;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px 0 20px;clip-path:polygon(8.5px 0,100% 0,100% 100%,16px 100%);cursor:pointer}
+.evc-pr.ask{background:#d5dae3;color:#1b2230}.evc-pr.ok{background:#5dbb82;color:#fff}.evc-pr.bad{background:#e8706f;color:#fff}
 
 .agbox .slbtn{height:30px;width:40px;flex-basis:40px;font-size:26px}.agbox{padding:2px 4px 4px!important}.agbox h3{font-size:1rem}.agbox .tag{font-size:10px}
 .chtl{white-space:nowrap;padding:0 48px!important;overflow:hidden}.chtl .chn{color:var(--acc-text);font-weight:600}.chtl.clubhead .favstar{position:absolute;right:0}
@@ -7151,13 +7165,24 @@ function calRow(e, today, favArg){
   var sel = ui.calDay && ui.calDay === e.date ? ' sel' : '';
   var attrs = ' data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '"';
   var when = '<span>' + (e.postponed ? '<s>' : '') + esc(fmtDay(e.date)) + (e.time ? ' · ' + esc(e.time) : '') + (e.postponed ? '</s>' : '') + tmpTag(e) + '</span>';
-  if(e.kind === 'event'){
-    var efoot = '<span class="mc-foot">' + when + (e.f.train && e.title !== 'Entraînement' && clubById(e.f.club) ? '<span>' + esc(clubById(e.f.club).name) + '</span>' : '') + '</span>', epb = presBtn(e, today);
-    if(epb) efoot = '<span class="mc-foot3"><span class="fl"></span><span class="fm">' + efoot + '</span><span class="fr">' + epb + '</span></span>';
-    return '<div class="mc' + sel + '" role="button" tabindex="0"' + attrs + '><span class="mc-top"><span class="mc-b">' + (e.date < today ? '<span class="tag">Passé</span>' : '<span class="tag up">À venir</span>') + '</span><span class="mc-ctx">' + dotHtml(entryType(e)) + (e.f.train ? 'Entraînement' : 'Événement') + '</span></span>' +
-      '<span class="mc-title">' + esc(e.f.train && e.title === 'Entraînement' ? ((clubById(e.f.club) || {}).name || e.title) : e.title) + '</span>' + efoot + presSum(e) + '</div>';
-  }
+  if(e.kind === 'event') return calRowE(e, today);
   return calRowN(e, today);
+}
+
+/* ---------- Entraînement / événement : trapèze orange à gauche, date et présence à droite ---------- */
+function calRowE(e, today){
+  var past = e.date < today, sel = ui.calDay && ui.calDay === e.date ? ' sel' : '';
+  var attrs = ' data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '"';
+  var cl = e.f.train ? clubById(e.f.club) : null;
+  var big = e.f.train && e.title === 'Entraînement' ? 'Entraînement' : e.title;
+  var sub = e.f.train && cl ? cl.name : '';
+  var pb = nmPres(e, today, 'evc-pr');
+  var rel = !e.postponed && !past && today ? Math.round((new Date(e.date + 'T12:00:00') - new Date(today + 'T12:00:00')) / 86400000) : 9;
+  var day = rel === 0 ? 'Aujourd\'hui' : (rel === 1 ? 'Demain' : (e.postponed ? '<s>' + esc(fmtDay(e.date)) + '</s>' : esc(fmtDay(e.date)))) + tmpTag(e);
+  var time = e.time && !past && !e.postponed ? esc(e.time) : '';
+  var d = pb ? '<span class="evc-d"><span>' + day + (time ? ' · ' + time : '') + '</span></span>'
+             : '<span class="evc-d solo"><span>' + day + '</span>' + (time ? '<span class="evc-h">' + time + '</span>' : '') + '</span>';
+  return '<div class="evc' + sel + '" role="button" tabindex="0"' + attrs + '><span class="evc-l"><b>' + esc(big) + '</b>' + (sub ? '<i>' + esc(sub) + '</i>' : '') + '</span><span class="evc-r">' + d + pb + '</span></div>';
 }
 
 /* ---------- Rencontre (hors championnat) : équipes en bandeaux obliques, centre en entonnoir ---------- */
@@ -7165,13 +7190,13 @@ function nmName(n){
   var m = String(n || '').match(/^(.*?)\s*(\([^()]*\))\s*$/);
   return m && m[1] ? esc(m[1]) + ' <span class="nmn">' + esc(m[2]) + '</span>' : esc(n || '');
 }
-function nmPres(e, today){
+function nmPres(e, today, base){
   if(!presCan(e, today)) return '';
   var st = (S.pres[e.fid] || {})[meGet()], n = presVisible(e) ? presInfo(e).p.length : null, cls, lab, aria;
   if(st === 'p'){ cls = ' ok'; lab = 'Présent' + (n === null ? '' : ' (' + n + ')'); aria = 'présent'; }
   else if(st === 'a'){ cls = ' bad'; lab = 'Absent'; aria = 'absent'; }
   else { cls = ' ask'; lab = 'Présent ?' + (n === null ? '' : ' (' + n + ' présent' + (n > 1 ? 's' : '') + ')'); aria = 'sans réponse'; }
-  return '<button class="nmc-pr' + cls + '" data-act="presTog" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" aria-label="Ma présence : ' + aria + '">' + lab + '</button>';
+  return '<button class="' + (base || 'nmc-pr') + cls + '" data-act="presTog" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" aria-label="Ma présence : ' + aria + '">' + lab + '</button>';
 }
 function calRowN(e, today){
   var res = entryResult(e), live = msLive(e.fid) && !e.postponed, past = e.date < today;
@@ -8883,7 +8908,7 @@ function render(){
   if(ui.calGo){
     var cg = ui.calGo; ui.calGo = null;
     if(ui.tab === 'cal'){
-      var crow = [].slice.call(document.querySelectorAll('.mc[data-date], .nmc[data-date]')), cbest = null, cbd = 1e15, cgt = toDate(cg).getTime();
+      var crow = [].slice.call(document.querySelectorAll('.mc[data-date], .nmc[data-date], .evc[data-date]')), cbest = null, cbd = 1e15, cgt = toDate(cg).getTime();
       crow.forEach(function(r){ var df = Math.abs(toDate(r.dataset.date).getTime() - cgt); if(df < cbd){ cbd = df; cbest = r; } });
       if(cbest) cbest.scrollIntoView({ block:'center' });
     }
