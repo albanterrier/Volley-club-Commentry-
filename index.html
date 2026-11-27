@@ -4279,9 +4279,6 @@ function stBoxHtml(d, keys){
   return '<div class="stbox" role="status"><b><i class="stdot" style="background:' + (ST_COL[k] || (k === 'win' ? 'var(--ok)' : 'var(--danger)')) + '"></i>' + ST_KINDS[k].t + ' : ' + rs.length + ' match' + (rs.length > 1 ? 's' : '') + '</b>' +
     (rs.length ? '<ul>' + rs.map(function(r){ return '<li>' + esc(r.label) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
 }
-function stLegendOff(items){
-  return '<div class="stleg">' + items.map(function(i){ return '<button class="stlg' + (ui.stSeg === i.k ? ' on' : '') + '" data-act="stSeg" data-k="' + i.k + '"><i style="background:' + i.color + '"></i>' + esc(i.label) + ' <b>' + i.v + '</b></button>'; }).join('') + '</div>';
-}
 function teamStatsHtml(d){
   var n = d.recs.length;
   if(!n) return '<p class="muted" style="margin:10px 0">Aucune donnée statistique pour le moment.</p>';
@@ -4507,7 +4504,6 @@ var IC_CAL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2
 var IC_PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 3.600 3.300 7.300 5.400 9.400H5.800L3 21.800h18l-2.800-3.400h-4.600C15.700 16.300 19 12.600 19 9c0-3.900-3.100-7-7-7zm0 9.500A2.500 2.500 0 1 1 12 6.500a2.500 2.500 0 0 1 0 5z"/></svg>';
 function clubPlace(cid){ var c = cid && clubById(cid); return c && c.place ? String(c.place) : ''; }
 function clubDays(cid){ var c = cid && clubById(cid); return c && Array.isArray(c.trainDays) ? c.trainDays.slice().sort(function(a, b){ return a - b; }) : []; }
-function daysTxt(arr){ return arr.map(function(i){ return DOW_LAB[i]; }).join(' · '); }
 function daysFull(arr){ return arr.map(function(i){ return DOW_FULL[i].charAt(0).toUpperCase() + DOW_FULL[i].slice(1); }).join(', '); }
 function clubTime(cid){ var c = cid && clubById(cid); return c && c.trainTime ? String(c.trainTime) : ''; }
 function nextDowDate(dw){
@@ -5680,11 +5676,6 @@ function prepEntries(today){
     return keep;
   });
 }
-function compoLines(e, tid){
-  var c = e.f && e.f.compo && e.f.compo[tid];
-  if(!c || !(c.pl || []).length) return 'Pas encore composée';
-  return c.pl.length + ' joueur' + (c.pl.length > 1 ? 's' : '');
-}
 function prepCardHtml(e, i, today, day){
   var op = 'data-act="openFixture" data-cid="' + esc(e.cid) + '" data-fid="' + e.fid + '" data-date="' + e.date + '" aria-label="Ouvrir ' + esc(clubName(e.home) + ' – ' + clubName(e.away)) + '"';
   var canP = i.staff.length && !(e.f && e.f.locked);
@@ -5780,27 +5771,7 @@ function pickMembersSheet(sh){
   }).join('') + '</div>';
   return out + '<div class="pmfoot"><button class="btn wide primary" id="pmok" data-act="pmOk" data-team="' + t + '"' + (n ? '' : ' disabled') + '>Valider' + (n ? ' (' + n + ')' : '') + '</button><button class="btn wide" data-act="pmManual" data-team="' + t + '">Autre joueur (saisir son nom)</button></div>';
 }
-function memberSelectHtml(t){
-  var club = clubById(S.teams[t].clubId), ftm = findTeam(S.teams[t].clubId);
-  if(!club) return '<p class="muted">Cette équipe n\'a pas de club : ajoutez ses joueurs à la main.</p>';
-  var have = {};
-  S.teams[t].players.forEach(function(p){ if(p.mid) have[p.mid] = true; });
-  var pool = ftm ? club.members.filter(function(m){ return ftm.t.memberIds.indexOf(m.id) >= 0; }) : club.members;
-  if(!pool.length) return '<p class="muted">Cette équipe n\'a pas encore de membres. Ajoutez-en dans Clubs › Équipe.</p>';
-  var list = sortMembers(pool.filter(function(m){ return !have[m.id]; }));
-  return '<select id="pickm' + t + '" data-bind="pickmember" data-team="' + t + '"><option value="">' + (list.length ? '— Choisir un membre —' : 'Tous les membres sont déjà ajoutés') + '</option>' +
-    list.map(function(m){ return '<option value="' + m.id + '">' + esc(memberName(m)) + (m.licence ? ' · ' + esc(m.licence) : '') + '</option>'; }).join('') + '</select>';
-}
 /* Choix du poste (ou du banc) à l'ajout d'un joueur */
-function addPostSelect(t){
-  var L = S.lineup[t], free = [];
-  for(var i = 0; i < 6; i++) if(!L[i]) free.push(i);
-  var cur = ui.addPost && ui.addPost[t];
-  if(cur !== 'bench' && !(cur !== null && cur !== undefined && free.indexOf(parseInt(cur, 10)) >= 0)) cur = free.length ? String(free[0]) : 'bench';
-  return '<select id="addpost' + t + '" data-bind="addpost" data-team="' + t + '" aria-label="Poste ou banc">' +
-    free.map(function(i){ return '<option value="' + i + '"' + (String(i) === String(cur) ? ' selected' : '') + '>Poste ' + (i + 1) + '</option>'; }).join('') +
-    '<option value="bench"' + (cur === 'bench' ? ' selected' : '') + '>Banc</option></select>';
-}
 function postChoice(t){ var el = document.getElementById('addpost' + t); return el ? el.value : undefined; }
 /* Composition de départ : liste des postes à gauche, demi-terrain de l'équipe à droite (boutons de poste) */
 function cmpBtn0(t, i){
@@ -6021,7 +5992,6 @@ function trnIsCap(T, t){
 }
 function trnCanScore(T, m){ return trnCanEdit(T) || trnIsCap(T, trnTeam(T, m.a)) || trnIsCap(T, trnTeam(T, m.b)) || (!!m.ref && trnIsCap(T, trnTeam(T, m.ref))); }
 function trnLogged(){ try{ return SB.status().logged; }catch(e){ return false; } }
-function trnCaptainOf(T){ var me = meGet(); if(!me) return null; return T.teams.filter(function(t){ return t.cap && t.players.some(function(p){ return p.id === t.cap && p.mid === me; }); })[0] || null; }
 function trnMyTeams(T){ var me = meGet(); if(!me) return []; return T.teams.filter(function(t){ return t.players.some(function(p){ return p.mid === me; }); }); }
 /* ---- synchronisation du tournoi avec une entrée du calendrier ---- */
 function trnSyncAgenda(T){
@@ -6144,7 +6114,6 @@ function trnResolve(T){
     });
   }
 }
-function trnScoreOf(T, m, side){ return m.res ? (side === 'a' ? m.res.a : m.res.b) : 0; }
 function trnPts(T, m, side){
   var c = T.cfg, w = trnWinner(T, m), me = side === 'a' ? m.a : m.b;
   if(!w) return 0;
@@ -7172,13 +7141,6 @@ function presInfo(e){
   out.n = total - out.p.length - out.a.length;
   return out;
 }
-function presSum(e){
-  return '';
-  if(!presVisible(e) || !S.pres[e.fid]) return '';
-  var i = presInfo(e);
-  if(!i.p.length && !i.a.length) return '';
-  return '<span class="mc-att"><b class="ok">' + i.p.length + ' présent' + (i.p.length > 1 ? 's' : '') + '</b> · <b class="bad">' + i.a.length + ' absent' + (i.a.length > 1 ? 's' : '') + '</b></span>';
-}
 function presSheetHtml(e, today, noList){
   if(noList && !presCan(e, today)) return '';
   if(!presVisible(e) && !presCan(e, today)) return '';
@@ -8153,15 +8115,6 @@ function dataClubView(){
   var D = teamSeasonData(e);
   return out + '<section class="card"><h2 class="pcell">' + logoHtml(c.id, 36) + '<span>' + esc(c.name) + '</span></h2><p class="muted" style="margin:4px 0 0">Toutes les équipes du club · saison ' + esc(curSeason().label) + '</p>' + teamStatsHtml(D) + rjHistoHtml(c.members) + '</section></div>';
 }
-function recordOf(items){
-  var v = 0, d = 0;
-  items.forEach(function(it){
-    if(!it.m.finished) return;
-    var w = setsWonOf(it.m);
-    if(w[it.t] > w[1 - it.t]) v++; else d++;
-  });
-  return v + 'V – ' + d + 'D';
-}
 /* ---------- Graphiques des statistiques (28/10/2026) : anneau victoires/défaites, histogrammes ---------- */
 var STCATS = [['attack', 'Attaque'], ['block', 'Bloc'], ['ace', 'Service'], ['relance', 'Relance'], ['faute', 'Fautes'], ['none', 'Non précisé']];
 var FAULT_SHORT = { 'Filet':'Filet', 'Ballon dehors':'Dehors', 'Ballon non franchi':'Non franchi', 'Faute de pied':'Pied', 'Ballon sorti':'Sorti', 'Double touche':'Double', 'Quatre touches':'4 touches', 'Faute de service':'Service', 'Faute de rotation':'Rotation', 'Pied sur la ligne':'Ligne', 'Autre':'Autre', 'Carton rouge':'Carton' };
@@ -8312,7 +8265,7 @@ function dataTeamsView(){
   out += dataTabsHtml('teams') + '<section class="card"><h3>Équipes</h3>';
   if(!teams.length) out += '<p class="muted">Aucune donnée statistique pour le moment.</p>';
   else out += '<p class="muted" style="margin:6px 0 4px">Choisissez une équipe pour voir ses statistiques et ses matchs.</p>' + teams.map(function(k){
-    return '<div class="ritem"><button class="fx" data-act="dataTeamSel" data-key="' + esc(k.key) + '"><span class="fxt"><span class="fxteam">' + logoHtml(k.logo, 28) + '<span class="nm">' + esc(k.label) + '</span></span><small>' + (function(){ var q = teamSeasonData(k); return q.items.length + q.res.length; })() + ' match(s)</small></span><span class="rsc">' + (function(){ var q = teamSeasonData(k), w = q.recs.filter(ST_KINDS.win.f).length; return w + 'V ' + (q.recs.length - w) + 'D'; })() + '</span></button></div>';
+    return '<div class="ritem"><button class="fx" data-act="dataTeamSel" data-key="' + esc(k.key) + '"><span class="fxt"><span class="fxteam">' + logoHtml(k.logo, 28) + '<span class="nm">' + esc(k.label) + '</span></span><small>' + (function(){ var q = teamSeasonData(k); return q.items.length + q.res.length; })() + ' match(s)' + teamChampsTxt(k.key.slice(2)) + '<!--p462--></small></span><span class="rsc">' + (function(){ var q = teamSeasonData(k), w = q.recs.filter(ST_KINDS.win.f).length; return w + 'V ' + (q.recs.length - w) + 'D'; })() + '</span></button></div>';
   }).join('');
   return out + '</section></div>';
 }
@@ -10027,7 +9980,6 @@ document.addEventListener('click', function(e){
       if(d.v === 'create') ui.newClub = { name:'', logo:'' };
       render(); window.scrollTo(0,0); break;
     case 'clubEdit': ui.edit = false; if(ui.clubSel !== d.cid) ui.clubTab = null; ui.clubSel = d.cid; ui.clubView = 'edit'; ui.msg = ''; render(); window.scrollTo(0,0); break;
-    case 'clubEv': ui.clubEv = d.k; render(); break;
     case 'clubTab': ui.clubTab = d.k; ui.msg = ''; render(); break;
     case 'clubAddOpen': ui.sheet = { kind:'clubadd', what:ui.clubTab, mode:null }; ui.importCtx = ui.clubTab; ui.msg = ''; render(); break;
     case 'caMode': sh.mode = d.m; render(); break;
